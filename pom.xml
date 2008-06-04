@@ -8,7 +8,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>vmware</artifactId>
+    <artifactId>ssh-slaves</artifactId>
     <packaging>hpi</packaging>
     <version>0.1-SNAPSHOT</version>
     <name>Hudson SSH Slaves plugin</name>
