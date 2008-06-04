@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 public class PluginImpl extends Plugin {
 
     public void start() throws Exception {
-        //ComputerLauncher.LIST.add(SSHLauncher.DESCRIPTOR);
+        ComputerLauncher.LIST.add(SSHLauncher.DESCRIPTOR);
     }
 
     private static final java.util.logging.Logger LOGGER = Logger.getLogger(PluginImpl.class.getName());
