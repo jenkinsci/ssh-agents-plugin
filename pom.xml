@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.jvnet.hudson.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>1.222</version>
+        <version>1.221</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -13,6 +13,19 @@
     <version>0.1-SNAPSHOT</version>
     <name>Hudson SSH Slaves plugin</name>
     <url>http://hudson.gotdns.com/wiki/display/HUDSON/SSH+Slaves+plugin</url>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.kohsuke</groupId>
+            <artifactId>trilead-putty-extension</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jvnet.hudson</groupId>
+            <artifactId>trilead-ssh2</artifactId>
+            <version>build212-hudson-1</version>
+        </dependency>
+    </dependencies>
 
     <scm>
         <connection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/hudson/plugins/ssh-slaves</connection>
