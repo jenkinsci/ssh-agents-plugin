@@ -129,7 +129,6 @@ public class SSHLauncher extends ComputerLauncher {
                                 count += bufsiz;
                             }
                             listener.getLogger().println("[SSH] Sent " + count + " bytes.");
-                            is.close();
                         } catch (Exception e) {
                             listener.getLogger().println("[SSH] Error writing to remote file");
                             e.printStackTrace(listener.getLogger());
