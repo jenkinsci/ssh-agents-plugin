@@ -1,8 +1,6 @@
 package hudson.plugins.sshslaves;
 
-import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.Session;
-import com.trilead.ssh2.StreamGobbler;
+import com.trilead.ssh2.*;
 import hudson.model.Descriptor;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
@@ -11,6 +9,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 /**
@@ -94,7 +93,61 @@ public class SSHLauncher extends ComputerLauncher {
 
             // TODO if not, find a java that is or throw an error
 
-            // TODO copy the slave.jar using sftp
+            String fileDir = slaveComputer.getNode().getRemoteFS();
+            while (fileDir.endsWith("/")) {
+                fileDir = fileDir.substring(0, fileDir.length() - 1);
+            }
+            String fileName = fileDir + "/slave.jar";
+
+            listener.getLogger().println("[SSH] Starting sftp client...");
+            SFTPv3Client sftpClient = null;
+            try {
+                sftpClient = new SFTPv3Client(connection);
+
+                SFTPv3FileHandle fh = null;
+                try {
+                    // TODO decide best permissions and handle errors if exists already
+                    sftpClient.mkdir(fileDir, 0700);
+
+                    // TODO handle the file existing already
+                    listener.getLogger().println("[SSH] Copying latest slave.jar...");
+                    fh = sftpClient.createFile(fileName);
+
+                    InputStream is = null;
+                    try {
+                        // TODO get the slave jar the correct way... this may not be working
+                        is = getClass().getResourceAsStream("/WEB-INF/slave.jar");
+                        byte[] buf = new byte[2048];
+
+                        listener.getLogger().println("[SSH] Sending data...");
+
+                        int count = 0;
+                        int bufsiz = 0;
+                        try {
+                            while ((bufsiz = is.read(buf)) != -1) {
+                                sftpClient.write(fh, (long) count, buf, 0, bufsiz);
+                                count += bufsiz;
+                            }
+                            listener.getLogger().println("[SSH] Sent " + count + " bytes.");
+                            is.close();
+                        } catch (Exception e) {
+                            listener.getLogger().println("[SSH] Error writing to remote file");
+                            e.printStackTrace(listener.getLogger());
+                        }
+                    } finally {
+                        if (is != null) {
+                            is.close();
+                        }
+                    }
+                } catch (Exception e) {
+                    listener.getLogger().println("[SSH] Error creating file");
+                    e.printStackTrace(listener.getLogger());
+                }
+            } finally {
+                if (sftpClient != null) {
+                    sftpClient.close();
+                }
+            }
 
             // TODO launch the slave.jar with a command that removes it once it terminates
 
