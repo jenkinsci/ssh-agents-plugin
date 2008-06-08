@@ -47,6 +47,17 @@ public class SSHLauncher extends ComputerLauncher {
     private static String getTimestamp() {
         return String.format("[%1$tD %1$tT]", new Date());
     }
+    
+    /**
+     * Returns remote root workspace (without trailing slash)
+     */
+    private static String getWorkingDirectory(SlaveComputer computer) {
+        String workingDirectory = computer.getNode().getRemoteFS();
+        while (workingDirectory.endsWith("/")) {
+            workingDirectory = workingDirectory.substring(0, workingDirectory.length() - 1);
+        }
+        return workingDirectory;
+    }
 
     public synchronized void launch(final SlaveComputer computer, final StreamTaskListener listener) {
         connection = new Connection(host, port);
@@ -55,10 +66,7 @@ public class SSHLauncher extends ComputerLauncher {
 
             String java = findJava(listener);
 
-            String workingDirectory = computer.getNode().getRemoteFS();
-            while (workingDirectory.endsWith("/")) {
-                workingDirectory = workingDirectory.substring(0, workingDirectory.length() - 1);
-            }
+            String workingDirectory = getWorkingDirectory(computer);
 
             copySlaveJar(listener, workingDirectory);
 
@@ -182,8 +190,8 @@ public class SSHLauncher extends ComputerLauncher {
                 // TODO make sure this works with IBM JVM & JRocket
 
                 while (null != (line = r.readLine()) && !line.startsWith("java version \"")) {
-                    listener.getLogger().println("  " + line);
-                }
+                        listener.getLogger().println("  " + line);
+                    }
             } finally {
                 out.close();
                 err.close();
@@ -227,9 +235,23 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     public synchronized void afterDisconnect(SlaveComputer slaveComputer, StreamTaskListener listener) {
+        String workingDirectory = getWorkingDirectory(slaveComputer);
+        String fileName = workingDirectory + "/slave.jar";
+        
         if (connection != null) {
 
-            // TODO remove slave.jar
+            SFTPv3Client sftpClient = null;
+            try {
+                sftpClient = new SFTPv3Client(connection);
+                sftpClient.rm(fileName);
+            } catch (Exception e) {
+                listener.getLogger().println("[SSH] Error deleting file");
+                e.printStackTrace(listener.getLogger());
+            } finally {
+                if (sftpClient != null) {
+                    sftpClient.close();
+                }
+            }
 
             connection.close();
             connection = null;
