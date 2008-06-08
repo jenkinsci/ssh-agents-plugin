@@ -122,14 +122,13 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             sftpClient = new SFTPv3Client(connection);
 
-            SFTPv3FileHandle fh = null;
             try {
                 // TODO decide best permissions and handle errors if exists already
                 sftpClient.mkdir(workingDirectory, 0700);
 
                 // TODO handle the file existing already
                 listener.getLogger().println("[SSH] Copying latest slave.jar...");
-                fh = sftpClient.createFile(fileName);
+                SFTPv3FileHandle fileHandle = sftpClient.createFile(fileName);
 
                 InputStream is = null;
                 try {
@@ -143,7 +142,7 @@ public class SSHLauncher extends ComputerLauncher {
                     int bufsiz = 0;
                     try {
                         while ((bufsiz = is.read(buf)) != -1) {
-                            sftpClient.write(fh, (long) count, buf, 0, bufsiz);
+                            sftpClient.write(fileHandle, (long) count, buf, 0, bufsiz);
                             count += bufsiz;
                         }
                         listener.getLogger().println("[SSH] Sent " + count + " bytes.");
