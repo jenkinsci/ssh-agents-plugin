@@ -178,20 +178,26 @@ public class SSHLauncher extends ComputerLauncher {
         String java;
         java = "java";
         listener.getLogger().println("[SSH] Checking default java version");
-        String line;
+        String line = null;
         Session session = connection.openSession();
         try {
             session.execCommand(java + " -version");
             StreamGobbler out = new StreamGobbler(session.getStdout());
             StreamGobbler err = new StreamGobbler(session.getStderr());
             try {
-                BufferedReader r = new BufferedReader(new InputStreamReader(out));
+                BufferedReader r1 = new BufferedReader(new InputStreamReader(out));
+                BufferedReader r2 = new BufferedReader(new InputStreamReader(err));
 
                 // TODO make sure this works with IBM JVM & JRocket
 
-                while (null != (line = r.readLine()) && !line.startsWith("java version \"")) {
+                Outer:for (BufferedReader r : new BufferedReader[]{r1, r2}) {
+                    while (null != (line = r.readLine())) {
+                        if(line.startsWith("java version \"")) {
+                            break Outer;
+                        }
                         listener.getLogger().println("  " + line);
                     }
+                }
             } finally {
                 out.close();
                 err.close();
