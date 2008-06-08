@@ -13,7 +13,7 @@
       </f:entry>
 
       <f:entry title="${%Password}">
-        <f:textbox name="launcher.password" value="${instance.password}"/>
+        <input type="password" name="launcher.password" value="${instance.password}"/>
       </f:entry>
     </f:advanced>
 
