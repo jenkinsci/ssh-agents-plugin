@@ -2,17 +2,19 @@
     <f:entry title="${%Host}">
       <f:textbox name="launcher.host" value="${instance.host}"/>
     </f:entry>
-    <!-- todo move to advanced section -->
-    <f:entry title="${%Port}">
-      <f:textbox name="launcher.port" value="${instance.port}"/>
-    </f:entry>
+    
+    <f:advanced>
+      <f:entry title="${%Port}">
+        <f:textbox name="launcher.port" value="${instance.port}"/>
+      </f:entry>
 
-    <f:entry title="${%Username}">
-      <f:textbox name="launcher.username" value="${instance.username}"/>
-    </f:entry>
+      <f:entry title="${%Username}">
+        <f:textbox name="launcher.username" value="${instance.username}"/>
+      </f:entry>
 
-    <f:entry title="${%Password}">
-      <f:textbox name="launcher.password" value="${instance.password}"/>
-    </f:entry>
+      <f:entry title="${%Password}">
+        <f:textbox name="launcher.password" value="${instance.password}"/>
+      </f:entry>
+    </f:advanced>
 
 </j:jelly>
