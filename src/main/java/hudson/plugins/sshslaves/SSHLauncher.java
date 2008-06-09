@@ -215,15 +215,13 @@ public class SSHLauncher extends ComputerLauncher {
                 }
 
                 // The file will be overwritten even if it already exists
-                listener.getLogger().println(getTimestamp() + " [SSH] Copying latest slave.jar...");
+                listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
                 SFTPv3FileHandle fileHandle = sftpClient.createFile(fileName);
 
                 InputStream is = null;
                 try {
                     is = Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
                     byte[] buf = new byte[BUFFER_SIZE];
-
-                    listener.getLogger().println(getTimestamp() + " [SSH] Sending data...");
 
                     int count = 0;
                     int len;
@@ -232,10 +230,9 @@ public class SSHLauncher extends ComputerLauncher {
                             sftpClient.write(fileHandle, (long) count, buf, 0, len);
                             count += len;
                         }
-                        listener.getLogger().println(getTimestamp() + " [SSH] Sent " + count + " bytes.");
+                        listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), count));
                     } catch (Exception e) {
-                        listener.getLogger().println(getTimestamp() + " [SSH] Error writing to remote file");
-                        throw new IOException2("Error writing to remote file", e);
+                        throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
                     }
                 } finally {
                     if (is != null) {
@@ -243,9 +240,7 @@ public class SSHLauncher extends ComputerLauncher {
                     }
                 }
             } catch (Exception e) {
-                listener.getLogger().println(getTimestamp() + " [SSH] Error creating file");
-                e.printStackTrace(listener.getLogger());
-                throw new IOException2("Could not copy slave.jar to slave", e);
+                throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
             }
         } finally {
             if (sftpClient != null) {
@@ -257,7 +252,7 @@ public class SSHLauncher extends ComputerLauncher {
     private String findJava(StreamTaskListener listener) throws IOException {
         String java;
         java = "java";
-        listener.getLogger().println(getTimestamp() + " [SSH] Checking default java version");
+        listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp()));
         String line = null;
         Session session = connection.openSession();
         try {
