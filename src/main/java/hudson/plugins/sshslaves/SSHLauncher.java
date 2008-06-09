@@ -15,7 +15,7 @@ import com.trilead.ssh2.Session;
 import com.trilead.ssh2.StreamGobbler;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
-import hudson.model.Messages;
+//import hudson.model.Messages;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
@@ -124,7 +124,7 @@ public class SSHLauncher extends ComputerLauncher {
             e.printStackTrace(listener.getLogger());
             connection.close();
             connection = null;
-            listener.getLogger().println(getTimestamp() + " [SSH] Connection closed.");
+            listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
         }
     }
 
@@ -141,21 +141,21 @@ public class SSHLauncher extends ComputerLauncher {
     private void startSlave(SlaveComputer computer, final StreamTaskListener listener, String java,
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
-        try {
-            // TODO handle escaping fancy characters in paths
-            session.execCommand("cd " + workingDirectory + " && " + java + " -jar slave.jar");
-            final StreamGobbler out = new StreamGobbler(session.getStdout());
-            final StreamGobbler err = new StreamGobbler(session.getStderr());
+        // TODO handle escaping fancy characters in paths
+        session.execCommand("cd " + workingDirectory + " && " + java + " -jar slave.jar");
+        final StreamGobbler out = new StreamGobbler(session.getStdout());
+        final StreamGobbler err = new StreamGobbler(session.getStderr());
 
             // capture error information from stderr. this will terminate itself
             // when the process is killed.
             new StreamCopyThread("stderr copier for remote agent on " + computer.getDisplayName(),
                     err, listener.getLogger()).start();
 
+        try {
             computer.setChannel(out, session.getStdin(), listener.getLogger(), new Channel.Listener() {
                 public void onClosed(Channel channel, IOException cause) {
                     if (cause != null) {
-                        cause.printStackTrace(listener.error(Messages.Slave_Terminated(getTimestamp())));
+                        cause.printStackTrace(listener.error(hudson.model.Messages.Slave_Terminated(getTimestamp())));
                     }
                     try {
                         session.close();
@@ -177,7 +177,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         } catch (InterruptedException e) {
             session.close();
-            e.printStackTrace(listener.error("aborted"));
+            throw new IOException2("aborted", e);
         }
     }
 
