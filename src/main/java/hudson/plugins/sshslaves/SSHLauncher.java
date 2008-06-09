@@ -47,11 +47,9 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Field password
      *
-     * @todo obfuscate the password
+     * @todo remove password once authentication is stored in the descriptor.
      */
     private final String password;
-
-    // TODO add support for key files
 
     /**
      * Field connection
@@ -401,6 +399,10 @@ public class SSHLauncher extends ComputerLauncher {
     public static final Descriptor<ComputerLauncher> DESCRIPTOR = new DescriptorImpl();
 
     private static class DescriptorImpl extends Descriptor<ComputerLauncher> {
+
+        // TODO move the authentication storage to descriptor... see SubversionSCM.java
+
+        // TODO add support for key files
 
         /**
          * Constructs a new DescriptorImpl.
