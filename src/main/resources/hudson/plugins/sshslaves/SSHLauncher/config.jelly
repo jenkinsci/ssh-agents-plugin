@@ -10,7 +10,7 @@
 
     <f:advanced>
         <f:entry title="${%Password}">
-            <input type="password" name="launcher.password" value="${instance.password}"/>
+            <input class="setting-input" type="password" name="launcher.password" value="${instance.password}"/>
         </f:entry>
 
         <f:entry title="${%Port}">
