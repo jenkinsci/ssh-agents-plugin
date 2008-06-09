@@ -1,20 +1,22 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:entry title="${%Host}">
-      <f:textbox name="launcher.host" value="${instance.host}"/>
+        <f:textbox name="launcher.host" value="${instance.host}"/>
     </f:entry>
-    
-    <f:advanced>
-      <f:entry title="${%Port}">
-        <f:textbox name="launcher.port" value="${instance.port}"/>
-      </f:entry>
 
-      <f:entry title="${%Username}">
+    <f:entry title="${%Username}">
         <f:textbox name="launcher.username" value="${instance.username}"/>
-      </f:entry>
+    </f:entry>
 
-      <f:entry title="${%Password}">
-        <input type="password" name="launcher.password" value="${instance.password}"/>
-      </f:entry>
+    <f:advanced>
+        <f:entry title="${%Password}">
+            <input type="password" name="launcher.password" value="${instance.password}"/>
+        </f:entry>
+
+        <f:entry title="${%Port}">
+            <f:textbox name="launcher.port" value="${h.ifThenElse(instance.port == null, '22', instance.port)}"/>
+        </f:entry>
+
     </f:advanced>
 
 </j:jelly>
