@@ -160,24 +160,24 @@ public class SSHLauncher extends ComputerLauncher {
                     try {
                         session.close();
                     } catch (Throwable t) {
-                        t.printStackTrace(listener.error("closed"));
+                        t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
                     }
                     try {
                         out.close();
                     } catch (Throwable t) {
-                        t.printStackTrace(listener.error("closed"));
+                        t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
                     }
                     try {
                         err.close();
                     } catch (Throwable t) {
-                        t.printStackTrace(listener.error("closed"));
+                        t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
                     }
                 }
             });
 
         } catch (InterruptedException e) {
             session.close();
-            throw new IOException2("aborted", e);
+            throw new IOException2(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
         }
     }
 
@@ -192,7 +192,7 @@ public class SSHLauncher extends ComputerLauncher {
     private void copySlaveJar(StreamTaskListener listener, String workingDirectory) throws IOException {
         String fileName = workingDirectory + "/slave.jar";
 
-        listener.getLogger().println(getTimestamp() + " [SSH] Starting sftp client...");
+        listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
         SFTPv3Client sftpClient = null;
         try {
             sftpClient = new SFTPv3Client(connection);
@@ -206,13 +206,12 @@ public class SSHLauncher extends ComputerLauncher {
                     fileAttributes = null;
                 }
                 if (fileAttributes == null) {
-                    listener.getLogger().println(getTimestamp() + " [SSH] Remote file system root '" + workingDirectory
-                            + "' does not exist. Will try to create it");
+                    listener.getLogger().println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(),
+                            workingDirectory));
                     // TODO mkdir -p mode
                     sftpClient.mkdir(workingDirectory, 0700);
                 } else if (fileAttributes.isRegularFile()) {
-                    throw new IOException("Remote file system root '" + workingDirectory
-                            + "' is a file not a directory or a symlink");
+                    throw new IOException(Messages.SSHLauncher_RemoteFSIsAFile(workingDirectory));
                 }
 
                 // The file will be overwritten even if it already exists
