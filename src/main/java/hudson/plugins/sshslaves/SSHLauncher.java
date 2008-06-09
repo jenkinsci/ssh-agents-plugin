@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.util.Date;
 
 import com.trilead.ssh2.Connection;
+import com.trilead.ssh2.SFTPException;
 import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.SFTPv3FileHandle;
@@ -56,6 +57,7 @@ public class SSHLauncher extends ComputerLauncher {
      * Field connection
      */
     private transient Connection connection;
+    private static final int BUFFER_SIZE = 2048;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -124,7 +126,7 @@ public class SSHLauncher extends ComputerLauncher {
             e.printStackTrace(listener.getLogger());
             connection.close();
             connection = null;
-            listener.getLogger().println("[SSH] Connection closed.");
+            listener.getLogger().println(getTimestamp() + " [SSH] Connection closed.");
         }
     }
 
@@ -192,30 +194,39 @@ public class SSHLauncher extends ComputerLauncher {
     private void copySlaveJar(StreamTaskListener listener, String workingDirectory) throws IOException {
         String fileName = workingDirectory + "/slave.jar";
 
-        listener.getLogger().println("[SSH] Starting sftp client...");
+        listener.getLogger().println(getTimestamp() + " [SSH] Starting sftp client...");
         SFTPv3Client sftpClient = null;
         try {
             sftpClient = new SFTPv3Client(connection);
 
             try {
                 // TODO decide best permissions and handle errors if exists already
-                final SFTPv3FileAttributes fileAttributes = sftpClient.stat(workingDirectory);
+                SFTPv3FileAttributes fileAttributes;
+                try {
+                    fileAttributes = sftpClient.stat(workingDirectory);
+                } catch (SFTPException e) {
+                    fileAttributes = null;
+                }
                 if (fileAttributes == null) {
+                    listener.getLogger().println(getTimestamp() + " [SSH] Remote file system root '" + workingDirectory
+                            + "' does not exist. Will try to create it");
+                    // TODO mkdir -p mode
                     sftpClient.mkdir(workingDirectory, 0700);
                 } else if (fileAttributes.isRegularFile()) {
-                    throw new IOException("Remote file system root is a file not a directory or a symlink");
+                    throw new IOException("Remote file system root '" + workingDirectory
+                            + "' is a file not a directory or a symlink");
                 }
 
-                // TODO handle the file existing already
-                listener.getLogger().println("[SSH] Copying latest slave.jar...");
+                // The file will be overwritten even if it already exists
+                listener.getLogger().println(getTimestamp() + " [SSH] Copying latest slave.jar...");
                 SFTPv3FileHandle fileHandle = sftpClient.createFile(fileName);
 
                 InputStream is = null;
                 try {
                     is = Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
-                    byte[] buf = new byte[2048];
+                    byte[] buf = new byte[BUFFER_SIZE];
 
-                    listener.getLogger().println("[SSH] Sending data...");
+                    listener.getLogger().println(getTimestamp() + " [SSH] Sending data...");
 
                     int count = 0;
                     int len;
@@ -224,10 +235,10 @@ public class SSHLauncher extends ComputerLauncher {
                             sftpClient.write(fileHandle, (long) count, buf, 0, len);
                             count += len;
                         }
-                        listener.getLogger().println("[SSH] Sent " + count + " bytes.");
+                        listener.getLogger().println(getTimestamp() + " [SSH] Sent " + count + " bytes.");
                     } catch (Exception e) {
-                        listener.getLogger().println("[SSH] Error writing to remote file");
-                        e.printStackTrace(listener.getLogger());
+                        listener.getLogger().println(getTimestamp() + " [SSH] Error writing to remote file");
+                        throw new IOException2("Error writing to remote file", e);
                     }
                 } finally {
                     if (is != null) {
@@ -235,7 +246,7 @@ public class SSHLauncher extends ComputerLauncher {
                     }
                 }
             } catch (Exception e) {
-                listener.getLogger().println("[SSH] Error creating file");
+                listener.getLogger().println(getTimestamp() + " [SSH] Error creating file");
                 e.printStackTrace(listener.getLogger());
                 throw new IOException2("Could not copy slave.jar to slave", e);
             }
@@ -249,7 +260,7 @@ public class SSHLauncher extends ComputerLauncher {
     private String findJava(StreamTaskListener listener) throws IOException {
         String java;
         java = "java";
-        listener.getLogger().println("[SSH] Checking default java version");
+        listener.getLogger().println(getTimestamp() + " [SSH] Checking default java version");
         String line = null;
         Session session = connection.openSession();
         try {
@@ -262,13 +273,12 @@ public class SSHLauncher extends ComputerLauncher {
 
                 // TODO make sure this works with IBM JVM & JRocket
 
-                Outer:
+                outer:
                 for (BufferedReader r : new BufferedReader[]{r1, r2}) {
                     while (null != (line = r.readLine())) {
                         if (line.startsWith("java version \"")) {
-                            break Outer;
+                            break outer;
                         }
-                        listener.getLogger().println("  " + line);
                     }
                 }
             } finally {
@@ -284,7 +294,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
-        listener.getLogger().println("[SSH] java version = " + line);
+        listener.getLogger().println(getTimestamp() + " [SSH] " + java + " version = " + line);
 
         // TODO make this version check a bit less hacky
         if (line.compareTo("1.5") < 0) {
@@ -295,20 +305,20 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private void openConnection(StreamTaskListener listener) throws IOException {
-        listener.getLogger().println("[SSH] Opening SSH connection to " + host + ":" + port);
+        listener.getLogger().println(getTimestamp() + " [SSH] Opening SSH connection to " + host + ":" + port);
         connection.connect();
 
         // TODO if using a key file, use the key file instead of password
-        listener.getLogger().println("[SSH] Authenticating as " + username + "/******");
+        listener.getLogger().println(getTimestamp() + " [SSH] Authenticating as " + username + "/******");
         boolean isAuthenicated = connection.authenticateWithPassword(username, password);
 
         if (isAuthenicated && connection.isAuthenticationComplete()) {
-            listener.getLogger().println("[SSH] Authentication successful.");
+            listener.getLogger().println(getTimestamp() + " [SSH] Authentication successful.");
         } else {
-            listener.getLogger().println("[SSH] Authentication failed.");
+            listener.getLogger().println(getTimestamp() + " [SSH] Authentication failed.");
             connection.close();
             connection = null;
-            listener.getLogger().println("[SSH] Connection closed.");
+            listener.getLogger().println(getTimestamp() + " [SSH] Connection closed.");
             throw new IOException("Authentication failed.");
         }
     }
@@ -327,7 +337,7 @@ public class SSHLauncher extends ComputerLauncher {
                 sftpClient = new SFTPv3Client(connection);
                 sftpClient.rm(fileName);
             } catch (Exception e) {
-                listener.getLogger().println("[SSH] Error deleting file");
+                listener.getLogger().println(getTimestamp() + " [SSH] Error deleting file");
                 e.printStackTrace(listener.getLogger());
             } finally {
                 if (sftpClient != null) {
@@ -337,7 +347,7 @@ public class SSHLauncher extends ComputerLauncher {
 
             connection.close();
             connection = null;
-            listener.getLogger().println("[SSH] Connection closed.");
+            listener.getLogger().println(getTimestamp() + " [SSH] Connection closed.");
         }
         super.afterDisconnect(slaveComputer, listener);
     }
