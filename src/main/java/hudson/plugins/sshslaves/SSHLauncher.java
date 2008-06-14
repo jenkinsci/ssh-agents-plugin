@@ -1,21 +1,8 @@
 package hudson.plugins.sshslaves;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Date;
-
-import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.SFTPException;
-import com.trilead.ssh2.SFTPv3Client;
-import com.trilead.ssh2.SFTPv3FileAttributes;
-import com.trilead.ssh2.SFTPv3FileHandle;
-import com.trilead.ssh2.Session;
-import com.trilead.ssh2.StreamGobbler;
+import com.trilead.ssh2.*;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
-//import hudson.model.Messages;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
@@ -23,6 +10,12 @@ import hudson.util.IOException2;
 import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
 import org.kohsuke.stapler.DataBoundConstructor;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Date;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
@@ -93,7 +86,6 @@ public class SSHLauncher extends ComputerLauncher {
      * Returns the remote root workspace (without trailing slash).
      *
      * @param computer The slave computer to get the root workspace of.
-     *
      * @return the remote root workspace (without trailing slash).
      */
     private static String getWorkingDirectory(SlaveComputer computer) {
@@ -135,7 +127,6 @@ public class SSHLauncher extends ComputerLauncher {
      * @param listener         The listener.
      * @param java             The full path name of the java executable to use.
      * @param workingDirectory The working directory from which to start the java process.
-     *
      * @throws IOException If something goes wrong.
      */
     private void startSlave(SlaveComputer computer, final StreamTaskListener listener, String java,
@@ -146,10 +137,10 @@ public class SSHLauncher extends ComputerLauncher {
         final StreamGobbler out = new StreamGobbler(session.getStdout());
         final StreamGobbler err = new StreamGobbler(session.getStderr());
 
-            // capture error information from stderr. this will terminate itself
-            // when the process is killed.
-            new StreamCopyThread("stderr copier for remote agent on " + computer.getDisplayName(),
-                    err, listener.getLogger()).start();
+        // capture error information from stderr. this will terminate itself
+        // when the process is killed.
+        new StreamCopyThread("stderr copier for remote agent on " + computer.getDisplayName(),
+                err, listener.getLogger()).start();
 
         try {
             computer.setChannel(out, session.getStdin(), listener.getLogger(), new Channel.Listener() {
@@ -186,7 +177,6 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @param listener         The listener.
      * @param workingDirectory The directory into whihc the slave jar will be copied.
-     *
      * @throws IOException If something goes wrong.
      */
     private void copySlaveJar(StreamTaskListener listener, String workingDirectory) throws IOException {
@@ -286,32 +276,32 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
-        listener.getLogger().println(getTimestamp() + " [SSH] " + java + " version = " + line);
+        listener.getLogger().println(Messages.SSHLauncher_JavaVersionResult(getTimestamp(), java, line));
 
         // TODO make this version check a bit less hacky
         if (line.compareTo("1.5") < 0) {
             // TODO find a java that is at least 1.5
-            throw new IOException("Could not find a version of java that is at least version 1.5");
+            throw new IOException(Messages.SSHLauncher_NoJavaFound());
         }
         return java;
     }
 
     private void openConnection(StreamTaskListener listener) throws IOException {
-        listener.getLogger().println(getTimestamp() + " [SSH] Opening SSH connection to " + host + ":" + port);
+        listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.connect();
 
         // TODO if using a key file, use the key file instead of password
-        listener.getLogger().println(getTimestamp() + " [SSH] Authenticating as " + username + "/******");
+        listener.getLogger().println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
         boolean isAuthenicated = connection.authenticateWithPassword(username, password);
 
         if (isAuthenicated && connection.isAuthenticationComplete()) {
-            listener.getLogger().println(getTimestamp() + " [SSH] Authentication successful.");
+            listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
         } else {
-            listener.getLogger().println(getTimestamp() + " [SSH] Authentication failed.");
+            listener.getLogger().println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
             connection.close();
             connection = null;
-            listener.getLogger().println(getTimestamp() + " [SSH] Connection closed.");
-            throw new IOException("Authentication failed.");
+            listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
+            throw new IOException(Messages.SSHLauncher_AuthenticationFailedException());
         }
     }
 
@@ -329,8 +319,7 @@ public class SSHLauncher extends ComputerLauncher {
                 sftpClient = new SFTPv3Client(connection);
                 sftpClient.rm(fileName);
             } catch (Exception e) {
-                listener.getLogger().println(getTimestamp() + " [SSH] Error deleting file");
-                e.printStackTrace(listener.getLogger());
+                e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
             } finally {
                 if (sftpClient != null) {
                     sftpClient.close();
@@ -339,7 +328,7 @@ public class SSHLauncher extends ComputerLauncher {
 
             connection.close();
             connection = null;
-            listener.getLogger().println(getTimestamp() + " [SSH] Connection closed.");
+            listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
         }
         super.afterDisconnect(slaveComputer, listener);
     }
@@ -409,7 +398,7 @@ public class SSHLauncher extends ComputerLauncher {
          * {@inheritDoc}
          */
         public String getDisplayName() {
-            return "Launch slave agents on Linux machines via SSH";
+            return Messages.SSHLauncher_DescriptorDisplayName();
         }
 
     }
