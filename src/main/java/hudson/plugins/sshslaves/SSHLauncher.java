@@ -48,6 +48,10 @@ public class SSHLauncher extends ComputerLauncher {
      * Field connection
      */
     private transient Connection connection;
+
+    /**
+     * Size of the buffer used to copy the slave jar file to the slave.
+     */
     private static final int BUFFER_SIZE = 2048;
 
     /**
@@ -112,6 +116,7 @@ public class SSHLauncher extends ComputerLauncher {
 
             startSlave(computer, listener, java, workingDirectory);
 
+            PluginImpl.register(connection);
         } catch (IOException e) {
             e.printStackTrace(listener.getLogger());
             connection.close();
@@ -327,6 +332,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
 
             connection.close();
+            PluginImpl.unregister(connection);
             connection = null;
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
         }
