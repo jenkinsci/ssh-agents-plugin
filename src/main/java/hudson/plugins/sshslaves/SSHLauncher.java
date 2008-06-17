@@ -16,6 +16,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
+import java.util.List;
+import java.util.Collections;
+import java.util.Arrays;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
@@ -108,7 +111,22 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             openConnection(listener);
 
-            String java = checkJavaVersion(listener, "java");
+            String java = null;
+            outer: for (JavaProvider provider: javaProviders) {
+                for (String javaCommand: provider.getJavas(listener, connection)) {
+                    try {
+                    java = checkJavaVersion(listener, javaCommand);
+                        if (java != null) {
+                            break outer;
+                        }
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                }
+            }
+            if (java == null) {
+                throw new IOException("Could not find any known supported java version");
+            }
 
             String workingDirectory = getWorkingDirectory(computer);
 
@@ -409,5 +427,20 @@ public class SSHLauncher extends ComputerLauncher {
             return Messages.SSHLauncher_DescriptorDisplayName();
         }
 
+    }
+
+    private static final List<JavaProvider> javaProviders = Arrays.<JavaProvider>asList(
+            new DefaultJavaProvider()
+    );
+
+    private static interface JavaProvider {
+        List<String> getJavas(StreamTaskListener listener, Connection connection);
+    }
+
+    private static class DefaultJavaProvider implements JavaProvider {
+
+        public List<String> getJavas(StreamTaskListener listener, Connection connection) {
+            return Collections.singletonList("java");
+        }
     }
 }
