@@ -118,9 +118,9 @@ public class SSHLauncher extends ComputerLauncher {
 
             PluginImpl.register(connection);
         } catch (RuntimeException e) {
-            e.printStackTrace(listener.error("Unexpected error in launching a slave. This is probably a bug in Hudson"));
+            e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
         } catch (Error e) {
-            e.printStackTrace(listener.error("Unexpected error in launching a slave. This is probably a bug in Hudson"));
+            e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
         } catch (IOException e) {
             e.printStackTrace(listener.getLogger());
             connection.close();
