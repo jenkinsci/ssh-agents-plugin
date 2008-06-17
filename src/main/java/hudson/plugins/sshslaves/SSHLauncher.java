@@ -108,7 +108,7 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             openConnection(listener);
 
-            String java = findJava(listener);
+            String java = checkJavaVersion(listener, "java");
 
             String workingDirectory = getWorkingDirectory(computer);
 
@@ -248,14 +248,12 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private String findJava(StreamTaskListener listener) throws IOException {
-        String java;
-        java = "java";
+    private String checkJavaVersion(StreamTaskListener listener, String javaCommand) throws IOException {
         listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp()));
         String line = null;
         Session session = connection.openSession();
         try {
-            session.execCommand(java + " -version");
+            session.execCommand(javaCommand + " -version");
             StreamGobbler out = new StreamGobbler(session.getStdout());
             StreamGobbler err = new StreamGobbler(session.getStderr());
             try {
@@ -292,7 +290,7 @@ public class SSHLauncher extends ComputerLauncher {
             // TODO find a java that is at least 1.5
             throw new IOException(Messages.SSHLauncher_NoJavaFound());
         }
-        return java;
+        return javaCommand;
     }
 
     private void openConnection(StreamTaskListener listener) throws IOException {
