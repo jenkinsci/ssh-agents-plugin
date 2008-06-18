@@ -301,7 +301,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
-        listener.getLogger().println(Messages.SSHLauncher_JavaVersionResult(getTimestamp(), java, line));
+        listener.getLogger().println(Messages.SSHLauncher_JavaVersionResult(getTimestamp(), javaCommand, line));
 
         // TODO make this version check a bit less hacky
         if (line.compareTo("1.5") < 0) {
