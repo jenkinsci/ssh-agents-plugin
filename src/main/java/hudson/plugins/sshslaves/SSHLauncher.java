@@ -231,7 +231,14 @@ public class SSHLauncher extends ComputerLauncher {
                     throw new IOException(Messages.SSHLauncher_RemoteFSIsAFile(workingDirectory));
                 }
 
-                // The file will be overwritten even if it already exists
+                try {
+                    // try to delete the file in case the slave we are copying is shorter than the slave
+                    // that is already there
+                    sftpClient.rm(fileName);
+                } catch (IOException e) {
+                    // the file did not exist... so no need to delete it!
+                }
+
                 listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
                 SFTPv3FileHandle fileHandle = sftpClient.createFile(fileName);
 
