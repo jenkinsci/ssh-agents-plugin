@@ -1,6 +1,22 @@
 package hudson.plugins.sshslaves;
 
-import com.trilead.ssh2.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import com.trilead.ssh2.Connection;
+import com.trilead.ssh2.SFTPException;
+import com.trilead.ssh2.SFTPv3Client;
+import com.trilead.ssh2.SFTPv3FileAttributes;
+import com.trilead.ssh2.SFTPv3FileHandle;
+import com.trilead.ssh2.Session;
+import com.trilead.ssh2.StreamGobbler;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.remoting.Channel;
@@ -10,15 +26,6 @@ import hudson.util.IOException2;
 import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
 import org.kohsuke.stapler.DataBoundConstructor;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Date;
-import java.util.List;
-import java.util.Collections;
-import java.util.Arrays;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
@@ -48,6 +55,11 @@ public class SSHLauncher extends ComputerLauncher {
     private final String password;
 
     /**
+     * Field privatekey
+     */
+    private final String privatekey;
+
+    /**
      * Field connection
      */
     private transient Connection connection;
@@ -60,17 +72,19 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
-     * @param host     The host to connect to.
-     * @param port     The port to connect on.
-     * @param username The username to connect as.
-     * @param password The password to connect with.
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param username   The username to connect as.
+     * @param password   The password to connect with.
+     * @param privatekey The ssh privatekey to connect with.
      */
     @DataBoundConstructor
-    public SSHLauncher(String host, int port, String username, String password) {
+    public SSHLauncher(String host, int port, String username, String password, String privatekey) {
         this.host = host;
         this.port = port == 0 ? 22 : port;
         this.username = username;
         this.password = password;
+        this.privatekey = privatekey;
     }
 
     /**
@@ -93,6 +107,7 @@ public class SSHLauncher extends ComputerLauncher {
      * Returns the remote root workspace (without trailing slash).
      *
      * @param computer The slave computer to get the root workspace of.
+     *
      * @return the remote root workspace (without trailing slash).
      */
     private static String getWorkingDirectory(SlaveComputer computer) {
@@ -111,11 +126,14 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             openConnection(listener);
 
+            reportEnvironment(listener);
+
             String java = null;
-            outer: for (JavaProvider provider: javaProviders) {
-                for (String javaCommand: provider.getJavas(listener, connection)) {
+            outer:
+            for (JavaProvider provider : javaProviders) {
+                for (String javaCommand : provider.getJavas(listener, connection)) {
                     try {
-                    java = checkJavaVersion(listener, javaCommand);
+                        java = checkJavaVersion(listener, javaCommand);
                         if (java != null) {
                             break outer;
                         }
@@ -154,6 +172,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param listener         The listener.
      * @param java             The full path name of the java executable to use.
      * @param workingDirectory The working directory from which to start the java process.
+     *
      * @throws IOException If something goes wrong.
      */
     private void startSlave(SlaveComputer computer, final StreamTaskListener listener, String java,
@@ -204,6 +223,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @param listener         The listener.
      * @param workingDirectory The directory into whihc the slave jar will be copied.
+     *
      * @throws IOException If something goes wrong.
      */
     private void copySlaveJar(StreamTaskListener listener, String workingDirectory) throws IOException {
@@ -273,6 +293,34 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
+    private void reportEnvironment(StreamTaskListener listener) throws IOException {
+        Session session = connection.openSession();
+        try {
+            session.execCommand("set");
+            StreamGobbler out = new StreamGobbler(session.getStdout());
+            StreamGobbler err = new StreamGobbler(session.getStderr());
+            try {
+                BufferedReader r1 = new BufferedReader(new InputStreamReader(out));
+                BufferedReader r2 = new BufferedReader(new InputStreamReader(err));
+
+                // TODO make sure this works with IBM JVM & JRocket
+
+                String line;
+                outer:
+                for (BufferedReader r : new BufferedReader[]{r1, r2}) {
+                    while (null != (line = r.readLine())) {
+                        listener.getLogger().println(line);
+                    }
+                }
+            } finally {
+                out.close();
+                err.close();
+            }
+        } finally {
+            session.close();
+        }
+    }
+
     private String checkJavaVersion(StreamTaskListener listener, String javaCommand) throws IOException {
         listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp()));
         String line = null;
@@ -323,10 +371,21 @@ public class SSHLauncher extends ComputerLauncher {
         connection.connect();
 
         // TODO if using a key file, use the key file instead of password
-        listener.getLogger().println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
-        boolean isAuthenicated = connection.authenticateWithPassword(username, password);
-
-        if (isAuthenicated && connection.isAuthenticationComplete()) {
+        boolean isAuthenticated = false;
+        if (privatekey.length() > 0) {
+            File key = new File(privatekey);
+            if (key.exists()) {
+                listener.getLogger()
+                        .println(Messages.SSHLauncher_AuthenticatingPublicKey(getTimestamp(), username, privatekey));
+                isAuthenticated = connection.authenticateWithPublicKey(username, key, password);
+            }
+        }
+        if (!isAuthenticated) {
+            listener.getLogger()
+                    .println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
+            isAuthenticated = connection.authenticateWithPassword(username, password);
+        }
+        if (isAuthenticated && connection.isAuthenticationComplete()) {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
         } else {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
@@ -403,6 +462,15 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
+     * Getter for property 'privatekey'.
+     *
+     * @return Value for property 'privatekey'.
+     */
+    public String getPrivatekey() {
+        return privatekey;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public Descriptor<ComputerLauncher> getDescriptor() {
@@ -441,13 +509,17 @@ public class SSHLauncher extends ComputerLauncher {
     );
 
     private static interface JavaProvider {
+
         List<String> getJavas(StreamTaskListener listener, Connection connection);
     }
 
     private static class DefaultJavaProvider implements JavaProvider {
 
         public List<String> getJavas(StreamTaskListener listener, Connection connection) {
-            return Collections.singletonList("java");
+            return Arrays.asList("java",
+                    "/usr/bin/java",
+                    "/usr/java/default/bin/java",
+                    "/usr/java/latest/bin/java");
         }
     }
 }

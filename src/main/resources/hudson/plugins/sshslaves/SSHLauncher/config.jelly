@@ -9,8 +9,12 @@
     </f:entry>
 
     <f:advanced>
-        <f:entry title="${%Password}">
+        <f:entry title="${%Password}" help="/plugin/ssh-slaves/help_password.html">
             <input class="setting-input" type="password" name="launcher.password" value="${instance.password}"/>
+        </f:entry>
+
+        <f:entry title="${%Private Key File}" help="/plugin/ssh-slaves/help_privatekey.html">
+            <f:textbox name="launcher.privatekey" value="${instance.privatekey}"/>
         </f:entry>
 
         <f:entry title="${%Port}">
