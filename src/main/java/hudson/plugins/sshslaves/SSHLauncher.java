@@ -372,7 +372,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         // TODO if using a key file, use the key file instead of password
         boolean isAuthenticated = false;
-        if (privatekey.length() > 0) {
+        if (privatekey != null && privatekey.length() > 0) {
             File key = new File(privatekey);
             if (key.exists()) {
                 listener.getLogger()
