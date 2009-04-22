@@ -178,8 +178,7 @@ public class SSHLauncher extends ComputerLauncher {
     private void startSlave(SlaveComputer computer, final StreamTaskListener listener, String java,
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
-        // TODO handle escaping fancy characters in paths
-        session.execCommand("cd " + workingDirectory + " && " + java + " -jar slave.jar");
+        session.execCommand("cd '" + workingDirectory + "' && " + java + " -jar slave.jar");
         final StreamGobbler out = new StreamGobbler(session.getStdout());
         final StreamGobbler err = new StreamGobbler(session.getStderr());
 
