@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
 
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SFTPException;
@@ -25,6 +25,7 @@ import hudson.slaves.SlaveComputer;
 import hudson.util.IOException2;
 import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
+import hudson.Extension;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -129,10 +130,12 @@ public class SSHLauncher extends ComputerLauncher {
             reportEnvironment(listener);
 
             String java = null;
+            List<String> tried = new ArrayList<String>();
             outer:
-            for (JavaProvider provider : javaProviders) {
+            for (JavaProvider provider : JavaProvider.all()) {
                 for (String javaCommand : provider.getJavas(listener, connection)) {
                     try {
+                        tried.add(javaCommand);
                         java = checkJavaVersion(listener, javaCommand);
                         if (java != null) {
                             break outer;
@@ -143,7 +146,7 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
             if (java == null) {
-                throw new IOException("Could not find any known supported java version");
+                throw new IOException("Could not find any known supported java version in "+tried);
             }
 
             String workingDirectory = getWorkingDirectory(computer);
@@ -503,17 +506,8 @@ public class SSHLauncher extends ComputerLauncher {
 
     }
 
-    private static final List<JavaProvider> javaProviders = Arrays.<JavaProvider>asList(
-            new DefaultJavaProvider()
-    );
-
-    private static interface JavaProvider {
-
-        List<String> getJavas(StreamTaskListener listener, Connection connection);
-    }
-
-    private static class DefaultJavaProvider implements JavaProvider {
-
+    @Extension
+    public static class DefaultJavaProvider extends JavaProvider {
         public List<String> getJavas(StreamTaskListener listener, Connection connection) {
             return Arrays.asList("java",
                     "/usr/bin/java",
