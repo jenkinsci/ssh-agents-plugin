@@ -12,7 +12,7 @@
     <packaging>hpi</packaging>
     <version>0.5-SNAPSHOT</version>
     <name>Hudson SSH Slaves plugin</name>
-    <url>http://hudson.gotdns.com/wiki/display/HUDSON/SSH+Slaves+plugin</url>
+    <url>http://wiki.hudson-ci.org/display/HUDSON/SSH+Slaves+plugin</url>
 
     <dependencies>
         <dependency>
