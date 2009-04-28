@@ -28,8 +28,8 @@
     </dependencies>
 
     <scm>
-        <connection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/hudson/plugins/ssh-slaves</connection>
-        <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/hudson/plugins/ssh-slaves</developerConnection>
-        <url>http://fisheye4.atlassian.com/browse/hudson/trunk/hudson/hudson/hudson/plugins/ssh-slaves</url>
+        <connection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/plugins/ssh-slavess</connection>
+        <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/plugins/ssh-slaves</developerConnection>
+        <url>http://fisheye4.atlassian.com/browse/hudson/trunk/hudson/plugins/ssh-slaves</url>
     </scm>
 </project>
