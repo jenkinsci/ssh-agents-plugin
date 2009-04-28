@@ -10,7 +10,7 @@
 
     <artifactId>ssh-slaves</artifactId>
     <packaging>hpi</packaging>
-    <version>0.5</version>
+    <version>0.6-SNAPSHOT</version>
     <name>Hudson SSH Slaves plugin</name>
     <url>http://wiki.hudson-ci.org/display/HUDSON/SSH+Slaves+plugin</url>
 
@@ -28,8 +28,8 @@
     </dependencies>
 
     <scm>
-        <connection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/ssh-slaves-0.5</connection>
-        <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/ssh-slaves-0.5</developerConnection>
-        <url>http://fisheye4.atlassian.com/browse/hudson/tags/ssh-slaves-0.5</url>
+        <connection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/plugins/ssh-slavess</connection>
+        <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/plugins/ssh-slaves</developerConnection>
+        <url>http://fisheye4.atlassian.com/browse/hudson/trunk/hudson/plugins/ssh-slaves</url>
     </scm>
 </project>
