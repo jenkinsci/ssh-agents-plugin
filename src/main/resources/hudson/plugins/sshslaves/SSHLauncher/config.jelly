@@ -21,6 +21,10 @@
             <f:textbox name="launcher.port" value="${h.ifThenElse(instance.port == null, '22', instance.port)}"/>
         </f:entry>
 
+        <f:entry title="${%JVM Options}">
+            <f:textbox name="launcher.jvmOptions" value="${instance.jvmOptions)}"/>
+        </f:entry>
+
     </f:advanced>
 
 </j:jelly>

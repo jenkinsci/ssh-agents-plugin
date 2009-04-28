@@ -61,6 +61,11 @@ public class SSHLauncher extends ComputerLauncher {
     private final String privatekey;
 
     /**
+     * Field jvmOptions.
+     */
+    private final String jvmOptions;
+
+    /**
      * Field connection
      */
     private transient Connection connection;
@@ -78,10 +83,12 @@ public class SSHLauncher extends ComputerLauncher {
      * @param username   The username to connect as.
      * @param password   The password to connect with.
      * @param privatekey The ssh privatekey to connect with.
+     * @param jvmOptions
      */
     @DataBoundConstructor
-    public SSHLauncher(String host, int port, String username, String password, String privatekey) {
+    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
         this.host = host;
+        this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.username = username;
         this.password = password;
@@ -93,6 +100,14 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public boolean isLaunchSupported() {
         return true;
+    }
+
+    /**
+     * Gets the JVM Options used to launch the slave JVM.
+     * @return
+     */
+    public String getJvmOptions() {
+        return jvmOptions;
     }
 
     /**
@@ -181,7 +196,7 @@ public class SSHLauncher extends ComputerLauncher {
     private void startSlave(SlaveComputer computer, final StreamTaskListener listener, String java,
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
-        session.execCommand("cd '" + workingDirectory + "' && " + java + " -jar slave.jar");
+        session.execCommand("cd '" + workingDirectory + "' && " + java + (jvmOptions == null ? "" : " " + jvmOptions) + " -jar slave.jar");
         final StreamGobbler out = new StreamGobbler(session.getStdout());
         final StreamGobbler err = new StreamGobbler(session.getStderr());
 
