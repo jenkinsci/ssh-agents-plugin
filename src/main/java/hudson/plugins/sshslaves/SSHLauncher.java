@@ -107,7 +107,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @return
      */
     public String getJvmOptions() {
-        return jvmOptions;
+        return jvmOptions == null ? "" : jvmOptions;
     }
 
     /**
@@ -196,7 +196,9 @@ public class SSHLauncher extends ComputerLauncher {
     private void startSlave(SlaveComputer computer, final StreamTaskListener listener, String java,
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
-        session.execCommand("cd '" + workingDirectory + "' && " + java + (jvmOptions == null ? "" : " " + jvmOptions) + " -jar slave.jar");
+        String cmd = "cd '" + workingDirectory + "' && " + java + (jvmOptions == null ? "" : " " + jvmOptions) + " -jar slave.jar";
+        listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
+        session.execCommand(cmd);
         final StreamGobbler out = new StreamGobbler(session.getStdout());
         final StreamGobbler err = new StreamGobbler(session.getStderr());
 
@@ -311,6 +313,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private void reportEnvironment(StreamTaskListener listener) throws IOException {
+        listener.getLogger().println(Messages._SSHLauncher_RemoteUserEnvironment(getTimestamp()));
         Session session = connection.openSession();
         try {
             session.execCommand("set");
@@ -332,6 +335,7 @@ public class SSHLauncher extends ComputerLauncher {
             } finally {
                 out.close();
                 err.close();
+                listener.getLogger().println();
             }
         } finally {
             session.close();
