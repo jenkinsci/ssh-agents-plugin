@@ -26,6 +26,7 @@ import hudson.util.IOException2;
 import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
 import hudson.Extension;
+import hudson.AbortException;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -413,7 +414,7 @@ public class SSHLauncher extends ComputerLauncher {
             connection.close();
             connection = null;
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
-            throw new IOException(Messages.SSHLauncher_AuthenticationFailedException());
+            throw new AbortException(Messages.SSHLauncher_AuthenticationFailedException());
         }
     }
 
