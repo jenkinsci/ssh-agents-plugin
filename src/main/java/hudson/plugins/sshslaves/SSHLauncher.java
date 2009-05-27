@@ -401,7 +401,6 @@ public class SSHLauncher extends ComputerLauncher {
             LOGGER.fine("Defaulting the user name to "+username);
         }
 
-        // TODO if using a key file, use the key file instead of password
         boolean isAuthenticated = false;
         if (privatekey != null && privatekey.length() > 0) {
             File key = new File(privatekey);
