@@ -4,11 +4,11 @@
         <f:textbox />
     </f:entry>
 
-    <f:entry title="${%Username}" field="username">
-        <f:textbox />
-    </f:entry>
-
     <f:advanced>
+        <f:entry title="${%Username}" field="username">
+            <f:textbox />
+        </f:entry>
+
         <f:entry title="${%Password}" help="/plugin/ssh-slaves/help_password.html">
             <input class="setting-input" type="password" name="launcher.password" value="${instance.password}"/>
         </f:entry>

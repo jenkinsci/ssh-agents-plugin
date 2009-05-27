@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SFTPException;
@@ -27,6 +28,8 @@ import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
 import hudson.Extension;
 import hudson.AbortException;
+import hudson.Util;
+import static hudson.Util.fixEmpty;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -391,6 +394,12 @@ public class SSHLauncher extends ComputerLauncher {
     private void openConnection(StreamTaskListener listener) throws IOException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.connect();
+        
+        String username = this.username;
+        if(fixEmpty(username)==null) {
+            username = System.getProperty("user.name");
+            LOGGER.fine("Defaulting the user name to "+username);
+        }
 
         // TODO if using a key file, use the key file instead of password
         boolean isAuthenticated = false;
@@ -535,4 +544,6 @@ public class SSHLauncher extends ComputerLauncher {
                     "/usr/java/latest/bin/java");
         }
     }
+
+    private static final Logger LOGGER = Logger.getLogger(SSHLauncher.class.getName());
 }
