@@ -402,7 +402,21 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         boolean isAuthenticated = false;
-        if (privatekey != null && privatekey.length() > 0) {
+        if(fixEmpty(privatekey)==null && fixEmpty(password)==null) {
+            // check the default key locations if no authentication method is explicitly configured.
+            File home = new File(System.getProperty("user.home"));
+            for (String keyName : Arrays.asList("id_rsa","id_dsa","identity")) {
+                File key = new File(home,".ssh/"+keyName);
+                if (key.exists()) {
+                    listener.getLogger()
+                            .println(Messages.SSHLauncher_AuthenticatingPublicKey(getTimestamp(), username, key));
+                    isAuthenticated = connection.authenticateWithPublicKey(username, key, null);
+                }
+                if (isAuthenticated)
+                    break;
+            }
+        }
+        if (!isAuthenticated && fixEmpty(privatekey).length() > 0) {
             File key = new File(privatekey);
             if (key.exists()) {
                 listener.getLogger()
@@ -415,6 +429,7 @@ public class SSHLauncher extends ComputerLauncher {
                     .println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
             isAuthenticated = connection.authenticateWithPassword(username, password);
         }
+
         if (isAuthenticated && connection.isAuthenticationComplete()) {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
         } else {
