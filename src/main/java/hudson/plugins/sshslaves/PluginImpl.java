@@ -27,7 +27,6 @@ public class PluginImpl extends Plugin {
      */
     public void start() throws Exception {
         LOGGER.log(Level.FINE, "Starting SSH Slaves plugin");
-        ComputerLauncher.LIST.add(SSHLauncher.DESCRIPTOR);
     }
 
     /**

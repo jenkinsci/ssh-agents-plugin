@@ -20,6 +20,7 @@ import com.trilead.ssh2.Session;
 import com.trilead.ssh2.StreamGobbler;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
+import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
@@ -28,7 +29,6 @@ import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
 import hudson.Extension;
 import hudson.AbortException;
-import hudson.Util;
 import static hudson.Util.fixEmpty;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -141,7 +141,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * {@inheritDoc}
      */
-    public synchronized void launch(final SlaveComputer computer, final StreamTaskListener listener) {
+    public synchronized void launch(final SlaveComputer computer, final TaskListener listener) {
         connection = new Connection(host, port);
         try {
             openConnection(listener);
@@ -197,7 +197,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @throws IOException If something goes wrong.
      */
-    private void startSlave(SlaveComputer computer, final StreamTaskListener listener, String java,
+    private void startSlave(SlaveComputer computer, final TaskListener listener, String java,
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
         String cmd = "cd '" + workingDirectory + "' && " + java + (jvmOptions == null ? "" : " " + jvmOptions) + " -jar slave.jar";
@@ -249,7 +249,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @throws IOException If something goes wrong.
      */
-    private void copySlaveJar(StreamTaskListener listener, String workingDirectory) throws IOException {
+    private void copySlaveJar(TaskListener listener, String workingDirectory) throws IOException {
         String fileName = workingDirectory + "/slave.jar";
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
@@ -316,7 +316,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private void reportEnvironment(StreamTaskListener listener) throws IOException {
+    private void reportEnvironment(TaskListener listener) throws IOException {
         listener.getLogger().println(Messages._SSHLauncher_RemoteUserEnvironment(getTimestamp()));
         Session session = connection.openSession();
         try {
@@ -346,7 +346,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private String checkJavaVersion(StreamTaskListener listener, String javaCommand) throws IOException {
+    private String checkJavaVersion(TaskListener listener, String javaCommand) throws IOException {
         listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp()));
         String line = null;
         Session session = connection.openSession();
@@ -391,7 +391,7 @@ public class SSHLauncher extends ComputerLauncher {
         return javaCommand;
     }
 
-    private void openConnection(StreamTaskListener listener) throws IOException {
+    private void openConnection(TaskListener listener) throws IOException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.connect();
         
@@ -515,30 +515,12 @@ public class SSHLauncher extends ComputerLauncher {
         return privatekey;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public Descriptor<ComputerLauncher> getDescriptor() {
-        return DESCRIPTOR;
-    }
-
-    /**
-     * Field DESCRIPTOR
-     */
-    public static final Descriptor<ComputerLauncher> DESCRIPTOR = new DescriptorImpl();
-
-    private static class DescriptorImpl extends Descriptor<ComputerLauncher> {
+    @Extension
+    public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
 
         // TODO move the authentication storage to descriptor... see SubversionSCM.java
 
         // TODO add support for key files
-
-        /**
-         * Constructs a new DescriptorImpl.
-         */
-        protected DescriptorImpl() {
-            super(SSHLauncher.class);
-        }
 
         /**
          * {@inheritDoc}
@@ -551,7 +533,7 @@ public class SSHLauncher extends ComputerLauncher {
 
     @Extension
     public static class DefaultJavaProvider extends JavaProvider {
-        public List<String> getJavas(StreamTaskListener listener, Connection connection) {
+        public List<String> getJavas(TaskListener listener, Connection connection) {
             return Arrays.asList("java",
                     "/usr/bin/java",
                     "/usr/java/default/bin/java",

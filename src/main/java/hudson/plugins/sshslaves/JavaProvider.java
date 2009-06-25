@@ -1,19 +1,18 @@
 package hudson.plugins.sshslaves;
 
-import hudson.util.StreamTaskListener;
-import hudson.ExtensionPoint;
+import com.trilead.ssh2.Connection;
 import hudson.ExtensionList;
+import hudson.ExtensionPoint;
 import hudson.model.Hudson;
+import hudson.model.TaskListener;
 
 import java.util.List;
-
-import com.trilead.ssh2.Connection;
 
 /**
  * Guess where Java is.
  */
 public abstract class JavaProvider implements ExtensionPoint {
-    public abstract List<String> getJavas(StreamTaskListener listener, Connection connection);
+    public abstract List<String> getJavas(TaskListener listener, Connection connection);
 
     /**
      * All regsitered instances.
