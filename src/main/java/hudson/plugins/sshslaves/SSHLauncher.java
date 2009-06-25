@@ -555,7 +555,9 @@ public class SSHLauncher extends ComputerLauncher {
             return Arrays.asList("java",
                     "/usr/bin/java",
                     "/usr/java/default/bin/java",
-                    "/usr/java/latest/bin/java");
+                    "/usr/java/latest/bin/java",
+                    "/usr/local/bin/java",
+                    "/usr/local/java/bin/java");
         }
     }
 
