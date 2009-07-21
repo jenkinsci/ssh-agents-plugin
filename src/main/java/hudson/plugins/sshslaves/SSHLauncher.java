@@ -5,11 +5,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import static java.util.logging.Level.FINE;
 
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SFTPException;
@@ -153,6 +155,7 @@ public class SSHLauncher extends ComputerLauncher {
             outer:
             for (JavaProvider provider : JavaProvider.all()) {
                 for (String javaCommand : provider.getJavas(listener, connection)) {
+                    LOGGER.fine("Trying Java at "+javaCommand);
                     try {
                         tried.add(javaCommand);
                         java = checkJavaVersion(listener, javaCommand);
@@ -160,7 +163,8 @@ public class SSHLauncher extends ComputerLauncher {
                             break outer;
                         }
                     } catch (IOException e) {
-                        // ignore
+                        LOGGER.log(FINE, "Failed to check the Java version",e);
+                        // try the next one
                     }
                 }
             }
@@ -347,9 +351,10 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private String checkJavaVersion(TaskListener listener, String javaCommand) throws IOException {
-        listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp()));
+        listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp(),javaCommand));
         String line = null;
         Session session = connection.openSession();
+        StringWriter output = new StringWriter();   // record output from Java
         try {
             session.execCommand(javaCommand + " -version");
             StreamGobbler out = new StreamGobbler(session.getStdout());
@@ -363,6 +368,8 @@ public class SSHLauncher extends ComputerLauncher {
                 outer:
                 for (BufferedReader r : new BufferedReader[]{r1, r2}) {
                     while (null != (line = r.readLine())) {
+                        output.write(line);
+                        output.write("\n");
                         if (line.startsWith("java version \"")) {
                             break outer;
                         }
@@ -377,7 +384,9 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         if (line == null || !line.startsWith("java version \"")) {
-            throw new IOException("The default version of java is either unsupported version or unknown");
+            listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+            listener.getLogger().println(output);
+            throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
         }
 
         line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
@@ -386,7 +395,7 @@ public class SSHLauncher extends ComputerLauncher {
         // TODO make this version check a bit less hacky
         if (line.compareTo("1.5") < 0) {
             // TODO find a java that is at least 1.5
-            throw new IOException(Messages.SSHLauncher_NoJavaFound());
+            throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
         }
         return javaCommand;
     }
