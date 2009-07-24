@@ -33,6 +33,7 @@ import hudson.Extension;
 import hudson.AbortException;
 import static hudson.Util.fixEmpty;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.putty.PuTTYKey;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
@@ -430,7 +431,13 @@ public class SSHLauncher extends ComputerLauncher {
             if (key.exists()) {
                 listener.getLogger()
                         .println(Messages.SSHLauncher_AuthenticatingPublicKey(getTimestamp(), username, privatekey));
-                isAuthenticated = connection.authenticateWithPublicKey(username, key, password);
+                if (PuTTYKey.isPuTTYKeyFile(key)) {
+                    LOGGER.fine(key+" is a PuTTY key file");
+                    String openSshKey = new PuTTYKey(key, password).toOpenSSH();
+                    isAuthenticated = connection.authenticateWithPublicKey(username, openSshKey.toCharArray(), password);
+                } else {
+                    isAuthenticated = connection.authenticateWithPublicKey(username, key, password);
+                }
             }
         }
         if (!isAuthenticated) {
