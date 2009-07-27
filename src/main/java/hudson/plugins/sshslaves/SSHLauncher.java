@@ -426,7 +426,7 @@ public class SSHLauncher extends ComputerLauncher {
                     break;
             }
         }
-        if (!isAuthenticated && fixEmpty(privatekey).length() > 0) {
+        if (!isAuthenticated && fixEmpty(privatekey)!=null) {
             File key = new File(privatekey);
             if (key.exists()) {
                 listener.getLogger()
