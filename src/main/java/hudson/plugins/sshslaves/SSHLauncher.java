@@ -366,13 +366,21 @@ public class SSHLauncher extends ComputerLauncher {
 
                 // TODO make sure this works with IBM JVM & JRocket
 
-                outer:
                 for (BufferedReader r : new BufferedReader[]{r1, r2}) {
                     while (null != (line = r.readLine())) {
                         output.write(line);
                         output.write("\n");
-                        if (line.startsWith("java version \"")) {
-                            break outer;
+                        line = line.toLowerCase();
+                        if (line.startsWith("java version \"") || line.startsWith("openjdk version \"")) {
+                            line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
+                            listener.getLogger().println(Messages.SSHLauncher_JavaVersionResult(getTimestamp(), javaCommand, line));
+
+                            // TODO make this version check a bit less hacky
+                            if (line.compareTo("1.5") < 0) {
+                                // TODO find a java that is at least 1.5
+                                throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
+                            }
+                            return javaCommand;
                         }
                     }
                 }
@@ -384,21 +392,9 @@ public class SSHLauncher extends ComputerLauncher {
             session.close();
         }
 
-        if (line == null || !line.startsWith("java version \"")) {
-            listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
-            listener.getLogger().println(output);
-            throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
-        }
-
-        line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
-        listener.getLogger().println(Messages.SSHLauncher_JavaVersionResult(getTimestamp(), javaCommand, line));
-
-        // TODO make this version check a bit less hacky
-        if (line.compareTo("1.5") < 0) {
-            // TODO find a java that is at least 1.5
-            throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
-        }
-        return javaCommand;
+        listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+        listener.getLogger().println(output);
+        throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
     }
 
     private void openConnection(TaskListener listener) throws IOException {
