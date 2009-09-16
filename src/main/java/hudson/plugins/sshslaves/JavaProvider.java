@@ -12,6 +12,12 @@ import java.util.List;
  * Guess where Java is.
  */
 public abstract class JavaProvider implements ExtensionPoint {
+    /**
+     * Returns the list of possible places where java executable might exist.
+     *
+     * @return
+     *      Can be empty but never null. Absolute path to the possible locations of Java.
+     */
     public abstract List<String> getJavas(TaskListener listener, Connection connection);
 
     /**
