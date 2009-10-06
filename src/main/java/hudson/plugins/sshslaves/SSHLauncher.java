@@ -105,6 +105,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isLaunchSupported() {
         return true;
     }
@@ -218,6 +219,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         try {
             computer.setChannel(out, session.getStdin(), listener.getLogger(), new Channel.Listener() {
+                @Override
                 public void onClosed(Channel channel, IOException cause) {
                     if (cause != null) {
                         cause.printStackTrace(listener.error(hudson.model.Messages.Slave_Terminated(getTimestamp())));

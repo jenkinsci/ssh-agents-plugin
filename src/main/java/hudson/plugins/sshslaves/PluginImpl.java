@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 
 import com.trilead.ssh2.Connection;
 import hudson.Plugin;
-import hudson.slaves.ComputerLauncher;
 
 /**
  * Entry point of ssh-slaves plugin.
@@ -25,6 +24,7 @@ public class PluginImpl extends Plugin {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void start() throws Exception {
         LOGGER.log(Level.FINE, "Starting SSH Slaves plugin");
     }
@@ -32,6 +32,7 @@ public class PluginImpl extends Plugin {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void stop() throws Exception {
         LOGGER.log(Level.FINE, "Stopping SSH Slaves plugin.");
         closeRegisteredConnections();
