@@ -3,21 +3,23 @@ package hudson.plugins.sshslaves;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.BufferedOutputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 import java.util.logging.Logger;
 import static java.util.logging.Level.FINE;
+import java.net.URL;
 
 import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.SFTPException;
 import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
-import com.trilead.ssh2.SFTPv3FileHandle;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.StreamGobbler;
 import hudson.model.Descriptor;
@@ -31,9 +33,15 @@ import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
 import hudson.Extension;
 import hudson.AbortException;
+import hudson.Util;
+import hudson.tools.JDKInstaller;
+import hudson.tools.JDKInstaller.Platform;
+import hudson.tools.JDKInstaller.CPU;
 import static hudson.Util.fixEmpty;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.putty.PuTTYKey;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.io.output.CountingOutputStream;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
@@ -76,11 +84,6 @@ public class SSHLauncher extends ComputerLauncher {
      * Field connection
      */
     private transient Connection connection;
-
-    /**
-     * Size of the buffer used to copy the slave jar file to the slave.
-     */
-    private static final int BUFFER_SIZE = 2048;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -145,7 +148,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * {@inheritDoc}
      */
-    public synchronized void launch(final SlaveComputer computer, final TaskListener listener) {
+    public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         connection = new Connection(host, port);
         try {
             openConnection(listener);
@@ -156,7 +159,7 @@ public class SSHLauncher extends ComputerLauncher {
             List<String> tried = new ArrayList<String>();
             outer:
             for (JavaProvider provider : JavaProvider.all()) {
-                for (String javaCommand : provider.getJavas(listener, connection)) {
+                for (String javaCommand : provider.getJavas(computer, listener, connection)) {
                     LOGGER.fine("Trying Java at "+javaCommand);
                     try {
                         tried.add(javaCommand);
@@ -170,11 +173,19 @@ public class SSHLauncher extends ComputerLauncher {
                     }
                 }
             }
+
+            final String workingDirectory = getWorkingDirectory(computer);
+
             if (java == null) {
-                throw new IOException("Could not find any known supported java version in "+tried);
+                // attempt auto JDK installation
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                try {
+                    java = attemptToInstallJDK(listener, workingDirectory, buf);
+                } catch (IOException e) {
+                    throw new IOException2("Could not find any known supported java version in "+tried+", and we also failed to install JDK as a fallback",e);
+                }
             }
 
-            String workingDirectory = getWorkingDirectory(computer);
 
             copySlaveJar(listener, workingDirectory);
 
@@ -191,6 +202,59 @@ public class SSHLauncher extends ComputerLauncher {
             connection = null;
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
         }
+    }
+
+    /**
+     * Attempts to install JDK, and return the path to Java.
+     */
+    private String attemptToInstallJDK(TaskListener listener, String workingDirectory, ByteArrayOutputStream buf) throws IOException, InterruptedException {
+        if (connection.exec("uname -a",new TeeOutputStream(buf,listener.getLogger()))!=0)
+            throw new IOException("Failed to run 'uname' to obtain the environment");
+
+        // guess the platform from uname output. I don't use the specific options because I'm not sure
+        // if various platforms have the consistent options
+        //
+        // === some of the output collected ====
+        // Linux bear 2.6.28-15-generic #49-Ubuntu SMP Tue Aug 18 19:25:34 UTC 2009 x86_64 GNU/Linux
+        // Linux wssqe20 2.6.24-24-386 #1 Tue Aug 18 16:24:26 UTC 2009 i686 GNU/Linux
+        // SunOS hudson 5.11 snv_79a i86pc i386 i86pc
+        // SunOS legolas 5.9 Generic_112233-12 sun4u sparc SUNW,Sun-Fire-280R
+        // CYGWIN_NT-5.1 franz 1.7.0(0.185/5/3) 2008-07-22 19:09 i686 Cygwin
+        // Windows_NT WINXPIE7 5 01 586
+        //        (this one is from MKS)
+
+        String uname = buf.toString();
+        Platform p = null;
+        CPU cpu = null;
+        if (uname.contains("GNU/Linux"))        p = Platform.LINUX;
+        if (uname.contains("SunOS"))            p = Platform.SOLARIS;
+        if (uname.contains("CYGWIN"))           p = Platform.WINDOWS;
+        if (uname.contains("Windows_NT"))       p = Platform.WINDOWS;
+
+        if (uname.contains("sparc"))            cpu = CPU.Sparc;
+        if (uname.contains("x86_64"))           cpu = CPU.amd64;
+        if (Pattern.compile("\\bi[3-6]86\\b").matcher(uname).find())           cpu = CPU.i386;  // look for ix86 as a word
+
+        if (p==null || cpu==null)
+            throw new IOException("Failed to detect the environment for automatic JDK installation. Please report this to users@hudson.dev.java.net: "+uname);
+
+        String javaDir = workingDirectory + "/jdk"; // this is where we install Java to
+        String bundleFile = workingDirectory + "/" + p.bundleFileName; // this is where we download the bundle to
+
+        SFTPClient sftp = new SFTPClient(connection);
+        // wipe out and recreate the Java directory
+        connection.exec("rm -rf "+javaDir,listener.getLogger());
+        sftp.mkdirs(javaDir, 0755);
+
+        JDKInstaller jdk = new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
+        URL bundle = jdk.locate(listener, p, cpu);
+
+        listener.getLogger().println("Downloading JDK6u16");
+        Util.copyStreamAndClose(bundle.openStream(),new BufferedOutputStream(sftp.writeToFile(bundleFile),32*1024));
+        sftp.chmod(bundleFile,0755);
+
+        jdk.install(new RemoteLauncher(listener,connection),p,new SFTPFileSystem(sftp),listener, javaDir,bundleFile);
+        return javaDir+"/bin/java";
     }
 
     /**
@@ -260,23 +324,16 @@ public class SSHLauncher extends ComputerLauncher {
         String fileName = workingDirectory + "/slave.jar";
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
-        SFTPv3Client sftpClient = null;
+        SFTPClient sftpClient = null;
         try {
-            sftpClient = new SFTPv3Client(connection);
+            sftpClient = new SFTPClient(connection);
 
             try {
-                // TODO decide best permissions and handle errors if exists already
-                SFTPv3FileAttributes fileAttributes;
-                try {
-                    fileAttributes = sftpClient.stat(workingDirectory);
-                } catch (SFTPException e) {
-                    fileAttributes = null;
-                }
-                if (fileAttributes == null) {
+                SFTPv3FileAttributes fileAttributes = sftpClient._stat(workingDirectory);
+                if (fileAttributes==null) {
                     listener.getLogger().println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(),
                             workingDirectory));
-                    // TODO mkdir -p mode
-                    sftpClient.mkdir(workingDirectory, 0700);
+                    sftpClient.mkdirs(workingDirectory, 0700);
                 } else if (fileAttributes.isRegularFile()) {
                     throw new IOException(Messages.SSHLauncher_RemoteFSIsAFile(workingDirectory));
                 }
@@ -290,28 +347,15 @@ public class SSHLauncher extends ComputerLauncher {
                 }
 
                 listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
-                SFTPv3FileHandle fileHandle = sftpClient.createFile(fileName);
 
-                InputStream is = null;
                 try {
-                    is = Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
-                    byte[] buf = new byte[BUFFER_SIZE];
-
-                    int count = 0;
-                    int len;
-                    try {
-                        while ((len = is.read(buf)) != -1) {
-                            sftpClient.write(fileHandle, (long) count, buf, 0, len);
-                            count += len;
-                        }
-                        listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), count));
-                    } catch (Exception e) {
-                        throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
-                    }
-                } finally {
-                    if (is != null) {
-                        is.close();
-                    }
+                    CountingOutputStream os = new CountingOutputStream(sftpClient.writeToFile(fileName));
+                    Util.copyStreamAndClose(
+                            Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar"),
+                            os);
+                    listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), os.getByteCount()));
+                } catch (Exception e) {
+                    throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
                 }
             } catch (Exception e) {
                 throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
@@ -353,45 +397,29 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private String checkJavaVersion(TaskListener listener, String javaCommand) throws IOException {
+    private String checkJavaVersion(TaskListener listener, String javaCommand) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp(),javaCommand));
-        String line = null;
-        Session session = connection.openSession();
+        String line;
         StringWriter output = new StringWriter();   // record output from Java
-        try {
-            session.execCommand(javaCommand + " -version");
-            StreamGobbler out = new StreamGobbler(session.getStdout());
-            StreamGobbler err = new StreamGobbler(session.getStderr());
-            try {
-                BufferedReader r1 = new BufferedReader(new InputStreamReader(out));
-                BufferedReader r2 = new BufferedReader(new InputStreamReader(err));
 
-                // TODO make sure this works with IBM JVM & JRocket
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        connection.exec(javaCommand + " -version",out);
+        BufferedReader r = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(out.toByteArray())));
+        while (null != (line = r.readLine())) {
+            output.write(line);
+            output.write("\n");
+            line = line.toLowerCase();
+            if (line.startsWith("java version \"") || line.startsWith("openjdk version \"")) {
+                line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
+                listener.getLogger().println(Messages.SSHLauncher_JavaVersionResult(getTimestamp(), javaCommand, line));
 
-                for (BufferedReader r : new BufferedReader[]{r1, r2}) {
-                    while (null != (line = r.readLine())) {
-                        output.write(line);
-                        output.write("\n");
-                        line = line.toLowerCase();
-                        if (line.startsWith("java version \"") || line.startsWith("openjdk version \"")) {
-                            line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
-                            listener.getLogger().println(Messages.SSHLauncher_JavaVersionResult(getTimestamp(), javaCommand, line));
-
-                            // TODO make this version check a bit less hacky
-                            if (line.compareTo("1.5") < 0) {
-                                // TODO find a java that is at least 1.5
-                                throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
-                            }
-                            return javaCommand;
-                        }
-                    }
+                // TODO make this version check a bit less hacky
+                if (line.compareTo("1.5") < 0) {
+                    // TODO find a java that is at least 1.5
+                    throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
                 }
-            } finally {
-                out.close();
-                err.close();
+                return javaCommand;
             }
-        } finally {
-            session.close();
         }
 
         listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
@@ -547,13 +575,14 @@ public class SSHLauncher extends ComputerLauncher {
 
     @Extension
     public static class DefaultJavaProvider extends JavaProvider {
-        public List<String> getJavas(TaskListener listener, Connection connection) {
+        public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
             return Arrays.asList("java",
                     "/usr/bin/java",
                     "/usr/java/default/bin/java",
                     "/usr/java/latest/bin/java",
                     "/usr/local/bin/java",
-                    "/usr/local/java/bin/java");
+                    "/usr/local/java/bin/java",
+                    getWorkingDirectory(computer)+"/jdk/bin/java"); // this is where we attempt to auto-install
         }
     }
 
