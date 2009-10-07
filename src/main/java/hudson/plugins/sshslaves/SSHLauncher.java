@@ -403,7 +403,7 @@ public class SSHLauncher extends ComputerLauncher {
         StringWriter output = new StringWriter();   // record output from Java
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        connection.exec(javaCommand + " -version",out);
+        connection.exec(javaCommand + " "+jvmOptions + " -version",out);
         BufferedReader r = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(out.toByteArray())));
         while (null != (line = r.readLine())) {
             output.write(line);
