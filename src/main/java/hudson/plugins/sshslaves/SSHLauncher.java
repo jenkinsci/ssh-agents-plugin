@@ -22,6 +22,7 @@ import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.StreamGobbler;
+import com.trilead.ssh2.DebugLogger;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.TaskListener;
@@ -367,34 +368,9 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private void reportEnvironment(TaskListener listener) throws IOException {
+    private void reportEnvironment(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages._SSHLauncher_RemoteUserEnvironment(getTimestamp()));
-        Session session = connection.openSession();
-        try {
-            session.execCommand("set");
-            StreamGobbler out = new StreamGobbler(session.getStdout());
-            StreamGobbler err = new StreamGobbler(session.getStderr());
-            try {
-                BufferedReader r1 = new BufferedReader(new InputStreamReader(out));
-                BufferedReader r2 = new BufferedReader(new InputStreamReader(err));
-
-                // TODO make sure this works with IBM JVM & JRocket
-
-                String line;
-                outer:
-                for (BufferedReader r : new BufferedReader[]{r1, r2}) {
-                    while (null != (line = r.readLine())) {
-                        listener.getLogger().println(line);
-                    }
-                }
-            } finally {
-                out.close();
-                err.close();
-                listener.getLogger().println();
-            }
-        } finally {
-            session.close();
-        }
+        connection.exec("set",listener.getLogger());
     }
 
     private String checkJavaVersion(TaskListener listener, String javaCommand) throws IOException, InterruptedException {
@@ -587,4 +563,13 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private static final Logger LOGGER = Logger.getLogger(SSHLauncher.class.getName());
+
+    static {
+        com.trilead.ssh2.log.Logger.enabled = true;
+        com.trilead.ssh2.log.Logger.logger = new DebugLogger() {
+            public void log(int level, String className, String message) {
+                System.out.println(className+"\n"+message);
+            }
+        };
+    }
 }
