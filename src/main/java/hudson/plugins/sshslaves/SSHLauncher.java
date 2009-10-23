@@ -22,7 +22,6 @@ import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.StreamGobbler;
-import com.trilead.ssh2.DebugLogger;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.TaskListener;
@@ -154,6 +153,7 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             openConnection(listener);
 
+            verifyNoHeaderJunk(listener);
             reportEnvironment(listener);
 
             String java = null;
@@ -206,6 +206,20 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
+     * Makes sure that SSH connection won't produce any unwanted text, which will interfere with sftp execution.
+     */
+    private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        connection.exec("true",baos);
+        String s = baos.toString();
+        if (s.length()!=0) {
+            listener.getLogger().println(Messages.SSHLauncher_SSHHeeaderJunkDetected());
+            listener.getLogger().println(s);
+            throw new AbortException();
+        }
+    }
+
+    /**
      * Attempts to install JDK, and return the path to Java.
      */
     private String attemptToInstallJDK(TaskListener listener, String workingDirectory, ByteArrayOutputStream buf) throws IOException, InterruptedException {
@@ -237,7 +251,7 @@ public class SSHLauncher extends ComputerLauncher {
         if (Pattern.compile("\\bi[3-6]86\\b").matcher(uname).find())           cpu = CPU.i386;  // look for ix86 as a word
 
         if (p==null || cpu==null)
-            throw new IOException("Failed to detect the environment for automatic JDK installation. Please report this to users@hudson.dev.java.net: "+uname);
+            throw new IOException(Messages.SSHLauncher_FailedToDetectEnvironment(uname));
 
         String javaDir = workingDirectory + "/jdk"; // this is where we install Java to
         String bundleFile = workingDirectory + "/" + p.bundleFileName; // this is where we download the bundle to
@@ -564,12 +578,12 @@ public class SSHLauncher extends ComputerLauncher {
 
     private static final Logger LOGGER = Logger.getLogger(SSHLauncher.class.getName());
 
-    static {
-        com.trilead.ssh2.log.Logger.enabled = true;
-        com.trilead.ssh2.log.Logger.logger = new DebugLogger() {
-            public void log(int level, String className, String message) {
-                System.out.println(className+"\n"+message);
-            }
-        };
-    }
+//    static {
+//        com.trilead.ssh2.log.Logger.enabled = true;
+//        com.trilead.ssh2.log.Logger.logger = new DebugLogger() {
+//            public void log(int level, String className, String message) {
+//                System.out.println(className+"\n"+message);
+//            }
+//        };
+//    }
 }
