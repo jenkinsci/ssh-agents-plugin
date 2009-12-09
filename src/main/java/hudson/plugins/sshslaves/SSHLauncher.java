@@ -248,7 +248,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         if (uname.contains("sparc"))            cpu = CPU.Sparc;
         if (uname.contains("x86_64"))           cpu = CPU.amd64;
-        if (Pattern.compile("\\bi[3-6]86\\b").matcher(uname).find())           cpu = CPU.i386;  // look for ix86 as a word
+        if (Pattern.compile("\\bi?[3-6]86\\b").matcher(uname).find())           cpu = CPU.i386;  // look for ix86 as a word
 
         if (p==null || cpu==null)
             throw new IOException(Messages.SSHLauncher_FailedToDetectEnvironment(uname));
