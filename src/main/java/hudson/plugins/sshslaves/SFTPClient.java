@@ -14,6 +14,7 @@ import java.io.InputStream;
 import hudson.util.IOException2;
 
 /**
+ * TODO: moved to Hudson core, so pick it up from there.
  * @author Kohsuke Kawaguchi
  */
 public class SFTPClient extends SFTPv3Client {
