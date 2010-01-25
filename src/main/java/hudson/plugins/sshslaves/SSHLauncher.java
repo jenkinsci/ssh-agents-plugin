@@ -29,6 +29,7 @@ import hudson.remoting.Channel;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
 import hudson.util.IOException2;
+import hudson.util.Secret;
 import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
 import hudson.Extension;
@@ -68,10 +69,10 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @todo remove password once authentication is stored in the descriptor.
      */
-    private final String password;
+    private final Secret password;
 
     /**
-     * Field privatekey
+     * File path of the private key.
      */
     private final String privatekey;
 
@@ -101,7 +102,7 @@ public class SSHLauncher extends ComputerLauncher {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.username = username;
-        this.password = password;
+        this.password = fixEmpty(password)!=null ? Secret.fromString(password) : null;
         this.privatekey = privatekey;
     }
 
@@ -427,8 +428,10 @@ public class SSHLauncher extends ComputerLauncher {
             LOGGER.fine("Defaulting the user name to "+username);
         }
 
+        String pass = getPassword();
+
         boolean isAuthenticated = false;
-        if(fixEmpty(privatekey)==null && fixEmpty(password)==null) {
+        if(fixEmpty(privatekey)==null && fixEmpty(pass)==null) {
             // check the default key locations if no authentication method is explicitly configured.
             File home = new File(System.getProperty("user.home"));
             for (String keyName : Arrays.asList("id_rsa","id_dsa","identity")) {
@@ -449,17 +452,17 @@ public class SSHLauncher extends ComputerLauncher {
                         .println(Messages.SSHLauncher_AuthenticatingPublicKey(getTimestamp(), username, privatekey));
                 if (PuTTYKey.isPuTTYKeyFile(key)) {
                     LOGGER.fine(key+" is a PuTTY key file");
-                    String openSshKey = new PuTTYKey(key, password).toOpenSSH();
-                    isAuthenticated = connection.authenticateWithPublicKey(username, openSshKey.toCharArray(), password);
+                    String openSshKey = new PuTTYKey(key, pass).toOpenSSH();
+                    isAuthenticated = connection.authenticateWithPublicKey(username, openSshKey.toCharArray(), pass);
                 } else {
-                    isAuthenticated = connection.authenticateWithPublicKey(username, key, password);
+                    isAuthenticated = connection.authenticateWithPublicKey(username, key, pass);
                 }
             }
         }
         if (!isAuthenticated) {
             listener.getLogger()
                     .println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
-            isAuthenticated = connection.authenticateWithPassword(username, password);
+            isAuthenticated = connection.authenticateWithPassword(username, pass);
         }
 
         if (isAuthenticated && connection.isAuthenticationComplete()) {
@@ -535,7 +538,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @return Value for property 'password'.
      */
     public String getPassword() {
-        return password;
+        return password!=null ? password.toString() : null;
     }
 
     /**
