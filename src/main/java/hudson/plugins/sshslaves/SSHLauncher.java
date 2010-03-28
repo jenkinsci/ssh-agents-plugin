@@ -1,48 +1,53 @@
 package hudson.plugins.sshslaves;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.BufferedOutputStream;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-import java.util.logging.Logger;
+import static hudson.Util.fixEmpty;
 import static java.util.logging.Level.FINE;
-import java.net.URL;
-
-import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.SFTPv3Client;
-import com.trilead.ssh2.SFTPv3FileAttributes;
-import com.trilead.ssh2.Session;
-import com.trilead.ssh2.StreamGobbler;
+import hudson.AbortException;
+import hudson.Extension;
+import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
+import hudson.tools.JDKInstaller;
+import hudson.tools.JDKInstaller.CPU;
+import hudson.tools.JDKInstaller.Platform;
 import hudson.util.IOException2;
 import hudson.util.Secret;
 import hudson.util.StreamCopyThread;
 import hudson.util.StreamTaskListener;
-import hudson.Extension;
-import hudson.AbortException;
-import hudson.Util;
-import hudson.tools.JDKInstaller;
-import hudson.tools.JDKInstaller.Platform;
-import hudson.tools.JDKInstaller.CPU;
-import static hudson.Util.fixEmpty;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.putty.PuTTYKey;
-import org.apache.commons.io.output.TeeOutputStream;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.net.URL;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
 import org.apache.commons.io.output.CountingOutputStream;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.kohsuke.putty.PuTTYKey;
+import org.kohsuke.stapler.DataBoundConstructor;
+
+import com.trilead.ssh2.Connection;
+import com.trilead.ssh2.SFTPv3Client;
+import com.trilead.ssh2.SFTPv3FileAttributes;
+import com.trilead.ssh2.Session;
+import com.trilead.ssh2.StreamGobbler;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
@@ -396,27 +401,61 @@ public class SSHLauncher extends ComputerLauncher {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         connection.exec(javaCommand + " "+jvmOptions + " -version",out);
         BufferedReader r = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(out.toByteArray())));
-        while (null != (line = r.readLine())) {
-            output.write(line);
-            output.write("\n");
-            line = line.toLowerCase();
-            if (line.startsWith("java version \"") || line.startsWith("openjdk version \"")) {
-                line = line.substring(line.indexOf('\"') + 1, line.lastIndexOf('\"'));
-                listener.getLogger().println(Messages.SSHLauncher_JavaVersionResult(getTimestamp(), javaCommand, line));
+        final String result = checkJavaVersion(listener.getLogger(), javaCommand, r, output);
 
-                // TODO make this version check a bit less hacky
-                if (line.compareTo("1.5") < 0) {
-                    // TODO find a java that is at least 1.5
-                    throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
-                }
-                return javaCommand;
-            }
+        if(null == result) {
+        	listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+        	listener.getLogger().println(output);
+        	throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+        } else {
+        	return result;
         }
-
-        listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
-        listener.getLogger().println(output);
-        throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
     }
+
+	/**
+	 * Given the output of "java -version" in <code>r</code>, determine if this
+	 * version of Java is supported. This method has default visiblity for testing.
+	 * 
+	 * @param logger
+	 *            where to log the output
+	 * @param javaCommand
+	 *            the command executed, used for logging
+	 * @param r
+	 *            the output of "java -version"
+	 * @param out
+	 *            copy the data from <code>r</code> into this output buffer
+	 */
+	static String checkJavaVersion(final PrintStream logger, String javaCommand,
+			final BufferedReader r, final StringWriter output)
+			throws IOException {
+		String line;
+		while (null != (line = r.readLine())) {
+			output.write(line);
+			output.write("\n");
+			line = line.toLowerCase();
+			if (line.startsWith("java version \"")
+					|| line.startsWith("openjdk version \"")) {
+				final String versionStr = line.substring(
+						line.indexOf('\"') + 1, line.lastIndexOf('\"'));
+				logger.println(Messages.SSHLauncher_JavaVersionResult(
+						getTimestamp(), javaCommand, versionStr));
+
+				// parse as a number and we should be OK as all we care about is up through the first dot.
+				try {
+					final Number version =
+						NumberFormat.getNumberInstance().parse(versionStr);
+					if(version.doubleValue() < 1.5) {
+						throw new IOException(Messages
+								.SSHLauncher_NoJavaFound(line));
+					}
+				} catch(final ParseException e) {
+					throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
+				}
+				return javaCommand;
+			}
+		}
+		return null;
+	}
 
     private void openConnection(TaskListener listener) throws IOException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
