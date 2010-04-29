@@ -3,21 +3,28 @@ package hudson.plugins.sshslaves;
 import static hudson.Util.fixEmpty;
 import static java.util.logging.Level.FINE;
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
+import hudson.model.JDK;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerLauncher;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.NodeProperty;
+import hudson.slaves.NodePropertyDescriptor;
 import hudson.slaves.SlaveComputer;
 import hudson.tools.JDKInstaller;
 import hudson.tools.JDKInstaller.CPU;
 import hudson.tools.JDKInstaller.Platform;
+import hudson.tools.ToolLocationNodeProperty;
+import hudson.tools.ToolLocationNodeProperty.ToolLocation;
+import hudson.util.DescribableList;
 import hudson.util.IOException2;
 import hudson.util.Secret;
 import hudson.util.StreamCopyThread;
-import hudson.util.StreamTaskListener;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -154,6 +161,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         connection = new Connection(host, port);
         try {
@@ -518,7 +526,8 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * {@inheritDoc}
      */
-    public synchronized void afterDisconnect(SlaveComputer slaveComputer, StreamTaskListener listener) {
+    @Override
+    public synchronized void afterDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
         String workingDirectory = getWorkingDirectory(slaveComputer);
         String fileName = workingDirectory + "/slave.jar";
 
@@ -607,14 +616,34 @@ public class SSHLauncher extends ComputerLauncher {
 
     @Extension
     public static class DefaultJavaProvider extends JavaProvider {
+        @Override
         public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
-            return Arrays.asList("java",
+            List<String> javas = new ArrayList<String>(Arrays.asList(
+                    "java",
                     "/usr/bin/java",
                     "/usr/java/default/bin/java",
                     "/usr/java/latest/bin/java",
                     "/usr/local/bin/java",
                     "/usr/local/java/bin/java",
-                    getWorkingDirectory(computer)+"/jdk/bin/java"); // this is where we attempt to auto-install
+                    getWorkingDirectory(computer)+"/jdk/bin/java")); // this is where we attempt to auto-install
+
+            DescribableList<NodeProperty<?>,NodePropertyDescriptor> list = computer.getNode().getNodeProperties();
+            if (list != null) {
+                Descriptor jdk = Hudson.getInstance().getDescriptorByType(JDK.DescriptorImpl.class);
+                for (NodeProperty prop : list) {
+                    if (prop instanceof EnvironmentVariablesNodeProperty) {
+                        EnvVars env = ((EnvironmentVariablesNodeProperty)prop).getEnvVars();
+                        if (env != null && env.containsKey("JAVA_HOME"))
+                            javas.add(env.get("JAVA_HOME") + "/bin/java");
+                    }
+                    else if (prop instanceof ToolLocationNodeProperty) {
+                        for (ToolLocation tool : ((ToolLocationNodeProperty)prop).getLocations())
+                            if (tool.getType() == jdk)
+                                javas.add(tool.getHome() + "/bin/java");
+                    }
+                }
+            }
+            return javas;
         }
     }
 
