@@ -14,31 +14,10 @@
     <name>Hudson SSH Slaves plugin</name>
     <url>http://wiki.hudson-ci.org/display/HUDSON/SSH+Slaves+plugin</url>
 
-    <!--dependencies>
-        <dependency>
-            <groupId>org.jvnet.hudson.main</groupId>
-            <artifactId>hudson-war</artifactId>
-            <type>war</type>
-            <version>1.324-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jvnet.hudson.main</groupId>
-            <artifactId>hudson-core</artifactId>
-            <version>1.324-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jvnet.hudson.main</groupId>
-            <artifactId>hudson-test-harness</artifactId>
-            <version>1.324-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies-->
-
-    <scm>
-        <connection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/plugins/ssh-slavess</connection>
-        <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/trunk/hudson/plugins/ssh-slaves</developerConnection>
-        <url>http://fisheye4.atlassian.com/browse/hudson/trunk/hudson/plugins/ssh-slaves</url>
-    </scm>
+    <developers>
+      <developer>
+        <id>kohsuke</id>
+        <name>Kohsuke Kawaguchi</name>
+      </developer>
+    </developers>
 </project>
