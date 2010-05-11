@@ -384,7 +384,7 @@ public class SSHLauncher extends ComputerLauncher {
                             os);
                     listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), os.getByteCount()));
                 } catch (Exception e) {
-                    throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
+                    throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarTo(fileName), e);
                 }
             } catch (Exception e) {
                 throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
