@@ -506,7 +506,7 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
         }
-        if (!isAuthenticated) {
+        if (!isAuthenticated && pass!=null) {
             listener.getLogger()
                     .println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
             isAuthenticated = connection.authenticateWithPassword(username, pass);
