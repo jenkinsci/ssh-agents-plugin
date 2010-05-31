@@ -2,6 +2,8 @@ package hudson.plugins.sshslaves;
 
 import static hudson.Util.fixEmpty;
 import static java.util.logging.Level.FINE;
+
+import com.trilead.ssh2.SCPClient;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -23,6 +25,7 @@ import hudson.tools.ToolLocationNodeProperty;
 import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
 import hudson.util.IOException2;
+import hudson.util.NullStream;
 import hudson.util.Secret;
 import hudson.util.StreamCopyThread;
 
@@ -32,6 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.StringWriter;
@@ -46,6 +50,7 @@ import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.kohsuke.putty.PuTTYKey;
@@ -350,7 +355,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @throws IOException If something goes wrong.
      */
-    private void copySlaveJar(TaskListener listener, String workingDirectory) throws IOException {
+    private void copySlaveJar(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
         String fileName = workingDirectory + "/slave.jar";
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
@@ -390,10 +395,51 @@ public class SSHLauncher extends ComputerLauncher {
             } catch (Exception e) {
                 throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
             }
+        } catch (IOException e) {
+            if (sftpClient == null) {
+                // lets try to recover if the slave doesn't have an SFTP service
+                copySlaveJarUsingSCP(listener, workingDirectory);
+            } else {
+                throw e;
+            }
         } finally {
             if (sftpClient != null) {
                 sftpClient.close();
             }
+        }
+    }
+
+    /**
+     * Method copies the slave jar to the remote system using scp.
+     *
+     * @param listener         The listener.
+     * @param workingDirectory The directory into which the slave jar will be copied.
+     *
+     * @throws IOException If something goes wrong.
+     * @throws InterruptedException If something goes wrong.
+     */
+    private void copySlaveJarUsingSCP(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
+        listener.getLogger().println(Messages.SSHLauncher_StartingSCPClient(getTimestamp()));
+        SCPClient scp = new SCPClient(connection);
+        try {
+            // check if the working directory exists
+            if (connection.exec("test -d " + workingDirectory ,listener.getLogger())!=0) {
+                listener.getLogger().println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
+                // working directory doesn't exist, lets make it.
+                if (connection.exec("mkdir -p " + workingDirectory, listener.getLogger())!=0) {
+                    listener.getLogger().println("Failed to create "+workingDirectory);
+                }
+            }
+
+            // delete the slave jar as we do with SFTP
+            connection.exec("rm " + workingDirectory + "/slave.jar", new NullStream());
+
+            // SCP it to the slave. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
+            InputStream is = Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
+            listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
+            scp.put(IOUtils.toByteArray(is), "slave.jar", workingDirectory, "0644");
+        } catch (IOException e) {
+            throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
         }
     }
 
@@ -404,7 +450,6 @@ public class SSHLauncher extends ComputerLauncher {
 
     private String checkJavaVersion(TaskListener listener, String javaCommand) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp(),javaCommand));
-        String line;
         StringWriter output = new StringWriter();   // record output from Java
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
