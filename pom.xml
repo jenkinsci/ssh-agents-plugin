@@ -10,7 +10,7 @@
 
     <artifactId>ssh-slaves</artifactId>
     <packaging>hpi</packaging>
-    <version>0.11</version>
+    <version>0.12-SNAPSHOT</version>
     <name>Hudson SSH Slaves plugin</name>
     <url>http://wiki.hudson-ci.org/display/HUDSON/SSH+Slaves+plugin</url>
 
@@ -20,10 +20,4 @@
         <name>Kohsuke Kawaguchi</name>
       </developer>
     </developers>
-
-  <scm>
-    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/ssh-slaves-0.11</connection>
-    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/ssh-slaves-0.11</developerConnection>
-    <url>https://hudson.dev.java.net/source/browse/hudson/tags/ssh-slaves-0.11</url>
-  </scm>
 </project>
