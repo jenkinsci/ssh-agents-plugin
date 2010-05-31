@@ -305,7 +305,7 @@ public class SSHLauncher extends ComputerLauncher {
     private void startSlave(SlaveComputer computer, final TaskListener listener, String java,
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
-        String cmd = "cd '" + workingDirectory + "' && " + java + (jvmOptions == null ? "" : " " + jvmOptions) + " -jar slave.jar";
+        String cmd = "cd '" + workingDirectory + "' && " + java + getJvmOptions() + " -jar slave.jar";
         listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
         final StreamGobbler out = new StreamGobbler(session.getStdout());
@@ -453,7 +453,7 @@ public class SSHLauncher extends ComputerLauncher {
         StringWriter output = new StringWriter();   // record output from Java
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        connection.exec(javaCommand + " "+jvmOptions + " -version",out);
+        connection.exec(javaCommand + " "+getJvmOptions() + " -version",out);
         BufferedReader r = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(out.toByteArray())));
         final String result = checkJavaVersion(listener.getLogger(), javaCommand, r, output);
 
