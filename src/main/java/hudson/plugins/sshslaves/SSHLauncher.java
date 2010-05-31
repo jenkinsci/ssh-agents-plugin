@@ -430,7 +430,7 @@ public class SSHLauncher extends ComputerLauncher {
 	 *            the command executed, used for logging
 	 * @param r
 	 *            the output of "java -version"
-	 * @param out
+	 * @param output
 	 *            copy the data from <code>r</code> into this output buffer
 	 */
 	static String checkJavaVersion(final PrintStream logger, String javaCommand,
