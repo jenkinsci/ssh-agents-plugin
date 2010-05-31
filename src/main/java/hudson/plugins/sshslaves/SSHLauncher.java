@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -451,7 +452,7 @@ public class SSHLauncher extends ComputerLauncher {
 				// parse as a number and we should be OK as all we care about is up through the first dot.
 				try {
 					final Number version =
-						NumberFormat.getNumberInstance().parse(versionStr);
+						NumberFormat.getNumberInstance(Locale.US).parse(versionStr);
 					if(version.doubleValue() < 1.5) {
 						throw new IOException(Messages
 								.SSHLauncher_NoJavaFound(line));
