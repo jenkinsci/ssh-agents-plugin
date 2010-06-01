@@ -521,7 +521,7 @@ public class SSHLauncher extends ComputerLauncher {
             LOGGER.fine("Defaulting the user name to "+username);
         }
 
-        String pass = getPassword();
+        String pass = Util.fixNull(getPassword());
 
         boolean isAuthenticated = false;
         if(fixEmpty(privatekey)==null && fixEmpty(pass)==null) {
@@ -552,7 +552,7 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
         }
-        if (!isAuthenticated && pass!=null) {
+        if (!isAuthenticated) {
             listener.getLogger()
                     .println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
             isAuthenticated = connection.authenticateWithPassword(username, pass);
