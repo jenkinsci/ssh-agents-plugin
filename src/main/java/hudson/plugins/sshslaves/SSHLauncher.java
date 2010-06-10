@@ -176,38 +176,9 @@ public class SSHLauncher extends ComputerLauncher {
             verifyNoHeaderJunk(listener);
             reportEnvironment(listener);
 
-            String java = null;
-            List<String> tried = new ArrayList<String>();
-            outer:
-            for (JavaProvider provider : JavaProvider.all()) {
-                for (String javaCommand : provider.getJavas(computer, listener, connection)) {
-                    LOGGER.fine("Trying Java at "+javaCommand);
-                    try {
-                        tried.add(javaCommand);
-                        java = checkJavaVersion(listener, javaCommand);
-                        if (java != null) {
-                            break outer;
-                        }
-                    } catch (IOException e) {
-                        LOGGER.log(FINE, "Failed to check the Java version",e);
-                        // try the next one
-                    }
-                }
-            }
+            String java = resolveJava(computer, listener);
 
-            final String workingDirectory = getWorkingDirectory(computer);
-
-            if (java == null) {
-                // attempt auto JDK installation
-                ByteArrayOutputStream buf = new ByteArrayOutputStream();
-                try {
-                    java = attemptToInstallJDK(listener, workingDirectory, buf);
-                } catch (IOException e) {
-                    throw new IOException2("Could not find any known supported java version in "+tried+", and we also failed to install JDK as a fallback",e);
-                }
-            }
-
-
+            String workingDirectory = getWorkingDirectory(computer);
             copySlaveJar(listener, workingDirectory);
 
             startSlave(computer, listener, java, workingDirectory);
@@ -222,6 +193,36 @@ public class SSHLauncher extends ComputerLauncher {
             connection.close();
             connection = null;
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
+        }
+    }
+
+    /**
+     * Finds local Java, and if none exist, install one.
+     */
+    protected String resolveJava(SlaveComputer computer, TaskListener listener) throws InterruptedException, IOException2 {
+        String workingDirectory = getWorkingDirectory(computer);
+
+        List<String> tried = new ArrayList<String>();
+        for (JavaProvider provider : JavaProvider.all()) {
+            for (String javaCommand : provider.getJavas(computer, listener, connection)) {
+                LOGGER.fine("Trying Java at "+javaCommand);
+                try {
+                    tried.add(javaCommand);
+                    String java = checkJavaVersion(listener, javaCommand);
+                    if (java != null)
+                        return java;
+                } catch (IOException e) {
+                    LOGGER.log(FINE, "Failed to check the Java version",e);
+                    // try the next one
+                }
+            }
+        }
+
+        // attempt auto JDK installation
+        try {
+            return attemptToInstallJDK(listener, workingDirectory);
+        } catch (IOException e) {
+            throw new IOException2("Could not find any known supported java version in "+tried+", and we also failed to install JDK as a fallback",e);
         }
     }
 
@@ -242,8 +243,9 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Attempts to install JDK, and return the path to Java.
      */
-    private String attemptToInstallJDK(TaskListener listener, String workingDirectory, ByteArrayOutputStream buf) throws IOException, InterruptedException {
-        if (connection.exec("uname -a",new TeeOutputStream(buf,listener.getLogger()))!=0)
+    private String attemptToInstallJDK(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
+        ByteArrayOutputStream unameOutput = new ByteArrayOutputStream();
+        if (connection.exec("uname -a",new TeeOutputStream(unameOutput,listener.getLogger()))!=0)
             throw new IOException("Failed to run 'uname' to obtain the environment");
 
         // guess the platform from uname output. I don't use the specific options because I'm not sure
@@ -258,7 +260,7 @@ public class SSHLauncher extends ComputerLauncher {
         // Windows_NT WINXPIE7 5 01 586
         //        (this one is from MKS)
 
-        String uname = buf.toString();
+        String uname = unameOutput.toString();
         Platform p = null;
         CPU cpu = null;
         if (uname.contains("GNU/Linux"))        p = Platform.LINUX;
@@ -443,7 +445,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private void reportEnvironment(TaskListener listener) throws IOException, InterruptedException {
+    protected void reportEnvironment(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages._SSHLauncher_RemoteUserEnvironment(getTimestamp()));
         connection.exec("set",listener.getLogger());
     }
@@ -511,7 +513,7 @@ public class SSHLauncher extends ComputerLauncher {
 		return null;
 	}
 
-    private void openConnection(TaskListener listener) throws IOException {
+    protected void openConnection(TaskListener listener) throws IOException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.connect();
         
