@@ -646,6 +646,10 @@ public class SSHLauncher extends ComputerLauncher {
         return privatekey;
     }
 
+    public Connection getConnection() {
+        return connection;
+    }
+
     @Extension
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
 
