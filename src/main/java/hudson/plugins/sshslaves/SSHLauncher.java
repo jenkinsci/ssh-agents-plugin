@@ -145,7 +145,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return the formatted current time stamp.
      */
-    private static String getTimestamp() {
+    protected String getTimestamp() {
         return String.format("[%1$tD %1$tT]", new Date());
     }
 
@@ -481,7 +481,7 @@ public class SSHLauncher extends ComputerLauncher {
 	 * @param output
 	 *            copy the data from <code>r</code> into this output buffer
 	 */
-	static String checkJavaVersion(final PrintStream logger, String javaCommand,
+	protected String checkJavaVersion(final PrintStream logger, String javaCommand,
 			final BufferedReader r, final StringWriter output)
 			throws IOException {
 		String line;
@@ -513,7 +513,7 @@ public class SSHLauncher extends ComputerLauncher {
 		return null;
 	}
 
-    protected void openConnection(TaskListener listener) throws IOException {
+    protected void openConnection(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.connect();
         
