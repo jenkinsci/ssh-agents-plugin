@@ -286,7 +286,7 @@ public class SSHLauncher extends ComputerLauncher {
         JDKInstaller jdk = new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
         URL bundle = jdk.locate(listener, p, cpu);
 
-        listener.getLogger().println("Downloading JDK6u16");
+        listener.getLogger().println("Installing JDK6u16");
         Util.copyStreamAndClose(bundle.openStream(),new BufferedOutputStream(sftp.writeToFile(bundleFile),32*1024));
         sftp.chmod(bundleFile,0755);
 
