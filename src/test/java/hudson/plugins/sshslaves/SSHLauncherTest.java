@@ -34,8 +34,13 @@ public class SSHLauncherTest extends TestCase {
 	}
 
 	@Test
-	public void testCheckJavaVersionSun4Linux() throws Exception {
-		Assert.assertFalse("Sun 1.4 on Linux should NOT be supported", checkSupported("sun-java-1.4-linux.version"));
+	public void testCheckJavaVersionSun4Linux() {
+        try {
+		    checkSupported("sun-java-1.4-linux.version");
+            fail();
+        } catch (IOException e) {
+            //
+        }
 	}
 
 	/**
