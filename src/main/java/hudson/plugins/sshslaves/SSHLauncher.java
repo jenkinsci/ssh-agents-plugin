@@ -634,7 +634,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @return Value for property 'password'.
      */
     public String getPassword() {
-        return password!=null ? password.toString() : null;
+        return password!=null ? Secret.toString(password) : null;
     }
 
     /**
