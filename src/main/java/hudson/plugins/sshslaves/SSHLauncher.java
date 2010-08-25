@@ -11,6 +11,7 @@ import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.JDK;
+import hudson.model.Slave;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerLauncher;
@@ -157,7 +158,11 @@ public class SSHLauncher extends ComputerLauncher {
      * @return the remote root workspace (without trailing slash).
      */
     private static String getWorkingDirectory(SlaveComputer computer) {
-        String workingDirectory = computer.getNode().getRemoteFS();
+        return getWorkingDirectory(computer.getNode());
+    }
+
+    private static String getWorkingDirectory(Slave slave) {
+        String workingDirectory = slave.getRemoteFS();
         while (workingDirectory.endsWith("/")) {
             workingDirectory = workingDirectory.substring(0, workingDirectory.length() - 1);
         }
@@ -576,20 +581,22 @@ public class SSHLauncher extends ComputerLauncher {
      */
     @Override
     public synchronized void afterDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
-        String workingDirectory = getWorkingDirectory(slaveComputer);
-        String fileName = workingDirectory + "/slave.jar";
-
+        Slave n = slaveComputer.getNode();
         if (connection != null) {
+            if (n != null) {
+                String workingDirectory = getWorkingDirectory(n);
+                String fileName = workingDirectory + "/slave.jar";
 
-            SFTPv3Client sftpClient = null;
-            try {
-                sftpClient = new SFTPv3Client(connection);
-                sftpClient.rm(fileName);
-            } catch (Exception e) {
-                e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-            } finally {
-                if (sftpClient != null) {
-                    sftpClient.close();
+                SFTPv3Client sftpClient = null;
+                try {
+                    sftpClient = new SFTPv3Client(connection);
+                    sftpClient.rm(fileName);
+                } catch (Exception e) {
+                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                } finally {
+                    if (sftpClient != null) {
+                        sftpClient.close();
+                    }
                 }
             }
 
