@@ -592,7 +592,15 @@ public class SSHLauncher extends ComputerLauncher {
                     sftpClient = new SFTPv3Client(connection);
                     sftpClient.rm(fileName);
                 } catch (Exception e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                    if (sftpClient == null) {// system without SFTP
+                        try {
+                            connection.exec("rm " + fileName, listener.getLogger());
+                        } catch (Exception x) {
+                            x.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                        }
+                    } else {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                    }
                 } finally {
                     if (sftpClient != null) {
                         sftpClient.close();
