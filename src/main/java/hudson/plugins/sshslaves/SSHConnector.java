@@ -25,29 +25,29 @@ public class SSHConnector extends ComputerConnector {
     /**
      * Field port
      */
-    private final int port;
+    public final int port;
 
     /**
      * Field username
      */
-    private final String username;
+    public final String username;
 
     /**
      * Field password
      *
      * @todo remove password once authentication is stored in the descriptor.
      */
-    private final Secret password;
+    public final Secret password;
 
     /**
      * File path of the private key.
      */
-    private final String privatekey;
+    public final String privatekey;
 
     /**
      * Field jvmOptions.
      */
-    private final String jvmOptions;
+    public final String jvmOptions;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
