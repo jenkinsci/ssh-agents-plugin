@@ -121,7 +121,7 @@ public class SSHLauncher extends ComputerLauncher {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.username = username;
-        this.password = fixEmpty(password)!=null ? Secret.fromString(password) : null;
+        this.password = Secret.fromString(fixEmpty(password));
         this.privatekey = privatekey;
     }
 
@@ -679,6 +679,20 @@ public class SSHLauncher extends ComputerLauncher {
             return Messages.SSHLauncher_DescriptorDisplayName();
         }
 
+        public Class getSshConnectorClass() {
+            return SSHConnector.class;
+        }
+
+        /**
+         * Delegates the help link to the {@link SSHConnector}.
+         */
+        @Override
+        public String getHelpFile(String fieldName) {
+            String n = super.getHelpFile(fieldName);
+            if (n==null)
+                n = Hudson.getInstance().getDescriptor(SSHConnector.class).getHelpFile(fieldName);
+            return n;
+        }
     }
 
     @Extension
