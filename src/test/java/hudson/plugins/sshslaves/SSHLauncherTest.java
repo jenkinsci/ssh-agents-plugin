@@ -5,13 +5,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.util.Collections;
 
+import hudson.model.Node.Mode;
+import hudson.model.Slave;
+import hudson.slaves.DumbSlave;
+import hudson.slaves.RetentionStrategy;
 import junit.framework.TestCase;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.jvnet.hudson.test.HudsonTestCase;
 
-public class SSHLauncherTest extends TestCase {
+public class SSHLauncherTest extends HudsonTestCase {
 
 	@Test
 	public void testCheckJavaVersionOpenJDK7NetBSD() throws Exception {
@@ -62,4 +68,19 @@ public class SSHLauncherTest extends TestCase {
                 javaCommand, r, output);
         return null != result;
 	}
+
+    public void testConfigurationRoundtrip() throws Exception {
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "test", "pass", "xyz", "def");
+        DumbSlave slave = new DumbSlave("slave", "dummy",
+                createTmpDir().getPath(), "1", Mode.NORMAL, "",
+                launcher, RetentionStrategy.NOOP, Collections.EMPTY_LIST);
+        hudson.addNode(slave);
+
+        submit(createWebClient().getPage(slave,"configure").getFormByName("config"));
+        Slave n = (Slave)hudson.getNode("slave");
+
+        assertNotSame(n,slave);
+        assertNotSame(n.getLauncher(),launcher);
+        assertEqualDataBoundBeans(n.getLauncher(),launcher);
+    }
 }
