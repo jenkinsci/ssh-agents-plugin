@@ -198,6 +198,7 @@ public class SSHLauncher extends ComputerLauncher {
             connection.close();
             connection = null;
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
+            throw new InterruptedException(e.getMessage());
         }
     }
 
