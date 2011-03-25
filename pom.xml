@@ -11,8 +11,8 @@
     <artifactId>ssh-slaves</artifactId>
     <packaging>hpi</packaging>
     <version>0.15-SNAPSHOT</version>
-    <name>Hudson SSH Slaves plugin</name>
-    <url>http://wiki.hudson-ci.org/display/HUDSON/SSH+Slaves+plugin</url>
+    <name>Jenkins SSH Slaves plugin</name>
+    <url>http://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
 
     <developers>
       <developer>
