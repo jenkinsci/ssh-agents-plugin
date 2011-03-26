@@ -16,6 +16,7 @@ import hudson.remoting.Channel;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -77,6 +78,21 @@ final class RemoteLauncher extends Launcher {
                 } finally {
                     session.close();
                 }
+            }
+
+            @Override
+            public InputStream getStdout() {
+                return null;
+            }
+
+            @Override
+            public InputStream getStderr() {
+                return null;
+            }
+
+            @Override
+            public OutputStream getStdin() {
+                return null;
             }
         };
     }

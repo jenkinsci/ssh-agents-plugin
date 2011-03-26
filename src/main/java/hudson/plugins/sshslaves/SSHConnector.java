@@ -50,6 +50,11 @@ public class SSHConnector extends ComputerConnector {
     public final String jvmOptions;
 
     /**
+     * Field javaPath.
+     */
+    public final String javaPath;
+
+    /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
      * @param port       The port to connect on.
@@ -59,17 +64,18 @@ public class SSHConnector extends ComputerConnector {
      * @param jvmOptions
      */
     @DataBoundConstructor
-    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions) {
+    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath) {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.username = username;
         this.password = Secret.fromString(fixEmpty(password));
         this.privatekey = privatekey;
+        this.javaPath = javaPath;
     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
-        return new SSHLauncher(host,port,username,Secret.toString(password),privatekey,jvmOptions);
+        return new SSHLauncher(host,port,username,Secret.toString(password),privatekey,jvmOptions,javaPath);
     }
 
     @Extension

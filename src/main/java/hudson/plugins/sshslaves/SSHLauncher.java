@@ -54,6 +54,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -101,6 +102,11 @@ public class SSHLauncher extends ComputerLauncher {
     private final String jvmOptions;
 
     /**
+     * Field javaPath.
+     */
+    public final String javaPath;
+
+    /**
      * Field connection
      */
     private transient Connection connection;
@@ -116,13 +122,14 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jvmOptions
      */
     @DataBoundConstructor
-    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
+    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, String javaPath) {
         this.host = host;
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.username = username;
         this.password = Secret.fromString(fixEmpty(password));
         this.privatekey = privatekey;
+        this.javaPath = javaPath;
     }
 
     /**
@@ -139,6 +146,14 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public String getJvmOptions() {
         return jvmOptions == null ? "" : jvmOptions;
+    }
+
+    /**
+     * Gets the optionnal java command to use to launch the slave JVM.
+     * @return
+     */
+    public String getJavaPath() {
+        return javaPath == null ? "" : javaPath;
     }
 
     /**
@@ -202,9 +217,13 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
+     * return javaPath if specified in the configuration.
      * Finds local Java, and if none exist, install one.
      */
     protected String resolveJava(SlaveComputer computer, TaskListener listener) throws InterruptedException, IOException2 {
+
+        if (StringUtils.isNotBlank(this.javaPath)) return this.javaPath;
+
         String workingDirectory = getWorkingDirectory(computer);
 
         List<String> tried = new ArrayList<String>();

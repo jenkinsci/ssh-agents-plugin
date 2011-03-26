@@ -17,6 +17,10 @@
           <f:textbox default="22" />
       </f:entry>
 
+      <f:entry title="${%JavaPath}" field="javaPath">
+          <f:textbox />
+      </f:entry>
+
       <f:entry title="${%JVM Options}" field="jvmOptions">
           <f:textbox />
       </f:entry>
