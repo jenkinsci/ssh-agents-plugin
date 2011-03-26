@@ -9,7 +9,7 @@
 
   <artifactId>ssh-slaves</artifactId>
   <packaging>hpi</packaging>
-  <version>0.15</version>
+  <version>0.16-SNAPSHOT</version>
   <name>Jenkins SSH Slaves plugin</name>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
 
