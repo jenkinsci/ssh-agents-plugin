@@ -7,11 +7,17 @@
     <version>1.403</version>
   </parent>
 
-    <artifactId>ssh-slaves</artifactId>
-    <packaging>hpi</packaging>
-    <version>0.15-SNAPSHOT</version>
-    <name>Jenkins SSH Slaves plugin</name>
-    <url>http://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
+  <artifactId>ssh-slaves</artifactId>
+  <packaging>hpi</packaging>
+  <version>0.15-SNAPSHOT</version>
+  <name>Jenkins SSH Slaves plugin</name>
+  <url>http://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
+
+  <scm>
+   <connection>scm:git:git://github.com/jenkinsci/ssh-slaves-plugin.git</connection>
+   <developerConnection>scm:git:git@github.com:jenkinsci/ssh-slaves-plugin.git</developerConnection>
+   <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
+  </scm>
 
     <developers>
       <developer>
