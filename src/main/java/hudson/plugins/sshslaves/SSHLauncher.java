@@ -434,7 +434,6 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
     }
-
     /**
      * Method copies the slave jar to the remote system using scp.
      *
@@ -576,6 +575,9 @@ public class SSHLauncher extends ComputerLauncher {
                 } else {
                     isAuthenticated = connection.authenticateWithPublicKey(username, key, pass);
                 }
+            } else {
+                listener.getLogger()
+                        .println(Messages.SSHLauncher_NoPrivateKey(getTimestamp(), privatekey));
             }
         }
         if (!isAuthenticated) {
