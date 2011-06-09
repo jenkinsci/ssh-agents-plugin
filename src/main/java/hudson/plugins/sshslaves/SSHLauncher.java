@@ -69,6 +69,12 @@ import com.trilead.ssh2.StreamGobbler;
  */
 public class SSHLauncher extends ComputerLauncher {
 
+    public static class DefaultJDKInstaller extends JDKInstaller {
+        public DefaultJDKInstaller() {
+            super("jdk-6u16-oth-JPR@CDS-CDS_Developer", true);
+        }
+    }
+
     /**
      * Field host
      */
@@ -107,6 +113,11 @@ public class SSHLauncher extends ComputerLauncher {
     public final String javaPath;
 
     /**
+     * Field jdk
+     */
+    private JDKInstaller jdk = new DefaultJDKInstaller();
+
+    /**
      * Field connection
      */
     private transient Connection connection;
@@ -119,10 +130,27 @@ public class SSHLauncher extends ComputerLauncher {
      * @param username   The username to connect as.
      * @param password   The password to connect with.
      * @param privatekey The ssh privatekey to connect with.
-     * @param jvmOptions
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      */
     @DataBoundConstructor
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, String javaPath) {
+        this(host, port, username, password, privatekey, jvmOptions, javaPath, null);
+    }
+
+    /**
+     * Constructor SSHLauncher creates a new SSHLauncher instance.
+     *
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param username   The username to connect as.
+     * @param password   The password to connect with.
+     * @param privatekey The ssh privatekey to connect with.
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host.
+     */
+    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller) {
         this.host = host;
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
@@ -130,6 +158,9 @@ public class SSHLauncher extends ComputerLauncher {
         this.password = Secret.fromString(fixEmpty(password));
         this.privatekey = privatekey;
         this.javaPath = javaPath;
+        if (jdkInstaller != null) {
+            this.jdk = jdkInstaller;
+        }
     }
 
     /**
@@ -307,7 +338,6 @@ public class SSHLauncher extends ComputerLauncher {
         connection.exec("rm -rf "+javaDir,listener.getLogger());
         sftp.mkdirs(javaDir, 0755);
 
-        JDKInstaller jdk = new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
         URL bundle = jdk.locate(listener, p, cpu);
 
         listener.getLogger().println("Installing JDK6u16");
