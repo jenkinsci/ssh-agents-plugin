@@ -124,12 +124,12 @@ public class SSHLauncher extends ComputerLauncher {
     @DataBoundConstructor
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, String javaPath) {
         this.host = host;
-        this.jvmOptions = jvmOptions;
+        this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
-        this.username = username;
+        this.username = fixEmpty(username);
         this.password = Secret.fromString(fixEmpty(password));
-        this.privatekey = privatekey;
-        this.javaPath = javaPath;
+        this.privatekey = fixEmpty(privatekey);
+        this.javaPath = fixEmpty(javaPath);
     }
 
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
