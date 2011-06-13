@@ -132,6 +132,10 @@ public class SSHLauncher extends ComputerLauncher {
         this.javaPath = javaPath;
     }
 
+    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
+        this(host,port,username,password,privatekey,jvmOptions,null);
+    }
+
     /**
      * {@inheritDoc}
      */
