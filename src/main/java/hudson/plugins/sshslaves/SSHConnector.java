@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
+import hudson.tools.JDKInstaller;
 import hudson.util.Secret;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -54,28 +55,37 @@ public class SSHConnector extends ComputerConnector {
      */
     public final String javaPath;
 
+
     /**
-     * Constructor SSHLauncher creates a new SSHLauncher instance.
-     *
-     * @param port       The port to connect on.
-     * @param username   The username to connect as.
-     * @param password   The password to connect with.
-     * @param privatekey The ssh privatekey to connect with.
-     * @param jvmOptions
+     * Field jdk
+     */
+    public final JDKInstaller jdkInstaller;
+
+
+    /**
+     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String)
      */
     @DataBoundConstructor
     public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath) {
+        this(port, username, password, privatekey, jvmOptions, javaPath, null);
+    }
+
+    /**
+     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, JDKInstaller)
+     */
+    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller) {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.username = username;
         this.password = Secret.fromString(fixEmpty(password));
         this.privatekey = privatekey;
         this.javaPath = javaPath;
+        this.jdkInstaller = jdkInstaller;
     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
-        return new SSHLauncher(host,port,username,Secret.toString(password),privatekey,jvmOptions,javaPath);
+        return new SSHLauncher(host,port,username,Secret.toString(password),privatekey,jvmOptions,javaPath,jdkInstaller);
     }
 
     @Extension
