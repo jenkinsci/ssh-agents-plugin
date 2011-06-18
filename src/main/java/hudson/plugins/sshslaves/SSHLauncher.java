@@ -148,7 +148,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param privatekey The ssh privatekey to connect with.
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
-     * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host.
+     * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
      */
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller) {
         this.host = host;
