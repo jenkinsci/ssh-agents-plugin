@@ -123,6 +123,17 @@ public class SSHLauncher extends ComputerLauncher {
     private transient Connection connection;
 
     /**
+     * Field prefixStartSlaveCmd. 
+     */
+    public final String prefixStartSlaveCmd;
+    
+    /**
+     *  Field suffixStartSlaveCmd.
+     */
+    public final String suffixStartSlaveCmd;
+    
+    
+    /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
      * @param host       The host to connect to.
@@ -132,10 +143,14 @@ public class SSHLauncher extends ComputerLauncher {
      * @param privatekey The ssh privatekey to connect with.
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command. 
      */
     @DataBoundConstructor
-    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, String javaPath) {
-        this(host, port, username, password, privatekey, jvmOptions, javaPath, null);
+    public SSHLauncher(String host, int port, String username, String password, String privatekey, 
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(host, port, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd, 
+                                                                                     suffixStartSlaveCmd);
     }
 
     /**
@@ -149,8 +164,11 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command. 
      */
-    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller) {
+    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, 
+                                    String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this.host = host;
         this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
@@ -161,10 +179,12 @@ public class SSHLauncher extends ComputerLauncher {
         if (jdkInstaller != null) {
             this.jdk = jdkInstaller;
         }
+        this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
+        this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
     }
 
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
-        this(host,port,username,password,privatekey,jvmOptions,null);
+        this(host,port,username,password,privatekey,jvmOptions,null, null, null);
     }
 
     /**
@@ -366,6 +386,10 @@ public class SSHLauncher extends ComputerLauncher {
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
         String cmd = "cd '" + workingDirectory + "' && " + java + " " + getJvmOptions() + " -jar slave.jar";
+        
+        //This will wrap the cmd with prefix commands and suffix commands if they are set.
+        cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
+        
         listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
         final StreamGobbler out = new StreamGobbler(session.getStdout());
@@ -720,6 +744,14 @@ public class SSHLauncher extends ComputerLauncher {
         return connection;
     }
 
+    public String getPrefixStartSlaveCmd() {
+        return prefixStartSlaveCmd == null ? "" : prefixStartSlaveCmd;
+    }
+    
+    public String getSuffixStartSlaveCmd() {
+        return suffixStartSlaveCmd == null ? "" : suffixStartSlaveCmd;
+    }
+    
     @Extension
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
 

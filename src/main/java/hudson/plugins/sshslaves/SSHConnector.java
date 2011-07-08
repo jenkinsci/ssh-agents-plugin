@@ -61,19 +61,31 @@ public class SSHConnector extends ComputerConnector {
      */
     public final JDKInstaller jdkInstaller;
 
+    /**
+     * Field prefixStartSlaveCmd. 
+     */
+    public final String prefixStartSlaveCmd;
+    
+    /**
+     *  Field suffixStartSlaveCmd.
+     */
+    public final String suffixStartSlaveCmd;
+    
 
     /**
-     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String)
+     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, String, String)
      */
     @DataBoundConstructor
-    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath) {
-        this(port, username, password, privatekey, jvmOptions, javaPath, null);
+    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath, 
+                                                                   String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(port, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
     }
 
     /**
-     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, JDKInstaller)
+     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, JDKInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd)
      */
-    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller) {
+    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath, 
+                                        JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.username = username;
@@ -81,11 +93,13 @@ public class SSHConnector extends ComputerConnector {
         this.privatekey = privatekey;
         this.javaPath = javaPath;
         this.jdkInstaller = jdkInstaller;
+        this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
+        this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
-        return new SSHLauncher(host,port,username,Secret.toString(password),privatekey,jvmOptions,javaPath,jdkInstaller);
+        return new SSHLauncher(host,port,username,Secret.toString(password),privatekey,jvmOptions,javaPath,jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd);
     }
 
     @Extension
