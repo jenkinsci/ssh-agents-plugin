@@ -25,14 +25,13 @@
           <f:textbox />
       </f:entry>
        
-      <f:entry title="${Prefix Start Slave Command}" field="prefixStartSlaveCmd">
+      <f:entry title="${%Prefix Start Slave Command}" field="prefixStartSlaveCmd">
           <f:textbox />
       </f:entry>
 
       <f:entry title="${%Suffix Start Slave Command}" field="suffixStartSlaveCmd">
           <f:textbox />
       </f:entry>
-     
 
   </f:advanced>
 </j:jelly>
