@@ -241,10 +241,22 @@ public class SSHLauncher extends ComputerLauncher {
             PluginImpl.register(connection);
         } catch (RuntimeException e) {
             e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+            cleanupConnection(listener);
         } catch (Error e) {
             e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+            cleanupConnection(listener);
         } catch (IOException e) {
             e.printStackTrace(listener.getLogger());
+            cleanupConnection(listener);
+        }
+    }
+
+    /**
+     * Called to terminate the SSH connection. Used liberally when we back out from an error.
+     */
+    private void cleanupConnection(TaskListener listener) {
+        // we might be called multiple times from multiple finally/catch block, 
+        if (connection!=null) {
             connection.close();
             connection = null;
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
@@ -624,9 +636,6 @@ public class SSHLauncher extends ComputerLauncher {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
         } else {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
-            connection.close();
-            connection = null;
-            listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
             throw new AbortException(Messages.SSHLauncher_AuthenticationFailedException());
         }
     }
@@ -663,10 +672,8 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
 
-            connection.close();
             PluginImpl.unregister(connection);
-            connection = null;
-            listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
+            cleanupConnection(listener);
         }
         super.afterDisconnect(slaveComputer, listener);
     }
