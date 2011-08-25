@@ -379,6 +379,9 @@ public class SSHLauncher extends ComputerLauncher {
         connection.exec("rm -rf "+javaDir,listener.getLogger());
         sftp.mkdirs(javaDir, 0755);
 
+        if (jdk==null)
+            jdk = new DefaultJDKInstaller();
+
         URL bundle = jdk.locate(listener, p, cpu);
 
         listener.getLogger().println("Installing JDK6u16");
