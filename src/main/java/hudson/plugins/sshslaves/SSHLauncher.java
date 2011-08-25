@@ -46,8 +46,10 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -585,12 +587,14 @@ public class SSHLauncher extends ComputerLauncher {
     protected void openConnection(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.connect();
-        
+
         String username = this.username;
         if(fixEmpty(username)==null) {
             username = System.getProperty("user.name");
             LOGGER.fine("Defaulting the user name to "+username);
         }
+
+        Set<String> availableMethods = new HashSet<String>(Arrays.asList(connection.getRemainingAuthMethods(username)));
 
         String pass = Util.fixNull(getPassword());
 
@@ -614,6 +618,9 @@ public class SSHLauncher extends ComputerLauncher {
             if (key.exists()) {
                 listener.getLogger()
                         .println(Messages.SSHLauncher_AuthenticatingPublicKey(getTimestamp(), username, privatekey));
+                if (!availableMethods.contains("publickey"))
+                    throw new AbortException("The server doesn't support the public key authentication");
+
                 if (PuTTYKey.isPuTTYKeyFile(key)) {
                     LOGGER.fine(key+" is a PuTTY key file");
                     String openSshKey = new PuTTYKey(key, pass).toOpenSSH();
@@ -627,6 +634,9 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
         if (!isAuthenticated) {
+            if (!availableMethods.contains("password") && pass.length()>0)
+                throw new AbortException("The server doesn't support the password authentication");
+
             listener.getLogger()
                     .println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
             isAuthenticated = connection.authenticateWithPassword(username, pass);
