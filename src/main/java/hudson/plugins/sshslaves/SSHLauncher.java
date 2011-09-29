@@ -45,6 +45,7 @@ import hudson.slaves.SlaveComputer;
 import hudson.tools.JDKInstaller;
 import hudson.tools.JDKInstaller.CPU;
 import hudson.tools.JDKInstaller.Platform;
+import hudson.tools.ToolInstallerDescriptor;
 import hudson.tools.ToolLocationNodeProperty;
 import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
@@ -93,10 +94,17 @@ import com.trilead.ssh2.StreamGobbler;
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
  */
 public class SSHLauncher extends ComputerLauncher {
-
+    /**
+     * @deprecated
+     *      Subtype of {@link JDKInstaller} causes JENKINS-10641.
+     */
     public static class DefaultJDKInstaller extends JDKInstaller {
         public DefaultJDKInstaller() {
             super("jdk-6u16-oth-JPR@CDS-CDS_Developer", true);
+        }
+
+        public Object readResolve() {
+            return new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
         }
     }
 
@@ -138,9 +146,10 @@ public class SSHLauncher extends ComputerLauncher {
     public final String javaPath;
 
     /**
-     * Field jdk
+     * to install JDK, keep this field null. This avoids baking the default value into the persisted form.
+     * @see #getJDKInstaller()
      */
-    private JDKInstaller jdk = new DefaultJDKInstaller();
+    private JDKInstaller jdk = null;
 
     /**
      * Field connection
@@ -356,6 +365,10 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
+    private JDKInstaller getJDKInstaller() {
+        return jdk!=null ? jdk : new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
+    }
+
     /**
      * Attempts to install JDK, and return the path to Java.
      */
@@ -399,16 +412,13 @@ public class SSHLauncher extends ComputerLauncher {
         connection.exec("rm -rf "+javaDir,listener.getLogger());
         sftp.mkdirs(javaDir, 0755);
 
-        if (jdk==null)
-            jdk = new DefaultJDKInstaller();
-
-        URL bundle = jdk.locate(listener, p, cpu);
+        URL bundle = getJDKInstaller().locate(listener, p, cpu);
 
         listener.getLogger().println("Installing JDK6u16");
         Util.copyStreamAndClose(bundle.openStream(),new BufferedOutputStream(sftp.writeToFile(bundleFile),32*1024));
         sftp.chmod(bundleFile,0755);
 
-        jdk.install(new RemoteLauncher(listener,connection),p,new SFTPFileSystem(sftp),listener, javaDir,bundleFile);
+        getJDKInstaller().install(new RemoteLauncher(listener,connection),p,new SFTPFileSystem(sftp),listener, javaDir,bundleFile);
         return javaDir+"/bin/java";
     }
 
