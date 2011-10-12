@@ -646,6 +646,7 @@ public class SSHLauncher extends ComputerLauncher {
 
     protected void openConnection(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
+        connection.setTCPNoDelay(true);
         connection.connect();
 
         String username = this.username;
