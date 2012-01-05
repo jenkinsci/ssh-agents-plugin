@@ -31,11 +31,7 @@ import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
-import hudson.model.Descriptor;
-import hudson.model.Hudson;
-import hudson.model.JDK;
-import hudson.model.Slave;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
@@ -323,7 +319,9 @@ public class SSHLauncher extends ComputerLauncher {
      */
     protected String resolveJava(SlaveComputer computer, TaskListener listener) throws InterruptedException, IOException2 {
 
-        if (StringUtils.isNotBlank(this.javaPath)) return this.javaPath;
+        if (StringUtils.isNotBlank(javaPath)) {
+            return expandExpression(computer, javaPath);
+        }
 
         String workingDirectory = getWorkingDirectory(computer);
 
@@ -349,6 +347,48 @@ public class SSHLauncher extends ComputerLauncher {
         } catch (IOException e) {
             throw new IOException2("Could not find any known supported java version in "+tried+", and we also failed to install JDK as a fallback",e);
         }
+    }
+
+    private String expandExpression(SlaveComputer computer, String expression) {
+        return getEnvVars(computer).expand(expression);
+    }
+
+    private EnvVars getEnvVars(SlaveComputer computer) {
+        final EnvVars global = getEnvVars(Hudson.getInstance());
+
+        final EnvVars local = getEnvVars(computer.getNode());
+
+        if (global != null) {
+            if (local != null) {
+                final EnvVars merged = new EnvVars(global);
+                merged.overrideAll(local);
+
+                return merged;
+            } else {
+                return global;
+            }
+        } else if (local != null) {
+            return local;
+        } else {
+            return new EnvVars();
+        }
+    }
+
+    private EnvVars getEnvVars(Hudson h) {
+        return getEnvVars(h.getGlobalNodeProperties());
+    }
+    
+    private EnvVars getEnvVars(Node n) {
+        return getEnvVars(n.getNodeProperties());
+    }
+    
+    private EnvVars getEnvVars(DescribableList<NodeProperty<?>, NodePropertyDescriptor> dl) {
+        final EnvironmentVariablesNodeProperty evnp = dl.get(EnvironmentVariablesNodeProperty.class);
+        if (evnp == null) {
+            return null;
+        }
+
+        return evnp.getEnvVars();        
     }
 
     /**
