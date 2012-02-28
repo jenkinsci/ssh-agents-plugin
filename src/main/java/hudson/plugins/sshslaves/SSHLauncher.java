@@ -26,6 +26,15 @@ package hudson.plugins.sshslaves;
 import static hudson.Util.fixEmpty;
 import static java.util.logging.Level.FINE;
 
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPassword;
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.trilead.ssh2.SCPClient;
 import hudson.AbortException;
 import hudson.EnvVars;
@@ -33,6 +42,7 @@ import hudson.Extension;
 import hudson.Util;
 import hudson.model.*;
 import hudson.remoting.Channel;
+import hudson.security.ACL;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.NodeProperty;
@@ -41,11 +51,11 @@ import hudson.slaves.SlaveComputer;
 import hudson.tools.JDKInstaller;
 import hudson.tools.JDKInstaller.CPU;
 import hudson.tools.JDKInstaller.Platform;
-import hudson.tools.ToolInstallerDescriptor;
 import hudson.tools.ToolLocationNodeProperty;
 import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
 import hudson.util.IOException2;
+import hudson.util.ListBoxModel;
 import hudson.util.NullStream;
 import hudson.util.Secret;
 import hudson.util.StreamCopyThread;
@@ -66,13 +76,12 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -115,21 +124,35 @@ public class SSHLauncher extends ComputerLauncher {
     private final int port;
 
     /**
-     * Field username
+     * The id of the credentials to use.
      */
-    private final String username;
+    private final String credentialsId;
+
+    /**
+     * Transient stash of the credentials to use, required during upgrade before the user saves the slave configuration.
+     */
+    private transient SSHUser credentials;
+
+    /**
+     * Field username
+     * @deprecated
+     */
+    @Deprecated
+    private transient String username;
 
     /**
      * Field password
-     *
-     * @todo remove password once authentication is stored in the descriptor.
+     * @deprecated
      */
-    private final Secret password;
+    @Deprecated
+    private transient Secret password;
 
     /**
      * File path of the private key.
+     * @deprecated
      */
-    private final String privatekey;
+    @Deprecated
+    private transient String privatekey;
 
     /**
      * Field jvmOptions.
@@ -153,16 +176,64 @@ public class SSHLauncher extends ComputerLauncher {
     private transient Connection connection;
 
     /**
-     * Field prefixStartSlaveCmd. 
+     * Field prefixStartSlaveCmd.
      */
     public final String prefixStartSlaveCmd;
-    
+
     /**
      *  Field suffixStartSlaveCmd.
      */
     public final String suffixStartSlaveCmd;
-    
-    
+
+
+    /**
+     * Constructor SSHLauncher creates a new SSHLauncher instance.
+     *
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param credentialsId The credentials id to connect as.
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     */
+    @DataBoundConstructor
+    public SSHLauncher(String host, int port, String credentialsId,
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
+    }
+
+    public static SSHUser lookupSystemCredentials(String credentialsId) {
+        try {
+             // only ever want from the system
+             // lookup every time so that we always have the latest
+             for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
+                 if (StringUtils.equals(u.getId(), credentialsId)) {
+                     return u;
+                 }
+             }
+         } catch (Throwable t) {
+             // ignore
+         }
+        return null;
+    }
+
+    /**
+     * Constructor SSHLauncher creates a new SSHLauncher instance.
+     *
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param credentials The credentials to connect as.
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     */
+    public SSHLauncher(String host, int port, SSHUser credentials,
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
+    }
+
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
@@ -174,12 +245,13 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command. 
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @deprecated use the {@link SSHUser} based version
      */
-    @DataBoundConstructor
-    public SSHLauncher(String host, int port, String username, String password, String privatekey, 
+    @Deprecated
+    public SSHLauncher(String host, int port, String username, String password, String privatekey,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd, 
+        this(host, port, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd,
                                                                                      suffixStartSlaveCmd);
     }
 
@@ -195,9 +267,11 @@ public class SSHLauncher extends ComputerLauncher {
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command. 
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @deprecated use the {@link SSHUser} based version
      */
-    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions, 
+    @Deprecated
+    public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this.host = host;
         this.jvmOptions = fixEmpty(jvmOptions);
@@ -205,6 +279,38 @@ public class SSHLauncher extends ComputerLauncher {
         this.username = fixEmpty(username);
         this.password = Secret.fromString(fixEmpty(password));
         this.privatekey = fixEmpty(privatekey);
+        this.credentials = null;
+        this.credentialsId = null;
+        this.javaPath = fixEmpty(javaPath);
+        if (jdkInstaller != null) {
+            this.jdk = jdkInstaller;
+        }
+        this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
+        this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
+    }
+
+    /**
+     * Constructor SSHLauncher creates a new SSHLauncher instance.
+     *
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param credentials The credentials to connect as.
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     */
+    public SSHLauncher(String host, int port, SSHUser credentials, String jvmOptions,
+                                    String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this.host = host;
+        this.jvmOptions = fixEmpty(jvmOptions);
+        this.port = port == 0 ? 22 : port;
+        this.username = null;
+        this.password = null;
+        this.privatekey = null;
+        this.credentials = credentials;
+        this.credentialsId = credentials == null ? null : credentials.getId();
         this.javaPath = fixEmpty(javaPath);
         if (jdkInstaller != null) {
             this.jdk = jdkInstaller;
@@ -215,6 +321,81 @@ public class SSHLauncher extends ComputerLauncher {
 
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
         this(host,port,username,password,privatekey,jvmOptions,null, null, null);
+    }
+
+    public String getCredentialsId() {
+        return credentialsId;
+    }
+
+    public SSHUser getCredentials() {
+        String credentialsId = this.credentialsId == null
+                ? (this.credentials == null ? null : this.credentials.getId())
+                : this.credentialsId;
+        try {
+            // only ever want from the system
+            // lookup every time so that we always have the latest
+            for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
+                if (StringUtils.equals(u.getId(), credentialsId)) {
+                    credentials = u;
+                    return u;
+                }
+            }
+        } catch (Throwable t) {
+            // ignore
+        }
+        if (credentials == null) {
+            if (credentialsId == null) {
+                String username = StringUtils.isEmpty(this.username) ? System.getProperty("user.name") : this.username;
+                Secret password = this.password;
+                String privatekey = Util.fixEmpty(this.privatekey);
+                if (privatekey != null) {
+                    try {
+                        File key = new File(privatekey);
+                        if (key.exists()) {
+                            if (PuTTYKey.isPuTTYKeyFile(key)) {
+                                privatekey = new PuTTYKey(key, password.getPlainText()).toOpenSSH();
+                            } else {
+                                privatekey = FileUtils.readFileToString(key).trim();
+                            }
+                        } else {
+                            privatekey = null;
+                        }
+                    } catch (Throwable t) {
+                        privatekey = null;
+                    }
+                }
+                // first check if there are any matching credentials, and use their id
+                for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
+                    if (StringUtils.equals(u.getUsername(), username)) {
+                        if (u instanceof SSHUserPassword
+                                && password != null
+                                && SSHUserPassword.class.cast(u).getPassword().equals(password)
+                                || u instanceof SSHUserPrivateKey
+                                && StringUtils.equals(SSHUserPrivateKey.class.cast(u).getPrivateKey().trim(), privatekey)) {
+                            credentials = u;
+                            return u;
+                        }
+                    }
+                }
+                // no matching, so make our own.
+                if (StringUtils.isEmpty(privatekey) && (password == null || StringUtils.isEmpty(password.getPlainText()))) {
+                    // must be user's own SSH key
+                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, host);
+                } else if (StringUtils.isNotEmpty(this.privatekey)) {
+                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(this.privatekey), password == null ? null : password.getEncryptedValue(), host);
+                } else {
+                    credentials = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, this.username, password == null ? null : password.getEncryptedValue(), host);
+                }
+                SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+                try {
+                    SystemCredentialsProvider.getInstance().save();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
+
+        return credentials;
     }
 
     /**
@@ -377,18 +558,18 @@ public class SSHLauncher extends ComputerLauncher {
     private EnvVars getEnvVars(Hudson h) {
         return getEnvVars(h.getGlobalNodeProperties());
     }
-    
+
     private EnvVars getEnvVars(Node n) {
         return getEnvVars(n.getNodeProperties());
     }
-    
+
     private EnvVars getEnvVars(DescribableList<NodeProperty<?>, NodePropertyDescriptor> dl) {
         final EnvironmentVariablesNodeProperty evnp = dl.get(EnvironmentVariablesNodeProperty.class);
         if (evnp == null) {
             return null;
         }
 
-        return evnp.getEnvVars();        
+        return evnp.getEnvVars();
     }
 
     /**
@@ -476,10 +657,10 @@ public class SSHLauncher extends ComputerLauncher {
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
         String cmd = "cd '" + workingDirectory + "' && " + java + " " + getJvmOptions() + " -jar slave.jar";
-        
+
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
         cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
-        
+
         listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
         final StreamGobbler out = new StreamGobbler(session.getStdout());
@@ -597,7 +778,8 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             // check if the working directory exists
             if (connection.exec("test -d " + workingDirectory ,listener.getLogger())!=0) {
-                listener.getLogger().println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
+                listener.getLogger().println(
+                        Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
                 // working directory doesn't exist, lets make it.
                 if (connection.exec("mkdir -p " + workingDirectory, listener.getLogger())!=0) {
                     listener.getLogger().println("Failed to create "+workingDirectory);
@@ -642,7 +824,7 @@ public class SSHLauncher extends ComputerLauncher {
 	/**
 	 * Given the output of "java -version" in <code>r</code>, determine if this
 	 * version of Java is supported. This method has default visiblity for testing.
-	 * 
+	 *
 	 * @param logger
 	 *            where to log the output
 	 * @param javaCommand
@@ -688,62 +870,13 @@ public class SSHLauncher extends ComputerLauncher {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(true);
         connection.connect();
-
-        String username = this.username;
-        if(fixEmpty(username)==null) {
-            username = System.getProperty("user.name");
-            LOGGER.fine("Defaulting the user name to "+username);
+        SSHUser credentials = getCredentials();
+        if (credentials == null) {
+            throw new AbortException("Cannot find SSH User credentials with id: " + credentialsId);
         }
 
-        Set<String> availableMethods = new HashSet<String>(Arrays.asList(connection.getRemainingAuthMethods(username)));
-
-        String pass = Util.fixNull(getPassword());
-
-        boolean isAuthenticated = false;
-        if(fixEmpty(privatekey)==null && fixEmpty(pass)==null) {
-            // check the default key locations if no authentication method is explicitly configured.
-            File home = new File(System.getProperty("user.home"));
-            for (String keyName : Arrays.asList("id_rsa","id_dsa","identity")) {
-                File key = new File(home,".ssh/"+keyName);
-                if (key.exists()) {
-                    listener.getLogger()
-                            .println(Messages.SSHLauncher_AuthenticatingPublicKey(getTimestamp(), username, key));
-                    isAuthenticated = connection.authenticateWithPublicKey(username, key, null);
-                }
-                if (isAuthenticated)
-                    break;
-            }
-        }
-        if (!isAuthenticated && fixEmpty(privatekey)!=null) {
-            File key = new File(privatekey);
-            if (key.exists()) {
-                listener.getLogger()
-                        .println(Messages.SSHLauncher_AuthenticatingPublicKey(getTimestamp(), username, privatekey));
-                if (!availableMethods.contains("publickey"))
-                    throw new AbortException("The server doesn't support the public key authentication");
-
-                if (PuTTYKey.isPuTTYKeyFile(key)) {
-                    LOGGER.fine(key+" is a PuTTY key file");
-                    String openSshKey = new PuTTYKey(key, pass).toOpenSSH();
-                    isAuthenticated = connection.authenticateWithPublicKey(username, openSshKey.toCharArray(), pass);
-                } else {
-                    isAuthenticated = connection.authenticateWithPublicKey(username, key, pass);
-                }
-            } else {
-                listener.getLogger()
-                        .println(Messages.SSHLauncher_NoPrivateKey(getTimestamp(), privatekey));
-            }
-        }
-        if (!isAuthenticated) {
-            if (!availableMethods.contains("password") && pass.length()>0)
-                throw new AbortException("The server doesn't support the password authentication");
-
-            listener.getLogger()
-                    .println(Messages.SSHLauncher_AuthenticatingUserPass(getTimestamp(), username, "******"));
-            isAuthenticated = connection.authenticateWithPassword(username, pass);
-        }
-
-        if (isAuthenticated && connection.isAuthenticationComplete()) {
+        if (SSHAuthenticator.newInstance(connection, credentials).authenticate()
+                && connection.isAuthenticationComplete()) {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
         } else {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
@@ -811,7 +944,9 @@ public class SSHLauncher extends ComputerLauncher {
      * Getter for property 'username'.
      *
      * @return Value for property 'username'.
+     * @deprecated
      */
+    @Deprecated
     public String getUsername() {
         return username;
     }
@@ -820,7 +955,9 @@ public class SSHLauncher extends ComputerLauncher {
      * Getter for property 'password'.
      *
      * @return Value for property 'password'.
+     * @deprecated
      */
+    @Deprecated
     public String getPassword() {
         return password!=null ? Secret.toString(password) : null;
     }
@@ -829,7 +966,9 @@ public class SSHLauncher extends ComputerLauncher {
      * Getter for property 'privatekey'.
      *
      * @return Value for property 'privatekey'.
+     * @deprecated
      */
+    @Deprecated
     public String getPrivatekey() {
         return privatekey;
     }
@@ -841,11 +980,11 @@ public class SSHLauncher extends ComputerLauncher {
     public String getPrefixStartSlaveCmd() {
         return prefixStartSlaveCmd == null ? "" : prefixStartSlaveCmd;
     }
-    
+
     public String getSuffixStartSlaveCmd() {
         return suffixStartSlaveCmd == null ? "" : suffixStartSlaveCmd;
     }
-    
+
     @Extension
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
 
@@ -873,6 +1012,10 @@ public class SSHLauncher extends ComputerLauncher {
             if (n==null)
                 n = Hudson.getInstance().getDescriptor(SSHConnector.class).getHelpFile(fieldName);
             return n;
+        }
+
+        public ListBoxModel doFillCredentialsIdItems() {
+            return SSHConnector.DescriptorImpl.class.cast(Hudson.getInstance().getDescriptor(SSHConnector.class)).doFillCredentialsIdItems();
         }
     }
 
