@@ -639,6 +639,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
+    // XXX switch to standard method in 1.479+
 	/**
 	 * Given the output of "java -version" in <code>r</code>, determine if this
 	 * version of Java is supported. This method has default visiblity for testing.
