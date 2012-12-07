@@ -41,7 +41,6 @@ import hudson.slaves.SlaveComputer;
 import hudson.tools.JDKInstaller;
 import hudson.tools.JDKInstaller.CPU;
 import hudson.tools.JDKInstaller.Platform;
-import hudson.tools.ToolInstallerDescriptor;
 import hudson.tools.ToolLocationNodeProperty;
 import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
@@ -74,7 +73,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.putty.PuTTYKey;
@@ -85,6 +83,7 @@ import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.StreamGobbler;
+import java.io.OutputStream;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
@@ -558,11 +557,14 @@ public class SSHLauncher extends ComputerLauncher {
                 listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
 
                 try {
-                    CountingOutputStream os = new CountingOutputStream(sftpClient.writeToFile(fileName));
-                    Util.copyStreamAndClose(
-                            Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar"),
-                            os);
-                    listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), os.getByteCount()));
+                    byte[] slaveJar = new Slave.JnlpJar("slave.jar").readFully();
+                    OutputStream os = sftpClient.writeToFile(fileName);
+                    try {
+                        os.write(slaveJar);
+                    } finally {
+                        os.close();
+                    }
+                    listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), slaveJar.length));
                 } catch (Exception e) {
                     throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarTo(fileName), e);
                 }
