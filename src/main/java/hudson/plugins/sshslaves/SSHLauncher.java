@@ -569,7 +569,7 @@ public class SSHLauncher extends ComputerLauncher {
                     throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarTo(fileName), e);
                 }
             } catch (Exception e) {
-                throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
+                throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
             }
         } catch (IOException e) {
             if (sftpClient == null) {
@@ -614,7 +614,7 @@ public class SSHLauncher extends ComputerLauncher {
             listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
             scp.put(IOUtils.toByteArray(is), "slave.jar", workingDirectory, "0644");
         } catch (IOException e) {
-            throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJar(), e);
+            throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
         }
     }
 
