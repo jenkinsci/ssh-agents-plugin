@@ -23,15 +23,34 @@
  */
 package hudson.plugins.sshslaves;
 
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPassword;
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import hudson.Extension;
+import hudson.Util;
+import hudson.model.Hudson;
+import hudson.model.Item;
 import hudson.model.TaskListener;
+import hudson.security.ACL;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
 import hudson.tools.JDKInstaller;
+import hudson.util.ListBoxModel;
 import hudson.util.Secret;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.Stapler;
 
+import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 
 import static hudson.Util.*;
 
@@ -52,21 +71,35 @@ public class SSHConnector extends ComputerConnector {
     public final int port;
 
     /**
-     * Field username
+     * The id of the credentials to use.
      */
-    public final String username;
+    private final String credentialsId;
+
+    /**
+     * Transient stash of the credentials to use, required during upgrade before the user saves the slave configuration.
+     */
+    private transient SSHUser credentials;
+
+    /**
+     * Field username
+     * @deprecated
+     */
+    @Deprecated
+    public transient String username;
 
     /**
      * Field password
-     *
-     * @todo remove password once authentication is stored in the descriptor.
+     * @deprecated
      */
-    public final Secret password;
+    @Deprecated
+    public transient Secret password;
 
     /**
      * File path of the private key.
+     * @deprecated
      */
-    public final String privatekey;
+    @Deprecated
+    public transient String privatekey;
 
     /**
      * Field jvmOptions.
@@ -94,23 +127,130 @@ public class SSHConnector extends ComputerConnector {
      */
     public final String suffixStartSlaveCmd;
     
+    public SSHUser getCredentials() {
+        String credentialsId = this.credentialsId == null
+                ? (this.credentials == null ? null : this.credentials.getId())
+                : this.credentialsId;
+        try {
+            // only ever want from the system
+            // lookup every time so that we always have the latest
+            for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
+                if (StringUtils.equals(u.getId(), credentialsId)) {
+                    credentials = u;
+                    return u;
+                }
+            }
+        } catch (Throwable t) {
+            // ignore
+        }
+        if (credentials == null) {
+            if (credentialsId == null) {
+                String username = StringUtils.isEmpty(this.username) ? System.getProperty("user.name") : this.username;
+                Secret password = this.password;
+                String privatekey = Util.fixEmpty(this.privatekey);
+                if (privatekey != null) {
+                    try {
+                        File key = new File(privatekey);
+                        if (key.exists()) {
+                            if (PuTTYKey.isPuTTYKeyFile(key)) {
+                                privatekey = new PuTTYKey(key, password.getPlainText()).toOpenSSH();
+                            } else {
+                                privatekey = FileUtils.readFileToString(key).trim();
+                            }
+                        } else {
+                            privatekey = null;
+                        }
+                    } catch (Throwable t) {
+                        privatekey = null;
+                    }
+                }
+                // first check if there are any matching credentials, and use their id
+                for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
+                    if (StringUtils.equals(u.getUsername(), username)) {
+                        if (u instanceof SSHUserPassword
+                                && password != null
+                                && SSHUserPassword.class.cast(u).getPassword().equals(password)
+                                || u instanceof SSHUserPrivateKey
+                                && StringUtils.equals(SSHUserPrivateKey.class.cast(u).getPrivateKey().trim(), privatekey)) {
+                            credentials = u;
+                            return u;
+                        }
+                    }
+                }
+                // no matching, so make our own.
+                if (StringUtils.isEmpty(privatekey) && (password == null || StringUtils.isEmpty(password.getPlainText()))) {
+                    // must be user's own SSH key
+                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, null);
+                } else if (StringUtils.isNotEmpty(this.privatekey)) {
+                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(this.privatekey), password == null ? null : password.getEncryptedValue(), null);
+                } else {
+                    credentials = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, this.username, password == null ? null : password.getEncryptedValue(), null);
+                }
+                SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+                try {
+                    SystemCredentialsProvider.getInstance().save();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
+
+        return credentials;
+    }
+
+    public String getCredentialsId() {
+        return credentialsId;
+    }
+
+    /**
+     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, String, String)
+     */
+    @DataBoundConstructor
+    public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
+                                                                   String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd
+        );
+    }
+
+    /**
+     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, String, String)
+     */
+    public SSHConnector(int port, SSHUser credentials, String jvmOptions, String javaPath,
+                                                                   String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(port, credentials, null, null, null, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd
+        );
+    }
 
     /**
      * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, String, String)
      */
-    @DataBoundConstructor
-    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath, 
+    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath,
                                                                    String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
+        this(port, null, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd
+        );
     }
 
     /**
-     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, JDKInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd)
+     * @see SSHLauncher#SSHLauncher(String, int, String,String,String, String, String, JDKInstaller, String, String)
      */
-    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath, 
-                                        JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+    public SSHConnector(int port, String username, String password, String privatekey,
+                        String jvmOptions,
+                        String javaPath,
+                        JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(port, null, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd);
+    }
+
+    /**
+     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, JDKInstaller, String, String)
+     */
+    public SSHConnector(int port, SSHUser credentials, String username, String password, String privatekey,
+                        String jvmOptions,
+                        String javaPath,
+                        JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
+        this.credentials = credentials;
+        this.credentialsId = credentials == null ? null : this.credentials.getId();
         this.username = username;
         this.password = Secret.fromString(fixEmpty(password));
         this.privatekey = privatekey;
@@ -122,7 +262,7 @@ public class SSHConnector extends ComputerConnector {
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
-        return new SSHLauncher(host,port,username,Secret.toString(password),privatekey,jvmOptions,javaPath,jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd);
+        return new SSHLauncher(host,port,getCredentials(),jvmOptions,javaPath,jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd);
     }
 
     @Extension
@@ -131,5 +271,17 @@ public class SSHConnector extends ComputerConnector {
         public String getDisplayName() {
             return Messages.SSHLauncher_DescriptorDisplayName();
         }
+
+        public ListBoxModel doFillCredentialsIdItems() {
+            ListBoxModel m = new ListBoxModel();
+
+            for (SSHUser u : CredentialsProvider.lookupCredentials(SSHUser.class,Hudson.getInstance(), ACL.SYSTEM)) {
+                m.add(u.getUsername() + (StringUtils.isNotEmpty(u.getDescription())?" (" + u.getDescription() + ")":""), u.getId());
+            }
+
+            return m;
+        }
+
+
     }
 }
