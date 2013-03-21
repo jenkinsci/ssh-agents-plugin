@@ -70,6 +70,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -656,6 +658,7 @@ public class SSHLauncher extends ComputerLauncher {
     private void startSlave(SlaveComputer computer, final TaskListener listener, String java,
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
+        expandChannelBufferSize(session,listener);
         String cmd = "cd '" + workingDirectory + "' && " + java + " " + getJvmOptions() + " -jar slave.jar";
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
@@ -699,6 +702,23 @@ public class SSHLauncher extends ComputerLauncher {
         } catch (InterruptedException e) {
             session.close();
             throw new IOException2(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
+        }
+    }
+
+    private void expandChannelBufferSize(Session session, TaskListener listener) {
+        try {
+            // this method is new in build214-jenkins-2
+            Method m = session.getClass().getMethod("setWindowSize", int.class);
+
+            // see hudson.remoting.Channel.PIPE_WINDOW_SIZE for the discussion of why 1MB is in the right ball park
+            // but this particular session is where all the master/slave communication will happen, so
+            // it's worth using a bigger buffer to really better utilize bandwidth even when the latency is even larger
+            // (and since we are draining this pipe very rapidly, it's unlikely that we'll actually accumulate this much data)
+            int sz = 4;
+            m.invoke(session, sz*1024*1024);
+            listener.getLogger().println("Expanded the channel window size to "+sz+"MB");
+        } catch (Exception e) {
+            e.printStackTrace(listener.error("Failed to expand buffer size"));
         }
     }
 
