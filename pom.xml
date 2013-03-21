@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
-  <version>0.23-SNAPSHOT</version>
+  <version>0.23</version>
   <packaging>hpi</packaging>
 
   <name>Jenkins SSH Slaves plugin</name>
