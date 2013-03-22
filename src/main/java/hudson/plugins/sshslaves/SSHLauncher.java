@@ -718,7 +718,6 @@ public class SSHLauncher extends ComputerLauncher {
             m.invoke(session, sz*1024*1024);
             listener.getLogger().println("Expanded the channel window size to "+sz+"MB");
         } catch (Exception e) {
-            e.printStackTrace(listener.error("Failed to expand buffer size"));
         }
     }
 
