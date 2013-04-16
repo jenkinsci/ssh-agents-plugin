@@ -382,13 +382,13 @@ public class SSHLauncher extends ComputerLauncher {
                 // no matching, so make our own.
                 if (StringUtils.isEmpty(privatekey) && (password == null || StringUtils.isEmpty(password.getPlainText()))) {
                     // must be user's own SSH key
-                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, host);
+                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, host);
                     this.credentialsId = credentials.getId();
                 } else if (StringUtils.isNotEmpty(this.privatekey)) {
-                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(this.privatekey), password == null ? null : password.getEncryptedValue(), host);
+                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(this.privatekey), password == null ? null : password.getEncryptedValue(), host);
                     this.credentialsId = credentials.getId();
                 } else {
-                    credentials = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, this.username, password == null ? null : password.getEncryptedValue(), host);
+                    credentials = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, username, password == null ? null : password.getEncryptedValue(), host);
                     this.credentialsId = credentials.getId();
                 }
                 SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
