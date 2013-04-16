@@ -76,7 +76,7 @@ public class SSHConnector extends ComputerConnector {
     private String credentialsId;
 
     /**
-     * Transient stash of the credentials to use, required during upgrade before the user saves the slave configuration.
+     * Transient stash of the credentials to use, mostly just for providing floating user object.
      */
     private transient SSHUser credentials;
 
