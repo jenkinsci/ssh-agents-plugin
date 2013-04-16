@@ -128,7 +128,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * The id of the credentials to use.
      */
-    private final String credentialsId;
+    private String credentialsId;
 
     /**
      * Transient stash of the credentials to use, required during upgrade before the user saves the slave configuration.
@@ -383,10 +383,13 @@ public class SSHLauncher extends ComputerLauncher {
                 if (StringUtils.isEmpty(privatekey) && (password == null || StringUtils.isEmpty(password.getPlainText()))) {
                     // must be user's own SSH key
                     credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, host);
+                    this.credentialsId = credentials.getId();
                 } else if (StringUtils.isNotEmpty(this.privatekey)) {
                     credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(this.privatekey), password == null ? null : password.getEncryptedValue(), host);
+                    this.credentialsId = credentials.getId();
                 } else {
                     credentials = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, this.username, password == null ? null : password.getEncryptedValue(), host);
+                    this.credentialsId = credentials.getId();
                 }
                 SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
                 try {
@@ -898,7 +901,7 @@ public class SSHLauncher extends ComputerLauncher {
             throw new AbortException("Cannot find SSH User credentials with id: " + credentialsId);
         }
 
-        if (SSHAuthenticator.newInstance(connection, credentials).authenticate()
+        if (SSHAuthenticator.newInstance(connection, credentials).authenticate(listener)
                 && connection.isAuthenticationComplete()) {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
         } else {
