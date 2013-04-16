@@ -73,7 +73,7 @@ public class SSHConnector extends ComputerConnector {
     /**
      * The id of the credentials to use.
      */
-    private final String credentialsId;
+    private String credentialsId;
 
     /**
      * Transient stash of the credentials to use, required during upgrade before the user saves the slave configuration.
@@ -145,53 +145,8 @@ public class SSHConnector extends ComputerConnector {
         }
         if (credentials == null) {
             if (credentialsId == null) {
-                String username = StringUtils.isEmpty(this.username) ? System.getProperty("user.name") : this.username;
-                Secret password = this.password;
-                String privatekey = Util.fixEmpty(this.privatekey);
-                if (privatekey != null) {
-                    try {
-                        File key = new File(privatekey);
-                        if (key.exists()) {
-                            if (PuTTYKey.isPuTTYKeyFile(key)) {
-                                privatekey = new PuTTYKey(key, password.getPlainText()).toOpenSSH();
-                            } else {
-                                privatekey = FileUtils.readFileToString(key).trim();
-                            }
-                        } else {
-                            privatekey = null;
-                        }
-                    } catch (Throwable t) {
-                        privatekey = null;
-                    }
-                }
-                // first check if there are any matching credentials, and use their id
-                for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
-                    if (StringUtils.equals(u.getUsername(), username)) {
-                        if (u instanceof SSHUserPassword
-                                && password != null
-                                && SSHUserPassword.class.cast(u).getPassword().equals(password)
-                                || u instanceof SSHUserPrivateKey
-                                && StringUtils.equals(SSHUserPrivateKey.class.cast(u).getPrivateKey().trim(), privatekey)) {
-                            credentials = u;
-                            return u;
-                        }
-                    }
-                }
-                // no matching, so make our own.
-                if (StringUtils.isEmpty(privatekey) && (password == null || StringUtils.isEmpty(password.getPlainText()))) {
-                    // must be user's own SSH key
-                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, null);
-                } else if (StringUtils.isNotEmpty(this.privatekey)) {
-                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, this.username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(this.privatekey), password == null ? null : password.getEncryptedValue(), null);
-                } else {
-                    credentials = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, this.username, password == null ? null : password.getEncryptedValue(), null);
-                }
-                SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
-                try {
-                    SystemCredentialsProvider.getInstance().save();
-                } catch (IOException e) {
-                    // ignore
-                }
+                credentials = SSHLauncher.upgrade(username,password,privatekey,null);
+                this.credentialsId = credentials.getId();
             }
         }
 

@@ -36,6 +36,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.trilead.ssh2.SCPClient;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -347,60 +348,67 @@ public class SSHLauncher extends ComputerLauncher {
         }
         if (credentials == null) {
             if (credentialsId == null) {
-                String username = StringUtils.isEmpty(this.username) ? System.getProperty("user.name") : this.username;
-                Secret password = this.password;
-                String privatekey = Util.fixEmpty(this.privatekey);
-                if (privatekey != null) {
-                    try {
-                        File key = new File(privatekey);
-                        if (key.exists()) {
-                            if (PuTTYKey.isPuTTYKeyFile(key)) {
-                                privatekey = new PuTTYKey(key, password.getPlainText()).toOpenSSH();
-                            } else {
-                                privatekey = FileUtils.readFileToString(key).trim();
-                            }
-                        } else {
-                            privatekey = null;
-                        }
-                    } catch (Throwable t) {
-                        privatekey = null;
-                    }
-                }
-                // first check if there are any matching credentials, and use their id
-                for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
-                    if (StringUtils.equals(u.getUsername(), username)) {
-                        if (u instanceof SSHUserPassword
-                                && password != null
-                                && SSHUserPassword.class.cast(u).getPassword().equals(password)
-                                || u instanceof SSHUserPrivateKey
-                                && StringUtils.equals(SSHUserPrivateKey.class.cast(u).getPrivateKey().trim(), privatekey)) {
-                            credentials = u;
-                            return u;
-                        }
-                    }
-                }
-                // no matching, so make our own.
-                if (StringUtils.isEmpty(privatekey) && (password == null || StringUtils.isEmpty(password.getPlainText()))) {
-                    // must be user's own SSH key
-                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, host);
-                    this.credentialsId = credentials.getId();
-                } else if (StringUtils.isNotEmpty(this.privatekey)) {
-                    credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(this.privatekey), password == null ? null : password.getEncryptedValue(), host);
-                    this.credentialsId = credentials.getId();
-                } else {
-                    credentials = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, username, password == null ? null : password.getEncryptedValue(), host);
-                    this.credentialsId = credentials.getId();
-                }
-                SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
-                try {
-                    SystemCredentialsProvider.getInstance().save();
-                } catch (IOException e) {
-                    // ignore
-                }
+                credentials = upgrade(username,password,privatekey,host);
+                this.credentialsId = credentials.getId();
             }
         }
 
         return credentials;
+    }
+
+    /**
+     * Take the legacy local credential configuration and create an equivalent global {@link SSHUser}.
+     */
+    @NonNull
+    static SSHUser upgrade(String username, Secret password, String privatekey, String description) {
+        username = StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
+        privatekey = Util.fixEmpty(privatekey);
+        if (privatekey != null) {
+            try {
+                File key = new File(privatekey);
+                if (key.exists()) {
+                    if (PuTTYKey.isPuTTYKeyFile(key)) {
+                        privatekey = new PuTTYKey(key, password.getPlainText()).toOpenSSH();
+                    } else {
+                        privatekey = FileUtils.readFileToString(key).trim();
+                    }
+                } else {
+                    privatekey = null;
+                }
+            } catch (Throwable t) {
+                privatekey = null;
+            }
+        }
+        // first check if there are any matching credentials, and use their id
+        for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
+            if (StringUtils.equals(u.getUsername(), username)) {
+                if (u instanceof SSHUserPassword
+                        && password != null
+                        && SSHUserPassword.class.cast(u).getPassword().equals(password)
+                        || u instanceof SSHUserPrivateKey
+                        && StringUtils.equals(SSHUserPrivateKey.class.cast(u).getPrivateKey().trim(), privatekey)) {
+                    return u;
+                }
+            }
+        }
+        SSHUser u;
+        // no matching, so make our own.
+        if (StringUtils.isEmpty(privatekey) && (password == null || StringUtils.isEmpty(password.getPlainText()))) {
+            // must be user's own SSH key
+            u = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, description);
+        } else if (StringUtils.isNotEmpty(privatekey)) {
+            u = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(privatekey), password == null ? null : password.getEncryptedValue(), description);
+        } else {
+            u = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, username, password == null ? null : password.getEncryptedValue(), description);
+        }
+
+        SystemCredentialsProvider.getInstance().getCredentials().add(u);
+        try {
+            SystemCredentialsProvider.getInstance().save();
+        } catch (IOException e) {
+            // ignore
+        }
+        return u;
     }
 
     /**
