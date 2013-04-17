@@ -71,7 +71,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.text.NumberFormat;
@@ -84,6 +83,8 @@ import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -402,11 +403,16 @@ public class SSHLauncher extends ComputerLauncher {
             u = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, username, password == null ? null : password.getEncryptedValue(), description);
         }
 
-        SystemCredentialsProvider.getInstance().getCredentials().add(u);
+        final SecurityContext securityContext = ACL.impersonate(ACL.SYSTEM);
         try {
-            SystemCredentialsProvider.getInstance().save();
-        } catch (IOException e) {
-            // ignore
+            SystemCredentialsProvider.getInstance().getCredentials().add(u);
+            try {
+                SystemCredentialsProvider.getInstance().save();
+            } catch (IOException e) {
+                // ignore
+            }
+        } finally {
+            SecurityContextHolder.setContext(securityContext);
         }
         return u;
     }
