@@ -363,39 +363,13 @@ public class SSHLauncher extends ComputerLauncher {
     @NonNull
     static SSHUser upgrade(String username, Secret password, String privatekey, String description) {
         username = StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
-        privatekey = Util.fixEmpty(privatekey);
-        if (privatekey != null) {
-            try {
-                File key = new File(privatekey);
-                if (key.exists()) {
-                    if (PuTTYKey.isPuTTYKeyFile(key)) {
-                        privatekey = new PuTTYKey(key, password.getPlainText()).toOpenSSH();
-                    } else {
-                        privatekey = FileUtils.readFileToString(key).trim();
-                    }
-                } else {
-                    privatekey = null;
-                }
-            } catch (Throwable t) {
-                privatekey = null;
-            }
-        }
-        // first check if there are any matching credentials, and use their id
-        for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
-            if (StringUtils.equals(u.getUsername(), username)) {
-                if (u instanceof SSHUserPassword
-                        && password != null
-                        && SSHUserPassword.class.cast(u).getPassword().equals(password)
-                        || u instanceof SSHUserPrivateKey
-                        && StringUtils.equals(SSHUserPrivateKey.class.cast(u).getPrivateKey().trim(), privatekey)) {
-                    return u;
-                }
-            }
-        }
-        SSHUser u;
+
+        SSHUser u = retrieveExistingSSHUser(username, password, privatekey);
+        if (u != null) return u;
+
         // no matching, so make our own.
         if (StringUtils.isEmpty(privatekey) && (password == null || StringUtils.isEmpty(password.getPlainText()))) {
-            // must be user's own SSH key
+            // no private key nor password set, must be user's own SSH key
             u = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, description);
         } else if (StringUtils.isNotEmpty(privatekey)) {
             u = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(privatekey), password == null ? null : password.getEncryptedValue(), description);
@@ -415,6 +389,42 @@ public class SSHLauncher extends ComputerLauncher {
             SecurityContextHolder.setContext(securityContext);
         }
         return u;
+    }
+
+    private static SSHUser retrieveExistingSSHUser(String username, Secret password, String privatekey) {
+        String privatekeyContent = getPrivateKeyContent(password, privatekey);
+        // first check if there are any matching credentials, and use their id
+        for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
+            if (StringUtils.equals(u.getUsername(), username)) {
+                if (u instanceof SSHUserPassword
+                        && password != null
+                        && SSHUserPassword.class.cast(u).getPassword().equals(password)
+                        || u instanceof SSHUserPrivateKey
+                        && StringUtils.equals(SSHUserPrivateKey.class.cast(u).getPrivateKey().trim(), privatekeyContent)) {
+                    return u;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String getPrivateKeyContent(Secret password, String privatekey) {
+        privatekey = Util.fixEmpty(privatekey);
+        if (privatekey != null) {
+            try {
+                File key = new File(privatekey);
+                if (key.exists()) {
+                    if (PuTTYKey.isPuTTYKeyFile(key)) {
+                        return new PuTTYKey(key, password.getPlainText()).toOpenSSH();
+                    } else {
+                        return FileUtils.readFileToString(key).trim();
+                    }
+                }
+            } catch (Throwable t) {
+                LOGGER.warning("invalid private key file " + privatekey);
+            }
+        }
+        return null;
     }
 
     /**
