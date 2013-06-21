@@ -693,8 +693,8 @@ public class SSHLauncher extends ComputerLauncher {
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
-        final StreamGobbler out = new StreamGobbler(session.getStdout());
-        final StreamGobbler err = new StreamGobbler(session.getStderr());
+        final InputStream out = session.getStdout();
+        final InputStream err = session.getStderr();
 
         // capture error information from stderr. this will terminate itself
         // when the process is killed.
