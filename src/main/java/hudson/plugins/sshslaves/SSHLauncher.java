@@ -96,7 +96,6 @@ import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.Session;
-import com.trilead.ssh2.StreamGobbler;
 import java.io.OutputStream;
 
 /**
@@ -694,12 +693,20 @@ public class SSHLauncher extends ComputerLauncher {
         listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
         final InputStream out = session.getStdout();
-        final InputStream err = session.getStderr();
+        final InputStream err;
 
-        // capture error information from stderr. this will terminate itself
-        // when the process is killed.
-        new StreamCopyThread("stderr copier for remote agent on " + computer.getDisplayName(),
-                err, listener.getLogger()).start();
+        if (!tryPipingStderr(session,listener.getLogger())) {
+            // capture error information from stderr. this will terminate itself
+            // when the process is killed.
+            err = session.getStderr();
+
+            new StreamCopyThread("stderr copier for remote agent on " + computer.getDisplayName(),
+                    err, listener.getLogger()).start();
+        } else {
+            // trilead that we are using supports pipeing
+            err = null;
+        }
+
 
         try {
             computer.setChannel(out, session.getStdin(), listener.getLogger(), new Channel.Listener() {
@@ -719,7 +726,8 @@ public class SSHLauncher extends ComputerLauncher {
                         t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
                     }
                     try {
-                        err.close();
+                        if (err!=null)
+                            err.close();
                     } catch (Throwable t) {
                         t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
                     }
@@ -747,6 +755,19 @@ public class SSHLauncher extends ComputerLauncher {
         } catch (Exception e) {
         }
     }
+
+    private boolean tryPipingStderr(Session session, OutputStream sink) {
+        try {
+            // this method is new in build214-jenkins-3
+            // if we can, this eliminates one thread
+            Method m = session.getClass().getMethod("pipeStderr", OutputStream.class);
+            m.invoke(session, sink);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 
     /**
      * Method copies the slave jar to the remote system.
