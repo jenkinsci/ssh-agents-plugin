@@ -75,11 +75,8 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -187,6 +184,11 @@ public class SSHLauncher extends ComputerLauncher {
      *  Field suffixStartSlaveCmd.
      */
     public final String suffixStartSlaveCmd;
+
+    /**
+     * 5 minute launch timeout
+     */
+    private final long sshLaunchTimeoutMS = 300000;
 
 
     /**
@@ -484,37 +486,69 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         connection = new Connection(host, port);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
+        callables.add(new Callable<Boolean>() {
+            public Boolean call() throws InterruptedException {
+                Boolean rval = Boolean.FALSE;
+                long time = System.currentTimeMillis();
+                try {
+                    openConnection(listener);
+
+                    verifyNoHeaderJunk(listener);
+                    reportEnvironment(listener);
+
+                    String java = resolveJava(computer, listener);
+
+                    String workingDirectory = getWorkingDirectory(computer);
+                    copySlaveJar(listener, workingDirectory);
+
+                    startSlave(computer, listener, java, workingDirectory);
+
+                    PluginImpl.register(connection);
+                    rval = Boolean.TRUE;
+                } catch (RuntimeException e) {
+                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    cleanupConnection(listener);
+                } catch (Error e) {
+                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    cleanupConnection(listener);
+                } catch (IOException e) {
+                    e.printStackTrace(listener.getLogger());
+                    cleanupConnection(listener);
+                } finally {
+                    long duration = System.currentTimeMillis() - time;
+                    if (!rval) {
+                        System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
+                                computer.getNode().getNodeName(), host, duration));
+                        listener.getLogger().println(getTimestamp()+" Launch failed - cleaning up connection");
+                        cleanupConnection(listener);
+                    } else {
+                        System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
+                                computer.getNode().getNodeName(), host, duration));
+                    }
+                    return rval;
+                }
+            }
+        });
+
         try {
-            openConnection(listener);
+            List<Future<Boolean>> futures = executorService.invokeAll(callables,
+                    this.sshLaunchTimeoutMS, TimeUnit.MILLISECONDS);
+            executorService.shutdown();
 
-            verifyNoHeaderJunk(listener);
-            reportEnvironment(listener);
-
-            String java = resolveJava(computer, listener);
-
-            String workingDirectory = getWorkingDirectory(computer);
-            copySlaveJar(listener, workingDirectory);
-
-            startSlave(computer, listener, java, workingDirectory);
-
-            PluginImpl.register(connection);
-        } catch (RuntimeException e) {
-            e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-            cleanupConnection(listener);
-        } catch (Error e) {
-            e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-            cleanupConnection(listener);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-            cleanupConnection(listener);
+        } catch (java.lang.InterruptedException e) {
+            System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
+                    computer.getNode().getNodeName(), host));
         }
+
     }
 
     /**
      * Called to terminate the SSH connection. Used liberally when we back out from an error.
      */
     private void cleanupConnection(TaskListener listener) {
-        // we might be called multiple times from multiple finally/catch block, 
+        // we might be called multiple times from multiple finally/catch block,
         if (connection!=null) {
             connection.close();
             connection = null;
