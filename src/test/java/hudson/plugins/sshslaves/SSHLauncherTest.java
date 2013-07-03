@@ -74,7 +74,7 @@ public class SSHLauncherTest extends HudsonTestCase {
 
 	/**
 	 * Returns true if the version is supported.
-	 * 
+	 *
 	 * @param testVersionOutput
 	 *            the resource to find relative to this class that contains the
 	 *            output of "java -version"
@@ -87,7 +87,7 @@ public class SSHLauncherTest extends HudsonTestCase {
         final BufferedReader r = new BufferedReader(new InputStreamReader(
                 versionStream));
         final StringWriter output = new StringWriter();
-        final String result = new SSHLauncher(null,0,null,null,null,null,null, null, null).checkJavaVersion(System.out,
+        final String result = new SSHLauncher(null,0,null,null,null,null,null, null, null, null).checkJavaVersion(System.out,
                 javaCommand, r, output);
         return null != result;
 	}
