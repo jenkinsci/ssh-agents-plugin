@@ -118,15 +118,20 @@ public class SSHConnector extends ComputerConnector {
     public final JDKInstaller jdkInstaller;
 
     /**
-     * Field prefixStartSlaveCmd. 
+     * Field prefixStartSlaveCmd.
      */
     public final String prefixStartSlaveCmd;
-    
+
     /**
      *  Field suffixStartSlaveCmd.
      */
     public final String suffixStartSlaveCmd;
-    
+
+    /**
+     *  Field launchTimeoutSeconds.
+     */
+    public final String launchTimeoutSeconds;
+
     public SSHUser getCredentials() {
         String credentialsId = this.credentialsId == null
                 ? (this.credentials == null ? null : this.credentials.getId())
@@ -158,22 +163,21 @@ public class SSHConnector extends ComputerConnector {
     }
 
     /**
-     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, String, String)
+     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, String, String, String)
      */
     @DataBoundConstructor
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
-                                                                   String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd
-        );
+                           String prefixStartSlaveCmd, String suffixStartSlaveCmd, String launchTimeoutSeconds) {
+        this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null, prefixStartSlaveCmd,
+                suffixStartSlaveCmd, launchTimeoutSeconds);
     }
 
     /**
-     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, String, String)
+     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, String, String, String)
      */
     public SSHConnector(int port, SSHUser credentials, String jvmOptions, String javaPath,
-                                                                   String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, credentials, null, null, null, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd
-        );
+                           String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(port, credentials, null, null, null, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
     }
 
     /**
@@ -181,8 +185,7 @@ public class SSHConnector extends ComputerConnector {
      */
     public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions, String javaPath,
                                                                    String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, null, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd
-        );
+        this(port, null, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
     }
 
     /**
@@ -192,16 +195,17 @@ public class SSHConnector extends ComputerConnector {
                         String jvmOptions,
                         String javaPath,
                         JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, null, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd);
+        this(port, null, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
     }
 
     /**
-     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, JDKInstaller, String, String)
+     * @see SSHLauncher#SSHLauncher(String, int, SSHUser, String, String, JDKInstaller, String, String, String)
      */
     public SSHConnector(int port, SSHUser credentials, String username, String password, String privatekey,
                         String jvmOptions,
                         String javaPath,
-                        JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+                        JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
+                        String suffixStartSlaveCmd, String launchTimeoutSeconds) {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.credentials = credentials;
@@ -213,11 +217,12 @@ public class SSHConnector extends ComputerConnector {
         this.jdkInstaller = jdkInstaller;
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
+        this.launchTimeoutSeconds = fixEmpty(launchTimeoutSeconds);
     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
-        return new SSHLauncher(host,port,getCredentials(),jvmOptions,javaPath,jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd);
+        return new SSHLauncher(host,port,getCredentials(),jvmOptions,javaPath,jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds);
     }
 
     @Extension
@@ -236,7 +241,5 @@ public class SSHConnector extends ComputerConnector {
 
             return m;
         }
-
-
     }
 }
