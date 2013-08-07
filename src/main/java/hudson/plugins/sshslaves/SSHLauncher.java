@@ -23,18 +23,26 @@
  */
 package hudson.plugins.sshslaves;
 
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.allOf;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.withUsername;
 import static hudson.Util.fixEmpty;
 import static java.util.logging.Level.FINE;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserListBoxModel;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPassword;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsMatcher;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
+import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.trilead.ssh2.SCPClient;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
@@ -83,6 +91,7 @@ import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.apache.commons.io.FileUtils;
@@ -96,12 +105,20 @@ import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.Session;
+import org.kohsuke.stapler.QueryParameter;
+
 import java.io.OutputStream;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
  */
 public class SSHLauncher extends ComputerLauncher {
+
+    /**
+     * The scheme requirement.
+     */
+    public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
+
     /**
      * @deprecated
      *      Subtype of {@link JDKInstaller} causes JENKINS-10641.
@@ -134,7 +151,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Transient stash of the credentials to use, mostly just for providing floating user object.
      */
-    private transient SSHUser credentials;
+    private transient StandardUsernameCredentials credentials;
 
     /**
      * Field username
@@ -206,19 +223,22 @@ public class SSHLauncher extends ComputerLauncher {
         this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
     }
 
-    public static SSHUser lookupSystemCredentials(String credentialsId) {
-        try {
-             // only ever want from the system
-             // lookup every time so that we always have the latest
-             for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
-                 if (StringUtils.equals(u.getId(), credentialsId)) {
-                     return u;
-                 }
-             }
-         } catch (Throwable t) {
-             // ignore
-         }
-        return null;
+    public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
+        return CredentialsMatchers.firstOrNull(
+                CredentialsProvider
+                        .lookupCredentials(StandardUsernameCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
+                                SSH_SCHEME),
+                CredentialsMatchers.withId(credentialsId)
+        );
+    }
+
+    public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId, String host, int port) {
+        return CredentialsMatchers.firstOrNull(
+                CredentialsProvider
+                        .lookupCredentials(StandardUsernameCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
+                                SSH_SCHEME, new HostnamePortRequirement(host, port)),
+                CredentialsMatchers.withId(credentialsId)
+        );
     }
 
     /**
@@ -232,7 +252,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
      */
-    public SSHLauncher(String host, int port, SSHUser credentials,
+    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
     }
@@ -249,7 +269,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
-     * @deprecated use the {@link SSHUser} based version
+     * @deprecated use the {@link StandardUsernameCredentials} based version
      */
     @Deprecated
     public SSHLauncher(String host, int port, String username, String password, String privatekey,
@@ -271,7 +291,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
-     * @deprecated use the {@link SSHUser} based version
+     * @deprecated use the {@link StandardUsernameCredentials} based version
      */
     @Deprecated
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions,
@@ -304,7 +324,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
      */
-    public SSHLauncher(String host, int port, SSHUser credentials, String jvmOptions,
+    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this.host = host;
         this.jvmOptions = fixEmpty(jvmOptions);
@@ -330,40 +350,39 @@ public class SSHLauncher extends ComputerLauncher {
         return credentialsId;
     }
 
-    public SSHUser getCredentials() {
+    public StandardUsernameCredentials getCredentials() {
         String credentialsId = this.credentialsId == null
                 ? (this.credentials == null ? null : this.credentials.getId())
                 : this.credentialsId;
         try {
             // only ever want from the system
             // lookup every time so that we always have the latest
-            for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
-                if (StringUtils.equals(u.getId(), credentialsId)) {
-                    credentials = u;
-                    return u;
-                }
+            StandardUsernameCredentials credentials = SSHLauncher.lookupSystemCredentials(credentialsId);
+            if (credentials != null) {
+                this.credentials = credentials;
+                return credentials;
             }
         } catch (Throwable t) {
             // ignore
         }
         if (credentials == null) {
             if (credentialsId == null) {
-                credentials = upgrade(username,password,privatekey,host);
+                credentials = upgrade(username, password, privatekey, host);
                 this.credentialsId = credentials.getId();
             }
         }
 
-        return credentials;
+        return this.credentials;
     }
 
     /**
-     * Take the legacy local credential configuration and create an equivalent global {@link SSHUser}.
+     * Take the legacy local credential configuration and create an equivalent global {@link StandardUsernameCredentials}.
      */
     @NonNull
-    static SSHUser upgrade(String username, Secret password, String privatekey, String description) {
+    static StandardUsernameCredentials upgrade(String username, Secret password, String privatekey, String description) {
         username = StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
 
-        SSHUser u = retrieveExistingSSHUser(username, password, privatekey);
+        StandardUsernameCredentials u = retrieveExistingCredentials(username, password, privatekey);
         if (u != null) return u;
 
         // no matching, so make our own.
@@ -373,7 +392,7 @@ public class SSHLauncher extends ComputerLauncher {
         } else if (StringUtils.isNotEmpty(privatekey)) {
             u = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(privatekey), password == null ? null : password.getEncryptedValue(), description);
         } else {
-            u = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, username, password == null ? null : password.getEncryptedValue(), description);
+            u = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, null, description, username, password == null ? null : password.getEncryptedValue());
         }
 
         final SecurityContext securityContext = ACL.impersonate(ACL.SYSTEM);
@@ -390,21 +409,30 @@ public class SSHLauncher extends ComputerLauncher {
         return u;
     }
 
-    private static SSHUser retrieveExistingSSHUser(String username, Secret password, String privatekey) {
-        String privatekeyContent = getPrivateKeyContent(password, privatekey);
-        // first check if there are any matching credentials, and use their id
-        for (SSHUser u: CredentialsProvider.lookupCredentials(SSHUser.class, Hudson.getInstance(), ACL.SYSTEM)) {
-            if (StringUtils.equals(u.getUsername(), username)) {
-                if (u instanceof SSHUserPassword
+    private static StandardUsernameCredentials retrieveExistingCredentials(String username, final Secret password,
+                                                                           String privatekey) {
+        final String privatekeyContent = getPrivateKeyContent(password, privatekey);
+        return CredentialsMatchers.firstOrNull(CredentialsProvider
+                .lookupCredentials(StandardUsernameCredentials.class, Hudson.getInstance(), ACL.SYSTEM,
+                        SSH_SCHEME), allOf(
+                withUsername(
+                        username), new CredentialsMatcher() {
+            public boolean matches(@NonNull Credentials item) {
+                if (item instanceof StandardUsernamePasswordCredentials
                         && password != null
-                        && SSHUserPassword.class.cast(u).getPassword().equals(password)
-                        || u instanceof SSHUserPrivateKey
-                        && StringUtils.equals(SSHUserPrivateKey.class.cast(u).getPrivateKey().trim(), privatekeyContent)) {
-                    return u;
+                        && StandardUsernamePasswordCredentials.class.cast(item).getPassword().equals(password)) {
+                    return true;
                 }
+                if (item instanceof SSHUserPrivateKey) {
+                    for (String key : SSHUserPrivateKey.class.cast(item).getPrivateKeys()) {
+                        if (StringUtils.equals(key, privatekeyContent)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
             }
-        }
-        return null;
+        }));
     }
 
     private static String getPrivateKeyContent(Secret password, String privatekey) {
@@ -941,7 +969,7 @@ public class SSHLauncher extends ComputerLauncher {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(true);
         connection.connect();
-        SSHUser credentials = getCredentials();
+        StandardUsernameCredentials credentials = getCredentials();
         if (credentials == null) {
             throw new AbortException("Cannot find SSH User credentials with id: " + credentialsId);
         }
@@ -1061,8 +1089,6 @@ public class SSHLauncher extends ComputerLauncher {
 
         // TODO move the authentication storage to descriptor... see SubversionSCM.java
 
-        // TODO add support for key files
-
         /**
          * {@inheritDoc}
          */
@@ -1085,8 +1111,14 @@ public class SSHLauncher extends ComputerLauncher {
             return n;
         }
 
-        public ListBoxModel doFillCredentialsIdItems() {
-            return SSHConnector.DescriptorImpl.class.cast(Hudson.getInstance().getDescriptor(SSHConnector.class)).doFillCredentialsIdItems();
+        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String host, @QueryParameter String port) {
+            int portValue = Integer.parseInt(port);
+            return new SSHUserListBoxModel()
+                    .withSystemScopeCredentials(
+                            SSHAuthenticator.matcher(Connection.class),
+                            SSH_SCHEME,
+                            new HostnamePortRequirement(host, portValue)
+                    );
         }
     }
 
