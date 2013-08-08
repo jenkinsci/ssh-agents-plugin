@@ -29,6 +29,7 @@ import static hudson.Util.fixEmpty;
 import static java.util.logging.Level.FINE;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserListBoxModel;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
@@ -257,6 +258,13 @@ public class SSHLauncher extends ComputerLauncher {
         this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
     }
 
+    /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String)} instead. */
+    @Deprecated
+    public SSHLauncher(String host, int port, SSHUser credentials,
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd);
+    }
+
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
@@ -340,6 +348,13 @@ public class SSHLauncher extends ComputerLauncher {
         }
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
+    }
+
+    /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String, String)} instead. */
+    @Deprecated
+    public SSHLauncher(String host, int port, SSHUser credentials, String jvmOptions,
+                                    String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd);
     }
 
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
