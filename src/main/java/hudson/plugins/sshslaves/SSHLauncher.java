@@ -39,7 +39,6 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
-import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
@@ -84,6 +83,7 @@ import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -407,7 +407,8 @@ public class SSHLauncher extends ComputerLauncher {
             // no private key nor password set, must be user's own SSH key
             u = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.UsersPrivateKeySource(), null, description);
         } else if (StringUtils.isNotEmpty(privatekey)) {
-            u = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(privatekey), password == null ? null : password.getEncryptedValue(), description);
+            u = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, null, username, new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(privatekey), password == null ? null : password.getEncryptedValue(),
+                    MessageFormat.format("{0} - key file: {1}", description, privatekey));
         } else {
             u = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, null, description, username, password == null ? null : password.getEncryptedValue());
         }
@@ -460,7 +461,7 @@ public class SSHLauncher extends ComputerLauncher {
                 File key = new File(privatekey);
                 if (key.exists()) {
                     if (PuTTYKey.isPuTTYKeyFile(key)) {
-                        return new PuTTYKey(key, password.getPlainText()).toOpenSSH();
+                        return Util.fixEmptyAndTrim(new PuTTYKey(key, password.getPlainText()).toOpenSSH());
                     } else {
                         return Util.fixEmptyAndTrim(FileUtils.readFileToString(key));
                     }
