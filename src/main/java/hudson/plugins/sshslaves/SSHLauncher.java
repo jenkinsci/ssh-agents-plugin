@@ -381,7 +381,7 @@ public class SSHLauncher extends ComputerLauncher {
             // ignore
         }
         if (credentials == null) {
-            if (credentialsId == null) {
+            if (credentialsId == null && (username != null || password != null || privatekey != null)) {
                 credentials = upgrade(username, password, privatekey, host);
                 this.credentialsId = credentials.getId();
             }
