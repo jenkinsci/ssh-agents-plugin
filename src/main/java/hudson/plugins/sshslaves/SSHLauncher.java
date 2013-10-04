@@ -38,9 +38,11 @@ import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
@@ -394,7 +396,7 @@ public class SSHLauncher extends ComputerLauncher {
      * Take the legacy local credential configuration and create an equivalent global {@link StandardUsernameCredentials}.
      */
     @NonNull
-    static StandardUsernameCredentials upgrade(String username, Secret password, String privatekey, String description) {
+    static synchronized StandardUsernameCredentials upgrade(String username, Secret password, String privatekey, String description) {
         username = StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
 
         StandardUsernameCredentials u = retrieveExistingCredentials(username, password, privatekey);
@@ -412,9 +414,10 @@ public class SSHLauncher extends ComputerLauncher {
 
         final SecurityContext securityContext = ACL.impersonate(ACL.SYSTEM);
         try {
-            SystemCredentialsProvider.getInstance().getCredentials().add(u);
+            CredentialsStore s = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
             try {
-                SystemCredentialsProvider.getInstance().save();
+                s.addCredentials(Domain.global(), u);
+                return u;
             } catch (IOException e) {
                 // ignore
             }
@@ -430,8 +433,8 @@ public class SSHLauncher extends ComputerLauncher {
         return CredentialsMatchers.firstOrNull(CredentialsProvider
                 .lookupCredentials(StandardUsernameCredentials.class, Hudson.getInstance(), ACL.SYSTEM,
                         SSH_SCHEME), allOf(
-                withUsername(
-                        username), new CredentialsMatcher() {
+                withUsername(username),
+                new CredentialsMatcher() {
             public boolean matches(@NonNull Credentials item) {
                 if (item instanceof StandardUsernamePasswordCredentials
                         && password != null
@@ -459,7 +462,7 @@ public class SSHLauncher extends ComputerLauncher {
                     if (PuTTYKey.isPuTTYKeyFile(key)) {
                         return new PuTTYKey(key, password.getPlainText()).toOpenSSH();
                     } else {
-                        return FileUtils.readFileToString(key).trim();
+                        return Util.fixEmptyAndTrim(FileUtils.readFileToString(key));
                     }
                 }
             } catch (Throwable t) {
