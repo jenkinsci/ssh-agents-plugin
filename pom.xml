@@ -84,6 +84,9 @@
         <artifactId>maven-hpi-plugin</artifactId>
         <version>1.95</version>
         <configuration>
+          <systemProperties>
+            <hudson.bundled.plugins>${basedir}/work/plugins/ssh-slaves.hpl</hudson.bundled.plugins>
+          </systemProperties>
           <compatibleSinceVersion>1.0</compatibleSinceVersion>
         </configuration>
       </plugin>
