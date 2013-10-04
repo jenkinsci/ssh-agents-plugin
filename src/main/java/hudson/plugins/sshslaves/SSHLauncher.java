@@ -97,6 +97,7 @@ import java.util.regex.Pattern;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -444,7 +445,7 @@ public class SSHLauncher extends ComputerLauncher {
                 }
                 if (item instanceof SSHUserPrivateKey) {
                     for (String key : SSHUserPrivateKey.class.cast(item).getPrivateKeys()) {
-                        if (StringUtils.equals(key, privatekeyContent)) {
+                        if (pemKeyEquals(key, privatekeyContent)) {
                             return true;
                         }
                     }
@@ -452,6 +453,57 @@ public class SSHLauncher extends ComputerLauncher {
                 return false;
             }
         }));
+    }
+
+    /**
+     * Returns {@code true} if they two keys are the same. There are two levels of comparison: the first is a simple
+     * string comparison with all whitespace removed. If that fails then the Base64 decoded bytes of the first
+     * PEM entity will be compared (to allow for comments in the key outside the PEM boundaries)
+     *
+     * @param key1 the first key
+     * @param key2 the second key
+     * @return {@code true} if they two keys are the same.
+     */
+    private static boolean pemKeyEquals(String key1, String key2) {
+        key1 = StringUtils.trim(key1);
+        key2 = StringUtils.trim(key2);
+        return StringUtils.equals(key1.replaceAll("\\s+", ""), key2.replace("\\s+", ""))
+                || Arrays.equals(quickNDirtyExtract(key1), quickNDirtyExtract(key2));
+    }
+
+    /**
+     * Extract the bytes of the first PEM encoded key in a string. This is a quick and dirty method just to
+     * establish if two keys are equal, we do not do any serious decoding of the key and this method could give "issues"
+     * but should be very unlikely to result in a false positive match.
+     *
+     * @param key the key to extract.
+     * @return the base64 decoded bytes from the key after discarding the key type and any header information.
+     */
+    private static byte[] quickNDirtyExtract(String key) {
+        StringBuilder builder = new StringBuilder(key.length());
+        boolean begin = false;
+        boolean header = false;
+        for (String line : StringUtils.split(key, "\n")) {
+            line = line.trim();
+            if (line.startsWith("---") && line.endsWith("---")) {
+                if (begin && line.contains("---END")) {
+                    break;
+                }
+                if (!begin && line.contains("---BEGIN")) {
+                    header = true;
+                    begin = true;
+                    continue;
+                }
+            }
+            if (StringUtils.isBlank(line)) {
+                header = false;
+                continue;
+            }
+            if (!header) {
+                builder.append(line);
+            }
+        }
+        return Base64.decodeBase64(builder.toString());
     }
 
     private static String getPrivateKeyContent(Secret password, String privatekey) {
