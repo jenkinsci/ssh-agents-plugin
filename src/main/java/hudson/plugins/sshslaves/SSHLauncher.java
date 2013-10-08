@@ -794,7 +794,7 @@ public class SSHLauncher extends ComputerLauncher {
         final InputStream out = session.getStdout();
         final InputStream err;
 
-        if (!tryPipingStderr(session,listener.getLogger())) {
+        if (!tryPipingStderr(session, new DelegateNoCloseOutputStream(listener.getLogger()))) {
             // capture error information from stderr. this will terminate itself
             // when the process is killed.
             err = session.getStderr();
@@ -1227,6 +1227,39 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private static final Logger LOGGER = Logger.getLogger(SSHLauncher.class.getName());
+
+    private static class DelegateNoCloseOutputStream extends OutputStream {
+        private OutputStream out;
+
+        public DelegateNoCloseOutputStream(OutputStream out) {
+            this.out = out;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            if (out != null) out.write(b);
+        }
+
+        @Override
+        public void close() throws IOException {
+            out = null;
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (out != null) out.flush();
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            if (out != null) out.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            if (out != null) out.write(b, off, len);
+        }
+    }
 
 //    static {
 //        com.trilead.ssh2.log.Logger.enabled = true;
