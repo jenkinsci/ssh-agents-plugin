@@ -103,6 +103,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.putty.PuTTYKey;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.trilead.ssh2.Connection;
@@ -1182,14 +1183,13 @@ public class SSHLauncher extends ComputerLauncher {
             return n;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String host, @QueryParameter String port) {
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
+                                                     @QueryParameter String host,
+                                                     @QueryParameter String port) {
             int portValue = Integer.parseInt(port);
-            return new SSHUserListBoxModel()
-                    .withSystemScopeCredentials(
-                            SSHAuthenticator.matcher(Connection.class),
-                            SSH_SCHEME,
-                            new HostnamePortRequirement(host, portValue)
-                    );
+            return new SSHUserListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
+                    CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
+                            ACL.SYSTEM, SSHLauncher.SSH_SCHEME, new HostnamePortRequirement(host, portValue)));
         }
     }
 
