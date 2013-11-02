@@ -124,17 +124,19 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
 
+
+    public static final String DEFAULT_JDK = "jdk-6u45-oth-JPR@CDS-CDS_Developer";
     /**
      * @deprecated
      *      Subtype of {@link JDKInstaller} causes JENKINS-10641.
      */
     public static class DefaultJDKInstaller extends JDKInstaller {
         public DefaultJDKInstaller() {
-            super("jdk-6u16-oth-JPR@CDS-CDS_Developer", true);
+            super(DEFAULT_JDK, true);
         }
 
         public Object readResolve() {
-            return new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
+            return new JDKInstaller(DEFAULT_JDK,true);
         }
     }
 
@@ -715,7 +717,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private JDKInstaller getJDKInstaller() {
-        return jdk!=null ? jdk : new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
+        return jdk!=null ? jdk : new JDKInstaller(SSHLauncher.DEFAULT_JDK, true);
     }
 
     /**
