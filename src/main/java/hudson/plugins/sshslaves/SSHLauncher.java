@@ -125,7 +125,8 @@ public class SSHLauncher extends ComputerLauncher {
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
 
 
-    public static final String DEFAULT_JDK = "jdk-6u45-oth-JPR@CDS-CDS_Developer";
+    public static final String JDKVERSION = "jdk-6u45";
+    public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR@CDS-CDS_Developer";
     /**
      * @deprecated
      *      Subtype of {@link JDKInstaller} causes JENKINS-10641.
@@ -765,7 +766,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         URL bundle = getJDKInstaller().locate(listener, p, cpu);
 
-        listener.getLogger().println("Installing JDK6u16");
+        listener.getLogger().println("Installing " + JDKVERSION);
         Util.copyStreamAndClose(bundle.openStream(),new BufferedOutputStream(sftp.writeToFile(bundleFile),32*1024));
         sftp.chmod(bundleFile,0755);
 
