@@ -124,17 +124,20 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
 
+
+    public static final String JDKVERSION = "jdk-6u45";
+    public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR@CDS-CDS_Developer";
     /**
      * @deprecated
      *      Subtype of {@link JDKInstaller} causes JENKINS-10641.
      */
     public static class DefaultJDKInstaller extends JDKInstaller {
         public DefaultJDKInstaller() {
-            super("jdk-6u16-oth-JPR@CDS-CDS_Developer", true);
+            super(DEFAULT_JDK, true);
         }
 
         public Object readResolve() {
-            return new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
+            return new JDKInstaller(DEFAULT_JDK,true);
         }
     }
 
@@ -715,7 +718,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private JDKInstaller getJDKInstaller() {
-        return jdk!=null ? jdk : new JDKInstaller("jdk-6u16-oth-JPR@CDS-CDS_Developer",true);
+        return jdk!=null ? jdk : new JDKInstaller(SSHLauncher.DEFAULT_JDK, true);
     }
 
     /**
@@ -763,7 +766,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         URL bundle = getJDKInstaller().locate(listener, p, cpu);
 
-        listener.getLogger().println("Installing JDK6u16");
+        listener.getLogger().println("Installing " + JDKVERSION);
         Util.copyStreamAndClose(bundle.openStream(),new BufferedOutputStream(sftp.writeToFile(bundleFile),32*1024));
         sftp.chmod(bundleFile,0755);
 
