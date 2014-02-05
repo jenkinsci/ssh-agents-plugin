@@ -89,8 +89,14 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -213,6 +219,10 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public final String suffixStartSlaveCmd;
 
+    /**
+     *  Field launchTimeoutSeconds.
+     */
+    public final Integer launchTimeoutSeconds;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -224,11 +234,21 @@ public class SSHLauncher extends ComputerLauncher {
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param launchTimeoutSeconds Launch timeout in seconds
      */
     @DataBoundConstructor
     public SSHLauncher(String host, int port, String credentialsId,
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
+        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds);
+    }
+
+    /**
+     * @deprecated use {@link SSHLauncher#(String,int,String,String,String,String,String,Integer)}
+     */
+    @Deprecated
+    public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
+        this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
     }
 
     public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
@@ -259,17 +279,25 @@ public class SSHLauncher extends ComputerLauncher {
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param launchTimeoutSeconds Launch timeout in seconds
      */
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
+        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds);
+    }
+
+    /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String, Integer)} instead. */
+    @Deprecated
+    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd);
+        this(host, port, credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String)} instead. */
     @Deprecated
     public SSHLauncher(String host, int port, SSHUser credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd);
+        this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
     }
 
     /**
@@ -325,6 +353,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
+        this.launchTimeoutSeconds = null;
     }
 
     /**
@@ -338,9 +367,29 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
+     *                            @deprecated
      */
+    @Deprecated
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(host, port, credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
+    }
+
+    /**
+     * Constructor SSHLauncher creates a new SSHLauncher instance.
+     *
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param credentials The credentials to connect as.
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param launchTimeoutSeconds Launch timeout in seconds
+     */
+    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
+                                    String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
         this.host = host;
         this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
@@ -355,6 +404,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
+        this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String, String)} instead. */
@@ -587,30 +637,66 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         connection = new Connection(host, port);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
+        callables.add(new Callable<Boolean>() {
+            public Boolean call() throws InterruptedException {
+                Boolean rval = Boolean.FALSE;
+                long time = System.currentTimeMillis();
+                try {
+
+                    openConnection(listener);
+
+                    verifyNoHeaderJunk(listener);
+                    reportEnvironment(listener);
+
+                    String java = resolveJava(computer, listener);
+
+                    String workingDirectory = getWorkingDirectory(computer);
+                    copySlaveJar(listener, workingDirectory);
+
+                    startSlave(computer, listener, java, workingDirectory);
+
+                    PluginImpl.register(connection);
+                    rval = Boolean.TRUE;
+                } catch (RuntimeException e) {
+                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    cleanupConnection(listener);
+                } catch (Error e) {
+                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    cleanupConnection(listener);
+                } catch (IOException e) {
+                    e.printStackTrace(listener.getLogger());
+                    cleanupConnection(listener);
+                } finally {
+                    long duration = System.currentTimeMillis() - time;
+                    if (!rval) {
+                        System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
+                                computer.getNode().getNodeName(), host, duration));
+                        listener.getLogger().println(getTimestamp()+" Launch failed - cleaning up connection");
+                        cleanupConnection(listener);
+                    } else {
+                        System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
+                                computer.getNode().getNodeName(), host, duration));
+                    }
+                    return rval;
+                }
+            }
+        });
+
         try {
-            openConnection(listener);
+            if (this.getLaunchTimeoutMillis() > 0) {
+                executorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+            } else {
+                executorService.invokeAll(callables);
+            }
+            executorService.shutdown();
 
-            verifyNoHeaderJunk(listener);
-            reportEnvironment(listener);
-
-            String java = resolveJava(computer, listener);
-
-            String workingDirectory = getWorkingDirectory(computer);
-            copySlaveJar(listener, workingDirectory);
-
-            startSlave(computer, listener, java, workingDirectory);
-
-            PluginImpl.register(connection);
-        } catch (RuntimeException e) {
-            e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-            cleanupConnection(listener);
-        } catch (Error e) {
-            e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-            cleanupConnection(listener);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-            cleanupConnection(listener);
+        } catch (java.lang.InterruptedException e) {
+            System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
+                    computer.getNode().getNodeName(), host));
         }
+
     }
 
     /**
@@ -1157,6 +1243,19 @@ public class SSHLauncher extends ComputerLauncher {
 
     public String getSuffixStartSlaveCmd() {
         return suffixStartSlaveCmd == null ? "" : suffixStartSlaveCmd;
+    }
+
+    /**
+     * Getter for property 'launchTimeoutSeconds'
+     *
+     * @return launchTimeoutSeconds
+     */
+    public Integer getLaunchTimeoutSeconds() {
+        return launchTimeoutSeconds;
+    }
+
+    private long getLaunchTimeoutMillis() {
+        return launchTimeoutSeconds == null ? 0L : TimeUnit.SECONDS.toMillis(launchTimeoutSeconds);
     }
 
     @Extension
