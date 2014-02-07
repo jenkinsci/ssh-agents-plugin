@@ -128,6 +128,11 @@ public class SSHConnector extends ComputerConnector {
      */
     public final Integer launchTimeoutSeconds;
 
+    /**
+     *  Field beforeConnectCmd.
+     */
+    public final String beforeConnectCmd;
+
     public StandardUsernameCredentials getCredentials() {
         String credentialsId = this.credentialsId == null
                 ? (this.credentials == null ? null : this.credentials.getId())
@@ -158,13 +163,14 @@ public class SSHConnector extends ComputerConnector {
     }
 
     /**
-     * @see SSHLauncher#(String, int, StandardUsernameCredentials, String, String, String, String, String, Integer)
+     * @see SSHLauncher#(String, int, StandardUsernameCredentials, String, String, String, String, String, Integer, String)
      */
     @DataBoundConstructor
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
+                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
+                        String beforeConnectCmd) {
         this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
-                prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds);
+                prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, beforeConnectCmd);
     }
 
     /**
@@ -174,7 +180,7 @@ public class SSHConnector extends ComputerConnector {
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
-                prefixStartSlaveCmd, suffixStartSlaveCmd, null);
+                prefixStartSlaveCmd, suffixStartSlaveCmd, null, null);
     }
 
     /**
@@ -214,7 +220,7 @@ public class SSHConnector extends ComputerConnector {
                         String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(port, credentials, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, null);
+                suffixStartSlaveCmd, null, null);
     }
     /**
      * @see SSHLauncher#SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String,
@@ -222,7 +228,8 @@ public class SSHConnector extends ComputerConnector {
      */
     public SSHConnector(int port, StandardUsernameCredentials credentials, String username, String password,
                         String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
+                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
+                        String beforeConnectCmd) {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.credentials = credentials;
@@ -235,12 +242,13 @@ public class SSHConnector extends ComputerConnector {
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
+        this.beforeConnectCmd = fixEmpty(beforeConnectCmd);
     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
         return new SSHLauncher(host, port, getCredentials(), jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, launchTimeoutSeconds);
+                suffixStartSlaveCmd, launchTimeoutSeconds, beforeConnectCmd);
     }
 
     @Extension
