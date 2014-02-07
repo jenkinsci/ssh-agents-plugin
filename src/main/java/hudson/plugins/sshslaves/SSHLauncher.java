@@ -1148,7 +1148,9 @@ public class SSHLauncher extends ComputerLauncher {
         StringBuffer output = new StringBuffer();
         try {
             listener.getLogger().println(Messages.SSHLauncher_BeforeConnectStart(getTimestamp(), beforeConnectCmd));
-            Process p = Runtime.getRuntime().exec(beforeConnectCmd);
+            ArgumentListBuilder builder = new ArgumentListBuilder();
+            builder.addTokenized(beforeConnectCmd);
+            Process p = Runtime.getRuntime().exec(builder.toCommandArray());
             p.waitFor();
             BufferedReader reader =
                     new BufferedReader(new InputStreamReader(p.getInputStream()));
