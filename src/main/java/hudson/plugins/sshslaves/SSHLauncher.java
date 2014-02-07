@@ -1191,7 +1191,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
 
         } catch (Exception e) {
-            listener.getLogger().println(Messages.SSHLauncher_BeforeConnectError(getTimestamp(), e.getMessage()));
+            listener.getLogger().println(Messages.SSHLauncher_BeforeConnectError(getTimestamp(), e.toString(), e.getMessage()));
         }
         listener.getLogger().println(Messages.SSHLauncher_BeforeConnectFinished(getTimestamp(), output.toString()));
     }
@@ -1234,7 +1234,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
 
         } catch (Exception e) {
-            listener.getLogger().println(Messages.SSHLauncher_BeforeDisconnectError(getTimestamp(), e.getMessage()));
+            listener.getLogger().println(Messages.SSHLauncher_BeforeDisconnectError(getTimestamp(), e.toString(), e.getMessage()));
         }
         listener.getLogger().println(Messages.SSHLauncher_BeforeDisconnectFinished(getTimestamp(), output.toString()));
     }
