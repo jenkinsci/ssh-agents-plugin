@@ -1180,6 +1180,7 @@ public class SSHLauncher extends ComputerLauncher {
                 }
                 catch (InterruptedException e) {
                 }
+                wait(1000);
             }
             BufferedReader reader =
                     new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -1222,6 +1223,7 @@ public class SSHLauncher extends ComputerLauncher {
                 }
                 catch (InterruptedException e) {
                 }
+                wait(1000);
             }
             BufferedReader reader =
                     new BufferedReader(new InputStreamReader(p.getInputStream()));
