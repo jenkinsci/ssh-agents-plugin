@@ -93,7 +93,7 @@ public class SSHLauncherTest extends HudsonTestCase {
 	}
 
     public void testConfigurationRoundtrip() throws Exception {
-        SSHLauncher launcher = new SSHLauncher("localhost", 123, "test", "pass", "xyz", "def",null, null, null, null);
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "test", "pass", "xyz", "def",null, null, 0, null);
         DumbSlave slave = new DumbSlave("slave", "dummy",
                 createTmpDir().getPath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.EMPTY_LIST);
