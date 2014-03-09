@@ -497,7 +497,7 @@ public class SSHLauncher extends ComputerLauncher {
                         && StandardUsernamePasswordCredentials.class.cast(item).getPassword().equals(password)) {
                     return true;
                 }
-                if (item instanceof SSHUserPrivateKey) {
+                if (privatekeyContent != null && item instanceof SSHUserPrivateKey) {
                     for (String key : SSHUserPrivateKey.class.cast(item).getPrivateKeys()) {
                         if (pemKeyEquals(key, privatekeyContent)) {
                             return true;
