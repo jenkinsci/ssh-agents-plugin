@@ -507,7 +507,7 @@ public class SSHLauncher extends ComputerLauncher {
                         && StandardUsernamePasswordCredentials.class.cast(item).getPassword().equals(password)) {
                     return true;
                 }
-                if (item instanceof SSHUserPrivateKey) {
+                if (privatekeyContent != null && item instanceof SSHUserPrivateKey) {
                     for (String key : SSHUserPrivateKey.class.cast(item).getPrivateKeys()) {
                         if (pemKeyEquals(key, privatekeyContent)) {
                             return true;
@@ -1198,8 +1198,9 @@ public class SSHLauncher extends ComputerLauncher {
 
     @Override
     public void beforeDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
-        if (beforeDisconnectCmd != null) {
-            synchronized (slaveComputer) {
+        Slave node = slaveComputer.getNode();
+        if (beforeDisconnectCmd != null && node != null) {
+            synchronized (node) {
                 StringBuffer output = new StringBuffer();
                 try {
                     listener.getLogger().println(Messages.SSHLauncher_BeforeDisconnectStart(getTimestamp(), beforeDisconnectCmd));
