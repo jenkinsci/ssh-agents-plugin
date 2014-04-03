@@ -649,6 +649,7 @@ public class SSHLauncher extends ComputerLauncher {
         connection = new Connection(host, port);
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
+        beforeConnect(computer, listener);
         callables.add(new Callable<Boolean>() {
             public Boolean call() throws InterruptedException {
                 Boolean rval = Boolean.FALSE;
@@ -1137,7 +1138,6 @@ public class SSHLauncher extends ComputerLauncher {
 	}
 
     protected void openConnection(SlaveComputer slaveComputer, TaskListener listener) throws IOException, InterruptedException {
-        beforeConnect(slaveComputer, listener);
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(true);
         connection.connect();
@@ -1155,87 +1155,63 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    protected synchronized void beforeConnect(SlaveComputer slaveComputer, TaskListener listener) throws  IOException, InterruptedException {
-        if (beforeConnectCmd == null)
+    protected synchronized void beforeConnect(SlaveComputer slaveComputer, TaskListener listener) {
+        if (beforeConnectCmd == null || connection.isAuthenticationComplete())
             return;
-        StringBuffer output = new StringBuffer();
+        PrintStream logger = listener.getLogger();
+        logger.println(Messages.SSHLauncher_BeforeConnectStart(getTimestamp(), beforeConnectCmd));
+        logger.flush();
         try {
-            listener.getLogger().println(Messages.SSHLauncher_BeforeConnectStart(getTimestamp(), beforeConnectCmd));
             ArgumentListBuilder builder = new ArgumentListBuilder();
             builder.addTokenized(beforeConnectCmd);
             Process p = Runtime.getRuntime().exec(builder.toCommandArray());
             boolean exited = false;
 
-            while (!exited) {
-
-                try {
-                    p.waitFor();
-
-                    try {
-                        p.exitValue();
-                        exited = true;
-                    }
-                    catch (IllegalThreadStateException e) {
-                    }
-                }
-                catch (InterruptedException e) {
-                }
-                Thread.sleep(1000);
-            }
             BufferedReader reader =
                     new BufferedReader(new InputStreamReader(p.getInputStream()));
 
             String line = "";
             while ((line = reader.readLine())!= null) {
-                output.append(line + "\n");
+                logger.println(Messages.SSHLauncher_BeforeConnectProgress(getTimestamp(), line));
+                logger.flush();
             }
 
+            p.waitFor();
+            p.exitValue();
         } catch (Exception e) {
-            listener.getLogger().println(Messages.SSHLauncher_BeforeConnectError(getTimestamp(), e.toString(), e.getMessage()));
+            logger.println(Messages.SSHLauncher_BeforeConnectError(getTimestamp(), e.toString(), e.getMessage()));
         }
-        listener.getLogger().println(Messages.SSHLauncher_BeforeConnectFinished(getTimestamp(), output.toString()));
+        logger.println(Messages.SSHLauncher_BeforeConnectFinished(getTimestamp()));
+        logger.flush();
     }
 
     @Override
-    public void beforeDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
-        Slave node = slaveComputer.getNode();
-        if (beforeDisconnectCmd != null && node != null) {
-            synchronized (node) {
-                StringBuffer output = new StringBuffer();
-                try {
-                    listener.getLogger().println(Messages.SSHLauncher_BeforeDisconnectStart(getTimestamp(), beforeDisconnectCmd));
-                    ArgumentListBuilder builder = new ArgumentListBuilder();
-                    builder.addTokenized(beforeDisconnectCmd);
-                    Process p = Runtime.getRuntime().exec(builder.toCommandArray());
-                    boolean exited = false;
+    public synchronized void beforeDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
+        if (beforeDisconnectCmd != null && slaveComputer.getChannel() != null) {
+            PrintStream logger = listener.getLogger();
+            logger.println(Messages.SSHLauncher_BeforeDisconnectStart(getTimestamp(), beforeDisconnectCmd));
+            logger.flush();
+            try {
+                ArgumentListBuilder builder = new ArgumentListBuilder();
+                builder.addTokenized(beforeDisconnectCmd);
+                Process p = Runtime.getRuntime().exec(builder.toCommandArray());
+                boolean exited = false;
 
-                    while (!exited) {
+                BufferedReader reader =
+                        new BufferedReader(new InputStreamReader(p.getInputStream()));
 
-                        try {
-                            p.waitFor();
-
-                            try {
-                                p.exitValue();
-                                exited = true;
-                            } catch (IllegalThreadStateException e) {
-                            }
-                        } catch (InterruptedException e) {
-                        }
-                        Thread.sleep(1000);
-                    }
-                    BufferedReader reader =
-                            new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-                    String line = "";
-                    while ((line = reader.readLine()) != null) {
-                        output.append(line + "\n");
-                    }
-
-                } catch (Exception e) {
-                    listener.getLogger().println(Messages.SSHLauncher_BeforeDisconnectError(getTimestamp(), e.toString(), e.getMessage()));
+                String line = "";
+                while ((line = reader.readLine()) != null) {
+                    logger.println(Messages.SSHLauncher_BeforeDisconnectProgress(getTimestamp(), line));
+                    logger.flush();
                 }
-                listener.getLogger().println(Messages.SSHLauncher_BeforeDisconnectFinished(getTimestamp(), output.toString()));
+                p.waitFor();
+                p.exitValue();
+            } catch (Exception e) {
+                logger.println(Messages.SSHLauncher_BeforeDisconnectError(getTimestamp(), e.toString(), e.getMessage()));
             }
+            logger.println(Messages.SSHLauncher_BeforeDisconnectFinished(getTimestamp()));
+            logger.flush();
         }
         super.beforeDisconnect(slaveComputer, listener);
     }
