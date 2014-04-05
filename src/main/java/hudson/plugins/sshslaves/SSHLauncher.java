@@ -716,6 +716,7 @@ public class SSHLauncher extends ComputerLauncher {
     private void cleanupConnection(TaskListener listener) {
         // we might be called multiple times from multiple finally/catch block,
         if (connection!=null) {
+            afterDisconnectRoutine(listener);
             connection.close();
             connection = null;
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
@@ -1185,9 +1186,11 @@ public class SSHLauncher extends ComputerLauncher {
         logger.flush();
     }
 
-    @Override
-    public synchronized void beforeDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
-        if (beforeDisconnectCmd != null && slaveComputer.getChannel() != null) {
+    /**
+     * Run custom entered script to handle node disconnection
+     */
+    private void afterDisconnectRoutine(TaskListener listener) {
+        if (beforeDisconnectCmd != null) {
             PrintStream logger = listener.getLogger();
             logger.println(Messages.SSHLauncher_BeforeDisconnectStart(getTimestamp(), beforeDisconnectCmd));
             logger.flush();
@@ -1213,7 +1216,6 @@ public class SSHLauncher extends ComputerLauncher {
             logger.println(Messages.SSHLauncher_BeforeDisconnectFinished(getTimestamp()));
             logger.flush();
         }
-        super.beforeDisconnect(slaveComputer, listener);
     }
 
     /**
@@ -1247,7 +1249,6 @@ public class SSHLauncher extends ComputerLauncher {
                     }
                 }
             }
-
             PluginImpl.unregister(connection);
             cleanupConnection(listener);
         }
