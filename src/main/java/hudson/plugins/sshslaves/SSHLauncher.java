@@ -115,8 +115,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -688,7 +690,6 @@ public class SSHLauncher extends ComputerLauncher {
         callables.add(new Callable<Boolean>() {
             public Boolean call() throws InterruptedException {
                 Boolean rval = Boolean.FALSE;
-                long time = System.currentTimeMillis();
                 try {
 
                     openConnection(listener);
@@ -707,37 +708,41 @@ public class SSHLauncher extends ComputerLauncher {
                     rval = Boolean.TRUE;
                 } catch (RuntimeException e) {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                    cleanupConnection(listener);
                 } catch (Error e) {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                    cleanupConnection(listener);
                 } catch (IOException e) {
                     e.printStackTrace(listener.getLogger());
-                    cleanupConnection(listener);
                 } finally {
-                    long duration = System.currentTimeMillis() - time;
-                    if (!rval) {
-                        System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
-                                computer.getNode().getNodeName(), host, duration));
-                        listener.getLogger().println(getTimestamp()+" Launch failed - cleaning up connection");
-                        cleanupConnection(listener);
-                    } else {
-                        System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
-                                computer.getNode().getNodeName(), host, duration));
-                    }
                     return rval;
                 }
             }
         });
 
         try {
+            long time = System.currentTimeMillis();
+            List<Future<Boolean>> results;
             if (this.getLaunchTimeoutMillis() > 0) {
-                executorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+                results = executorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
             } else {
-                executorService.invokeAll(callables);
+                results = executorService.invokeAll(callables);
+            }
+            long duration = System.currentTimeMillis() - time;
+            Boolean res;
+            try {
+                res = results.get(0).get();
+            } catch (ExecutionException e) {
+                res = Boolean.FALSE;
+            }
+            if (!res) {
+                System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
+                        computer.getNode().getNodeName(), host, duration));
+                listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
+                cleanupConnection(listener);
+            } else {
+                System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
+                        computer.getNode().getNodeName(), host, duration));
             }
             executorService.shutdown();
-
         } catch (InterruptedException e) {
             System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
                     computer.getNode().getNodeName(), host));
