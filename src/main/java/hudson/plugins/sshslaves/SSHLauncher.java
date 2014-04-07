@@ -932,6 +932,7 @@ public class SSHLauncher extends ComputerLauncher {
                     } catch (Throwable t) {
                         t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
                     }
+                    cleanupConnection(listener);
                 }
             });
 
