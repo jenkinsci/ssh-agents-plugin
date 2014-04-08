@@ -248,7 +248,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Deprecated
     public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
+        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
     }
 
     public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
