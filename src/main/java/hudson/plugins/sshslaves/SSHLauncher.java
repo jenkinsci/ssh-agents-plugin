@@ -23,11 +23,6 @@
  */
 package hudson.plugins.sshslaves;
 
-import static com.cloudbees.plugins.credentials.CredentialsMatchers.allOf;
-import static com.cloudbees.plugins.credentials.CredentialsMatchers.withUsername;
-import static hudson.Util.fixEmpty;
-import static java.util.logging.Level.FINE;
-
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserListBoxModel;
@@ -45,13 +40,24 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.trilead.ssh2.ChannelCondition;
+import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
+import com.trilead.ssh2.SFTPv3Client;
+import com.trilead.ssh2.SFTPv3FileAttributes;
+import com.trilead.ssh2.Session;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
-import hudson.model.*;
+import hudson.model.Descriptor;
+import hudson.model.Hudson;
+import hudson.model.ItemGroup;
+import hudson.model.JDK;
+import hudson.model.Node;
+import hudson.model.Slave;
+import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.security.ACL;
 import hudson.slaves.ComputerLauncher;
@@ -70,6 +76,18 @@ import hudson.util.ListBoxModel;
 import hudson.util.NullStream;
 import hudson.util.Secret;
 import hudson.util.StreamCopyThread;
+import jenkins.model.Jenkins;
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.putty.PuTTYKey;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -79,6 +97,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -100,25 +120,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import jenkins.model.Jenkins;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.TeeOutputStream;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.putty.PuTTYKey;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-
-import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.SFTPv3Client;
-import com.trilead.ssh2.SFTPv3FileAttributes;
-import com.trilead.ssh2.Session;
-import org.kohsuke.stapler.QueryParameter;
-
-import java.io.OutputStream;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.*;
+import static hudson.Util.*;
+import static java.util.logging.Level.*;
 
 /**
  * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
@@ -926,6 +930,19 @@ public class SSHLauncher extends ComputerLauncher {
         } catch (InterruptedException e) {
             session.close();
             throw new IOException2(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
+        } catch (IOException e) {
+            try {
+                // often times error this early means the JVM has died, so let's see if we can capture all stderr
+                // and exit code
+                session.waitForCondition(ChannelCondition.EXIT_STATUS, 3000);
+                Integer exitCode = session.getExitStatus();
+                if (exitCode!=null)
+                    throw new IOException2("Slave JVM has terminated. Exit code="+exitCode,e);
+                else
+                    throw new IOException2("Failed to establish channel with slave JVM but it's still running",e);
+            } catch (InterruptedException x) {
+                throw (IOException)new IOException().initCause(e);
+            }
         }
     }
 
