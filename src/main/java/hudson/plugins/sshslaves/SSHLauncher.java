@@ -101,6 +101,7 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.lang.InterruptedException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.text.MessageFormat;
@@ -696,7 +697,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
             executorService.shutdown();
 
-        } catch (java.lang.InterruptedException e) {
+        } catch (InterruptedException e) {
             System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
                     computer.getNode().getNodeName(), host));
         }
