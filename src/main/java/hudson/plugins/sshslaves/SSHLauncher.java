@@ -656,9 +656,9 @@ public class SSHLauncher extends ComputerLauncher {
                     reportEnvironment(listener);
 
                     String java = resolveJava(computer, listener);
-
                     String workingDirectory = getWorkingDirectory(computer);
-                    copySlaveJar(listener, workingDirectory);
+                    String nodeName = computer.getName();
+                    copySlaveJar(listener, workingDirectory, nodeName);
 
                     startSlave(computer, listener, java, workingDirectory);
 
@@ -746,7 +746,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         // attempt auto JDK installation
         try {
-            return attemptToInstallJDK(listener, workingDirectory);
+            return attemptToInstallJDK(listener, workingDirectory, computer.getName());
         } catch (IOException e) {
             throw new IOException2("Could not find any known supported java version in "+tried+", and we also failed to install JDK as a fallback",e);
         }
@@ -815,7 +815,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Attempts to install JDK, and return the path to Java.
      */
-    private String attemptToInstallJDK(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
+    private String attemptToInstallJDK(TaskListener listener, String workingDirectory, String nodeName) throws IOException, InterruptedException {
         ByteArrayOutputStream unameOutput = new ByteArrayOutputStream();
         if (connection.exec("uname -a",new TeeOutputStream(unameOutput,listener.getLogger()))!=0)
             throw new IOException("Failed to run 'uname' to obtain the environment");
@@ -847,8 +847,8 @@ public class SSHLauncher extends ComputerLauncher {
         if (p==null || cpu==null)
             throw new IOException(Messages.SSHLauncher_FailedToDetectEnvironment(uname));
 
-        String javaDir = workingDirectory + "/jdk"; // this is where we install Java to
-        String bundleFile = workingDirectory + "/" + p.bundleFileName; // this is where we download the bundle to
+        String javaDir = workingDirectory + "/jdk_" + nodeName; // this is where we install Java to
+        String bundleFile = workingDirectory + "/" + nodeName + "/" + p.bundleFileName; // this is where we download the bundle to
 
         SFTPClient sftp = new SFTPClient(connection);
         // wipe out and recreate the Java directory
@@ -879,7 +879,8 @@ public class SSHLauncher extends ComputerLauncher {
                             String workingDirectory) throws IOException {
         final Session session = connection.openSession();
         expandChannelBufferSize(session,listener);
-        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar";
+        String nodeName = computer.getName();
+        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + nodeName + "_slave.jar";
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
         cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
@@ -984,8 +985,8 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @throws IOException If something goes wrong.
      */
-    private void copySlaveJar(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
-        String fileName = workingDirectory + "/slave.jar";
+    private void copySlaveJar(TaskListener listener, String workingDirectory, String nodeName) throws IOException, InterruptedException {
+        String fileName = workingDirectory + "/" + nodeName + "_slave.jar";
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
         SFTPClient sftpClient = null;
@@ -1030,7 +1031,7 @@ public class SSHLauncher extends ComputerLauncher {
         } catch (IOException e) {
             if (sftpClient == null) {
                 // lets try to recover if the slave doesn't have an SFTP service
-                copySlaveJarUsingSCP(listener, workingDirectory);
+                copySlaveJarUsingSCP(listener, workingDirectory, nodeName);
             } else {
                 throw e;
             }
@@ -1049,7 +1050,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @throws IOException If something goes wrong.
      * @throws InterruptedException If something goes wrong.
      */
-    private void copySlaveJarUsingSCP(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
+    private void copySlaveJarUsingSCP(TaskListener listener, String workingDirectory, String nodeName) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_StartingSCPClient(getTimestamp()));
         SCPClient scp = new SCPClient(connection);
         try {
@@ -1064,12 +1065,12 @@ public class SSHLauncher extends ComputerLauncher {
             }
 
             // delete the slave jar as we do with SFTP
-            connection.exec("rm " + workingDirectory + "/slave.jar", new NullStream());
+            connection.exec("rm " + workingDirectory + "/" + nodeName + "_slave.jar", new NullStream());
 
             // SCP it to the slave. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
             InputStream is = Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
             listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
-            scp.put(IOUtils.toByteArray(is), "slave.jar", workingDirectory, "0644");
+            scp.put(IOUtils.toByteArray(is), nodeName + "_slave.jar", workingDirectory, "0644");
         } catch (IOException e) {
             throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
         }
@@ -1171,7 +1172,7 @@ public class SSHLauncher extends ComputerLauncher {
         if (connection != null) {
             if (n != null) {
                 String workingDirectory = getWorkingDirectory(n);
-                String fileName = workingDirectory + "/slave.jar";
+                String fileName = workingDirectory + "/" + slaveComputer.getName() + "_slave.jar";
 
                 SFTPv3Client sftpClient = null;
                 try {
@@ -1324,7 +1325,7 @@ public class SSHLauncher extends ComputerLauncher {
                     "/usr/java/latest/bin/java",
                     "/usr/local/bin/java",
                     "/usr/local/java/bin/java",
-                    getWorkingDirectory(computer)+"/jdk/bin/java")); // this is where we attempt to auto-install
+                    getWorkingDirectory(computer)+"/jdk_" + computer.getName() + "/bin/java")); // this is where we attempt to auto-install
 
             DescribableList<NodeProperty<?>,NodePropertyDescriptor> list = computer.getNode().getNodeProperties();
             if (list != null) {
