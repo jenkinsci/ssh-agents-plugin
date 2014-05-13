@@ -889,18 +889,12 @@ public class SSHLauncher extends ComputerLauncher {
         final InputStream out = session.getStdout();
         final InputStream err;
 
-        if (!tryPipingStderr(session, new DelegateNoCloseOutputStream(listener.getLogger()))) {
-            // capture error information from stderr. this will terminate itself
-            // when the process is killed.
-            err = session.getStderr();
+		// capture error information from stderr. this will terminate itself
+		// when the process is killed.
+		err = session.getStderr();
 
-            new StreamCopyThread("stderr copier for remote agent on " + computer.getDisplayName(),
-                    err, listener.getLogger()).start();
-        } else {
-            // trilead that we are using supports pipeing
-            err = null;
-        }
-
+		new StreamCopyThread("stderr copier for remote agent on " + computer.getDisplayName(),
+				err, listener.getLogger()).start();
 
         try {
             computer.setChannel(out, session.getStdin(), listener.getLogger(), new Channel.Listener() {
@@ -962,19 +956,6 @@ public class SSHLauncher extends ComputerLauncher {
         } catch (Exception e) {
         }
     }
-
-    private boolean tryPipingStderr(Session session, OutputStream sink) {
-        try {
-            // this method is new in build214-jenkins-3
-            // if we can, this eliminates one thread
-            Method m = session.getClass().getMethod("pipeStderr", OutputStream.class);
-            m.invoke(session, sink);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
 
     /**
      * Method copies the slave jar to the remote system.
