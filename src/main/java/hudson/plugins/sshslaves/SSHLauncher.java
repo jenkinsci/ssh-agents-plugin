@@ -1203,11 +1203,11 @@ public class SSHLauncher extends ComputerLauncher {
                     break;
                 }
                 if (maxNumRetries - i > 0) {
-                    listener.getLogger().println("SSH Auth failed with IOException: \"" + ioExceptionMessageCause
+                    listener.getLogger().println("SSH Connection failed with IOException: \"" + ioExceptionMessageCause
                                                          + "\", retrying in " + retryWaitTime + " seconds.  There are "
                                                          + (maxNumRetries - i) + " more retries left.");
                 } else {
-                    listener.getLogger().println("SSH Auth failed with IOException: \"" + ioExceptionMessageCause + "\".");
+                    listener.getLogger().println("SSH Connection failed with IOException: \"" + ioExceptionMessageCause + "\".");
                     throw ioexception;
                 }
             }
