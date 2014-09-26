@@ -230,6 +230,16 @@ public class SSHLauncher extends ComputerLauncher {
     public final Integer launchTimeoutSeconds;
 
     /**
+     * Field maxNumRetries.
+     */
+    public final Integer maxNumRetries;
+
+    /**
+     * Field retryWaitTime.
+     */
+    public final Integer retryWaitTime;
+
+    /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
      * @param host       The host to connect to.
@@ -240,11 +250,24 @@ public class SSHLauncher extends ComputerLauncher {
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
      * @param launchTimeoutSeconds Launch timeout in seconds
+     * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
+     * @param retryWaitTime The number of seconds to wait between retries
      */
     @DataBoundConstructor
     public SSHLauncher(String host, int port, String credentialsId,
-             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
-        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds);
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
+             Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
+        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
+             suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
+    }
+
+    /** @deprecated Use {@link #SSHLauncher(String, int, String, String, String, String, String, Integer, Integer, Integer)} instead. */
+    @Deprecated
+    public SSHLauncher(String host, int port, String credentialsId,
+                       String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
+                       Integer launchTimeoutSeconds) {
+        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
+             suffixStartSlaveCmd, launchTimeoutSeconds, null, null);
     }
 
     /**
@@ -253,7 +276,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Deprecated
     public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
+        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
     }
 
     public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
@@ -285,24 +308,35 @@ public class SSHLauncher extends ComputerLauncher {
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
      * @param launchTimeoutSeconds Launch timeout in seconds
+     * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
+     * @param retryWaitTime The number of seconds to wait between retries
      */
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
-             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
-        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds);
+                       String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
+                       Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
+        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
     }
 
-    /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String, Integer)} instead. */
+    /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String, Integer, Integer, Integer)} instead. */
+    @Deprecated
+    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
+             Integer launchTimeoutSeconds) {
+        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, null, null);
+    }
+
+    /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String, Integer, Integer, Integer)} instead. */
     @Deprecated
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
+        this(host, port, credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String)} instead. */
     @Deprecated
     public SSHLauncher(String host, int port, SSHUser credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
+        this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
     }
 
     /**
@@ -359,6 +393,8 @@ public class SSHLauncher extends ComputerLauncher {
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
         this.launchTimeoutSeconds = null;
+        this.maxNumRetries = null;
+        this.retryWaitTime = null;
     }
 
     /**
@@ -377,7 +413,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Deprecated
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, null);
+        this(host, port, credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
     }
 
     /**
@@ -392,9 +428,12 @@ public class SSHLauncher extends ComputerLauncher {
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
      * @param suffixStartSlaveCmd This will suffix the start slave command.
      * @param launchTimeoutSeconds Launch timeout in seconds
+     * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
+     * @param retryWaitTime The number of seconds to wait between retries
      */
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
-                                    String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
+                                    String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
+                                    String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
         this.host = host;
         this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
@@ -410,6 +449,8 @@ public class SSHLauncher extends ComputerLauncher {
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
+        this.maxNumRetries = maxNumRetries == null || maxNumRetries <= 0 ? 0 : maxNumRetries;
+        this.retryWaitTime = retryWaitTime == null || retryWaitTime <= 0 ? 0 : retryWaitTime;
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String, String)} instead. */
@@ -1147,12 +1188,36 @@ public class SSHLauncher extends ComputerLauncher {
     protected void openConnection(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(true);
-        connection.connect();
+
+        for (int i = 0; i <= maxNumRetries; i++) {
+            try {
+                connection.connect();
+                break;
+            } catch (IOException ioexception) {
+                listener.getLogger().println(ioexception.getCause().getMessage());
+                String ioExceptionMessageCause = "";
+                if (ioexception.getCause() != null) {
+                    ioExceptionMessageCause = ioexception.getCause().getMessage();
+                }
+                if (!ioExceptionMessageCause.equals("Connection refused")) {
+                    break;
+                }
+                if (maxNumRetries - i > 0) {
+                    listener.getLogger().println("SSH Connection failed with IOException: \"" + ioExceptionMessageCause
+                                                         + "\", retrying in " + retryWaitTime + " seconds.  There are "
+                                                         + (maxNumRetries - i) + " more retries left.");
+                } else {
+                    listener.getLogger().println("SSH Connection failed with IOException: \"" + ioExceptionMessageCause + "\".");
+                    throw ioexception;
+                }
+            }
+            Thread.sleep(TimeUnit.SECONDS.toMillis(retryWaitTime));
+        }
+
         StandardUsernameCredentials credentials = getCredentials();
         if (credentials == null) {
             throw new AbortException("Cannot find SSH User credentials with id: " + credentialsId);
         }
-
         if (SSHAuthenticator.newInstance(connection, credentials).authenticate(listener)
                 && connection.isAuthenticationComplete()) {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
@@ -1274,6 +1339,24 @@ public class SSHLauncher extends ComputerLauncher {
 
     private long getLaunchTimeoutMillis() {
         return launchTimeoutSeconds == null ? 0L : TimeUnit.SECONDS.toMillis(launchTimeoutSeconds);
+    }
+
+    /**
+     * Getter for property 'maxNumRetries'
+     *
+     * @return maxNumRetries
+     */
+    public Integer getMaxNumRetries() {
+        return maxNumRetries;
+    }
+
+    /**
+     * Getter for property 'retryWaitTime'
+     *
+     * @return retryWaitTime
+     */
+    public Integer getRetryWaitTime() {
+        return retryWaitTime;
     }
 
     @Extension

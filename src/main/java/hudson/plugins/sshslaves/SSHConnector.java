@@ -128,6 +128,16 @@ public class SSHConnector extends ComputerConnector {
      */
     public final Integer launchTimeoutSeconds;
 
+    /**
+     *  Field maxNumRetries.
+     */
+    public final Integer maxNumRetries;
+
+    /**
+     *  Field retryWaitTime.
+     */
+    public final Integer retryWaitTime;
+
     public StandardUsernameCredentials getCredentials() {
         String credentialsId = this.credentialsId == null
                 ? (this.credentials == null ? null : this.credentials.getId())
@@ -158,13 +168,24 @@ public class SSHConnector extends ComputerConnector {
     }
 
     /**
-     * @see SSHLauncher#(String, int, StandardUsernameCredentials, String, String, String, String, String, Integer)
+     * @see SSHLauncher#(String, int, StandardUsernameCredentials, String, String, String, String, String, Integer, Integer, Integer)
      */
     @DataBoundConstructor
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
+                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
+                        Integer maxNumRetries, Integer retryWaitTime) {
+        this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
+             prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
+    }
+
+    /**
+     * @see SSHLauncher#(String, int, StandardUsernameCredentials, String, String, String, String, String, Integer)
+     */
+    @Deprecated
+    public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
         this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
-                prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds);
+                prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, null, null);
     }
 
     /**
@@ -174,7 +195,7 @@ public class SSHConnector extends ComputerConnector {
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
-                prefixStartSlaveCmd, suffixStartSlaveCmd, null);
+                prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
     }
 
     /**
@@ -214,7 +235,7 @@ public class SSHConnector extends ComputerConnector {
                         String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(port, credentials, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, null);
+                suffixStartSlaveCmd, null, null, null);
     }
     /**
      * @see SSHLauncher#SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String,
@@ -222,7 +243,8 @@ public class SSHConnector extends ComputerConnector {
      */
     public SSHConnector(int port, StandardUsernameCredentials credentials, String username, String password,
                         String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
+                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
+                        Integer maxNumRetries, Integer retryWaitTime) {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.credentials = credentials;
@@ -235,12 +257,14 @@ public class SSHConnector extends ComputerConnector {
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
+        this.maxNumRetries = maxNumRetries == null || maxNumRetries <= 0 ? 0 : maxNumRetries;
+        this.retryWaitTime = retryWaitTime == null || retryWaitTime <= 0 ? 0 : retryWaitTime;
     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
         return new SSHLauncher(host, port, getCredentials(), jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, launchTimeoutSeconds);
+                suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
     }
 
     @Extension
