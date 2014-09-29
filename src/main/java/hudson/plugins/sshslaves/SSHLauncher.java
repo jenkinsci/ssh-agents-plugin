@@ -1195,6 +1195,8 @@ public class SSHLauncher extends ComputerLauncher {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(true);
 
+        int maxNumRetries = this.maxNumRetries == null || this.maxNumRetries < 0 ? 0 : this.maxNumRetries;
+
         for (int i = 0; i <= maxNumRetries; i++) {
             try {
                 connection.connect();
@@ -1353,7 +1355,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @return maxNumRetries
      */
     public Integer getMaxNumRetries() {
-        return maxNumRetries;
+        return maxNumRetries == null || maxNumRetries < 0 ? 0 : maxNumRetries;
     }
 
     /**
