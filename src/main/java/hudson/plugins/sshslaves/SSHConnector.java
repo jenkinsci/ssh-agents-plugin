@@ -24,9 +24,9 @@
 package hudson.plugins.sshslaves;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserListBoxModel;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.trilead.ssh2.Connection;
 import hudson.Extension;
 import hudson.model.ItemGroup;
@@ -280,7 +280,7 @@ public class SSHConnector extends ComputerConnector {
             if (!(context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance()).hasPermission(Computer.CONFIGURE)) {
                 return new ListBoxModel();
             }
-            return new SSHUserListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
+            return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
                     CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
                             ACL.SYSTEM, SSHLauncher.SSH_SCHEME));
         }

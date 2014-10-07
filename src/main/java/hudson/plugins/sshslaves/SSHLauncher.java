@@ -25,7 +25,6 @@ package hudson.plugins.sshslaves;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserListBoxModel;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.Credentials;
@@ -123,6 +122,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.*;
+import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import static hudson.Util.*;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
@@ -1402,7 +1402,7 @@ public class SSHLauncher extends ComputerLauncher {
                 return new ListBoxModel();
             }
             int portValue = Integer.parseInt(port);
-            return new SSHUserListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
+            return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
                     CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
                             ACL.SYSTEM, SSHLauncher.SSH_SCHEME, new HostnamePortRequirement(host, portValue)));
         }
