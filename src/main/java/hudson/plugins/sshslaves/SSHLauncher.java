@@ -97,7 +97,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
@@ -125,6 +124,8 @@ import java.util.regex.Pattern;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.*;
 import static hudson.Util.*;
+import hudson.model.Computer;
+import hudson.security.AccessControlled;
 import static java.util.logging.Level.*;
 
 /**
@@ -1397,6 +1398,9 @@ public class SSHLauncher extends ComputerLauncher {
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
                                                      @QueryParameter String host,
                                                      @QueryParameter String port) {
+            if (!(context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance()).hasPermission(Computer.CONFIGURE)) {
+                return new ListBoxModel();
+            }
             int portValue = Integer.parseInt(port);
             return new SSHUserListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
                     CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,

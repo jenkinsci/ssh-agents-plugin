@@ -46,6 +46,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 
 import static hudson.Util.fixEmpty;
+import hudson.model.Computer;
+import hudson.security.AccessControlled;
 
 /**
  * {@link ComputerConnector} for {@link SSHLauncher}.
@@ -275,6 +277,9 @@ public class SSHConnector extends ComputerConnector {
         }
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
+            if (!(context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance()).hasPermission(Computer.CONFIGURE)) {
+                return new ListBoxModel();
+            }
             return new SSHUserListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
                     CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
                             ACL.SYSTEM, SSHLauncher.SSH_SCHEME));
