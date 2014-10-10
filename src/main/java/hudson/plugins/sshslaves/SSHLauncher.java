@@ -88,6 +88,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -155,6 +156,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
+    
     /**
      * Field host
      */
@@ -164,6 +166,13 @@ public class SSHLauncher extends ComputerLauncher {
      * Field port
      */
     private final int port;
+    
+    /**
+     * comma separated list of remote ports forwardings
+     */
+    private String remotePortsForwardings;
+
+    
 
     /**
      * The id of the credentials to use.
@@ -454,6 +463,29 @@ public class SSHLauncher extends ComputerLauncher {
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
         this.maxNumRetries = maxNumRetries == null || maxNumRetries <= 0 ? 0 : maxNumRetries;
         this.retryWaitTime = retryWaitTime == null || retryWaitTime <= 0 ? 0 : retryWaitTime;
+    }
+    
+     /**
+     * Constructor SSHLauncher creates a new SSHLauncher instance.
+     *
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param credentials The credentials to connect as.
+     * @param remotePortsForwardings optional comma-separated list of remote ports to forward to this Jenkins (equivalent of SSH -R localhost:port localhost:port options)
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param launchTimeoutSeconds Launch timeout in seconds
+     * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
+     * @param retryWaitTime The number of seconds to wait between retries
+     */
+    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String remotePortsForwardings, String jvmOptions,
+                                    String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
+                                    String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime){
+         this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
+         this.remotePortsForwardings = remotePortsForwardings;
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String, String)} instead. */
@@ -1230,6 +1262,9 @@ public class SSHLauncher extends ComputerLauncher {
         if (SSHAuthenticator.newInstance(connection, credentials).authenticate(listener)
                 && connection.isAuthenticationComplete()) {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
+            listener.getLogger().println(Messages.SSHLauncher_ForwardingRemotePorts(getTimestamp(),remotePortsForwardings));
+            connection.requestRemotePortForwarding("localhost", 9000, "localhost", 9000);
+            connection.requestRemotePortForwarding("localhost", 5432, "localhost", 5432);
         } else {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
             throw new AbortException(Messages.SSHLauncher_AuthenticationFailedException());
@@ -1358,6 +1393,12 @@ public class SSHLauncher extends ComputerLauncher {
     public Integer getMaxNumRetries() {
         return maxNumRetries == null || maxNumRetries < 0 ? 0 : maxNumRetries;
     }
+    
+    public String getRemotePortsForwardings() {
+        return remotePortsForwardings;
+    }
+
+
 
     /**
      * Getter for property 'retryWaitTime'
@@ -1474,6 +1515,8 @@ public class SSHLauncher extends ComputerLauncher {
         public void write(byte[] b, int off, int len) throws IOException {
             if (out != null) out.write(b, off, len);
         }
+        
+        
     }
 
 //    static {
