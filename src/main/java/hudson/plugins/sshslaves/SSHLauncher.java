@@ -257,6 +257,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param host       The host to connect to.
      * @param port       The port to connect on.
      * @param credentialsId The credentials id to connect as.
+     * @param remotePortsForwardings optional comma-separated list of remote ports to forward from the slave
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
@@ -266,10 +267,10 @@ public class SSHLauncher extends ComputerLauncher {
      * @param retryWaitTime The number of seconds to wait between retries
      */
     @DataBoundConstructor
-    public SSHLauncher(String host, int port, String credentialsId,
+    public SSHLauncher(String host, int port, String credentialsId, String remotePortsForwardings,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
              Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
-        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
+        this(host, port, lookupSystemCredentials(credentialsId), remotePortsForwardings, jvmOptions, javaPath, null, prefixStartSlaveCmd,
              suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
     }
 
@@ -1262,12 +1263,27 @@ public class SSHLauncher extends ComputerLauncher {
         if (SSHAuthenticator.newInstance(connection, credentials).authenticate(listener)
                 && connection.isAuthenticationComplete()) {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
-            listener.getLogger().println(Messages.SSHLauncher_ForwardingRemotePorts(getTimestamp(),remotePortsForwardings));
-            connection.requestRemotePortForwarding("localhost", 9000, "localhost", 9000);
-            connection.requestRemotePortForwarding("localhost", 5432, "localhost", 5432);
+            forwardRemotePorts(listener);
         } else {
             listener.getLogger().println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
             throw new AbortException(Messages.SSHLauncher_AuthenticationFailedException());
+        }
+    }
+    
+    /**
+     * Forward remote ports to master if remotePortsForwardings is not null or empty
+     * 
+     * @param listener 
+     */
+    protected void forwardRemotePorts(TaskListener listener) throws IOException{
+        if(!StringUtils.isEmpty(remotePortsForwardings)){
+            listener.getLogger().println(Messages.SSHLauncher_ForwardingRemotePorts(getTimestamp(),remotePortsForwardings));
+            String ports[] = remotePortsForwardings.split(",");
+            for(int i = 0; i < ports.length; i++) {
+                int portToForward = Integer.parseInt(ports[i].trim());
+                connection.requestRemotePortForwarding("localhost", portToForward, "localhost", portToForward);                
+            }
+            
         }
     }
 
