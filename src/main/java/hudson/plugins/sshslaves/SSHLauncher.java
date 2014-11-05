@@ -934,20 +934,8 @@ public class SSHLauncher extends ComputerLauncher {
         listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
         final InputStream out = session.getStdout();
-        final InputStream err;
 
-        if (!tryPipingStderr(session, new DelegateNoCloseOutputStream(listener.getLogger()))) {
-            // capture error information from stderr. this will terminate itself
-            // when the process is killed.
-            err = session.getStderr();
-
-            new StreamCopyThread("stderr copier for remote agent on " + computer.getDisplayName(),
-                    err, listener.getLogger()).start();
-        } else {
-            // trilead that we are using supports pipeing
-            err = null;
-        }
-
+        session.pipeStderr(new DelegateNoCloseOutputStream(listener.getLogger()));
 
         try {
             computer.setChannel(out, session.getStdin(), listener.getLogger(), new Channel.Listener() {
@@ -977,12 +965,6 @@ public class SSHLauncher extends ComputerLauncher {
                     } catch (Throwable t) {
                         t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
                     }
-                    try {
-                        if (err!=null)
-                            err.close();
-                    } catch (Throwable t) {
-                        t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
-                    }
                     cleanupConnection(listener);
                 }
             });
@@ -1007,33 +989,14 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private void expandChannelBufferSize(Session session, TaskListener listener) {
-        try {
-            // this method is new in build214-jenkins-2
-            Method m = session.getClass().getMethod("setWindowSize", int.class);
-
             // see hudson.remoting.Channel.PIPE_WINDOW_SIZE for the discussion of why 1MB is in the right ball park
             // but this particular session is where all the master/slave communication will happen, so
             // it's worth using a bigger buffer to really better utilize bandwidth even when the latency is even larger
             // (and since we are draining this pipe very rapidly, it's unlikely that we'll actually accumulate this much data)
             int sz = 4;
-            m.invoke(session, sz*1024*1024);
+            session.setWindowSize(sz*1024*1024);
             listener.getLogger().println("Expanded the channel window size to "+sz+"MB");
-        } catch (Exception e) {
-        }
     }
-
-    private boolean tryPipingStderr(Session session, OutputStream sink) {
-        try {
-            // this method is new in build214-jenkins-3
-            // if we can, this eliminates one thread
-            Method m = session.getClass().getMethod("pipeStderr", OutputStream.class);
-            m.invoke(session, sink);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
 
     /**
      * Method copies the slave jar to the remote system.
