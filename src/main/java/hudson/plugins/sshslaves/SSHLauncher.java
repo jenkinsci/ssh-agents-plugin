@@ -57,7 +57,6 @@ import hudson.model.JDK;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
-import hudson.remoting.Channel;
 import hudson.security.ACL;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
@@ -74,7 +73,6 @@ import hudson.util.IOException2;
 import hudson.util.ListBoxModel;
 import hudson.util.NullStream;
 import hudson.util.Secret;
-import hudson.util.StreamCopyThread;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
@@ -100,7 +98,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.InterruptedException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
@@ -141,6 +138,7 @@ public class SSHLauncher extends ComputerLauncher {
 
     public static final String JDKVERSION = "jdk-6u45";
     public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR@CDS-CDS_Developer";
+
     /**
      * @deprecated
      *      Subtype of {@link JDKInstaller} causes JENKINS-10641.
@@ -213,9 +211,14 @@ public class SSHLauncher extends ComputerLauncher {
     private JDKInstaller jdk = null;
 
     /**
-     * Field connection
+     * SSH connection to the slave.
      */
     private transient Connection connection;
+
+    /**
+     * The session inside {@link #connection} that controls the slave process.
+     */
+    private transient Session session;
 
     /**
      * Field prefixStartSlaveCmd.
@@ -924,7 +927,7 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void startSlave(SlaveComputer computer, final TaskListener listener, String java,
                             String workingDirectory) throws IOException {
-        final Session session = connection.openSession();
+        session = connection.openSession();
         expandChannelBufferSize(session,listener);
         String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar";
 
@@ -933,42 +936,11 @@ public class SSHLauncher extends ComputerLauncher {
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
-        final InputStream out = session.getStdout();
 
         session.pipeStderr(new DelegateNoCloseOutputStream(listener.getLogger()));
 
         try {
-            computer.setChannel(out, session.getStdin(), listener.getLogger(), new Channel.Listener() {
-                @Override
-                public void onClosed(Channel channel, IOException cause) {
-                    if (cause != null) {
-                        cause.printStackTrace(listener.error(hudson.model.Messages.Slave_Terminated(getTimestamp())));
-                    }
-                    try {
-                        session.waitForCondition(ChannelCondition.EXIT_STATUS|ChannelCondition.EXIT_SIGNAL,3000);
-                        Integer exitCode = session.getExitStatus();
-                        if (exitCode!=null)
-                            listener.getLogger().println("Slave JVM has terminated. Exit code=" + exitCode);
-                        else {
-                            String sig = session.getExitSignal();
-                            if (sig!=null)
-                                listener.getLogger().println("Slave JVM has terminated. Exit signal=" + sig);
-                            else
-                                listener.getLogger().println("Slave JVM has not reported exit code. Is it still running?");
-                        }
-                        session.close();
-                    } catch (Throwable t) {
-                        t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
-                    }
-                    try {
-                        out.close();
-                    } catch (Throwable t) {
-                        t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
-                    }
-                    cleanupConnection(listener);
-                }
-            });
-
+            computer.setChannel(session.getStdout(), session.getStdin(), listener.getLogger(), null);
         } catch (InterruptedException e) {
             session.close();
             throw new IOException2(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
@@ -1245,7 +1217,29 @@ public class SSHLauncher extends ComputerLauncher {
             PluginImpl.unregister(connection);
             cleanupConnection(listener);
         }
-        super.afterDisconnect(slaveComputer, listener);
+
+        try {
+            session.waitForCondition(ChannelCondition.EXIT_STATUS|ChannelCondition.EXIT_SIGNAL,3000);
+            Integer exitCode = session.getExitStatus();
+            if (exitCode!=null)
+                listener.getLogger().println("Slave JVM has terminated. Exit code=" + exitCode);
+            else {
+                String sig = session.getExitSignal();
+                if (sig!=null)
+                    listener.getLogger().println("Slave JVM has terminated. Exit signal=" + sig);
+                else
+                    listener.getLogger().println("Slave JVM has not reported exit code. Is it still running?");
+            }
+            session.close();
+        } catch (Throwable t) {
+            t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
+        }
+        try {
+            session.getStdout().close();
+        } catch (Throwable t) {
+            t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
+        }
+        cleanupConnection(listener);
     }
 
     /**
