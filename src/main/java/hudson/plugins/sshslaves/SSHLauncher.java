@@ -45,6 +45,7 @@ import com.trilead.ssh2.SCPClient;
 import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.Session;
+import com.trilead.ssh2.transport.TransportManager;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
@@ -98,6 +99,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.InterruptedException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
@@ -1183,6 +1185,8 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public synchronized void afterDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
         if (connection != null) {
+            reportTransportLoss(connection,listener);
+
             if (session!=null) {
                 // give the process 3 seconds to write out its dying message before we cut the loss
                 // and give up on this process. if the slave process had JVM crash, OOME, or any other
@@ -1228,6 +1232,35 @@ public class SSHLauncher extends ComputerLauncher {
 
             PluginImpl.unregister(connection);
             cleanupConnection(listener);
+        }
+    }
+
+    /**
+     * If the SSH connection as a whole is lost, report that information.
+     */
+    private void reportTransportLoss(Connection c, TaskListener listener) {
+        // TODO: switch to Connection.getReasonClosedCause() post build217-jenkins-8
+        // in the mean time, rely on reflection to get to the object
+
+        TransportManager tm = null;
+        try {
+            Field f = Connection.class.getDeclaredField("tm");
+            f.setAccessible(true);
+            tm = (TransportManager) f.get(c);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace(listener.error("Failed to get to TransportManager"));
+        } catch (IllegalAccessException e) {
+            e.printStackTrace(listener.error("Failed to get to TransportManager"));
+        }
+
+        if (tm==null) {
+            listener.error("Couldn't get to TransportManager.");
+            return;
+        }
+
+        Throwable cause = tm.getReasonClosedCause();
+        if (cause!=null) {
+            cause.printStackTrace(listener.error("Socket connection to SSH server was lost"));
         }
     }
 
