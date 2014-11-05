@@ -1185,7 +1185,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public synchronized void afterDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
         if (connection != null) {
-            reportTransportLoss(connection,listener);
+            boolean connectionLost = reportTransportLoss(connection, listener);
 
             if (session!=null) {
                 // give the process 3 seconds to write out its dying message before we cut the loss
@@ -1203,7 +1203,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
 
             Slave n = slaveComputer.getNode();
-            if (n != null) {
+            if (n != null && !connectionLost) {
                 // this would fail if the connection is already lost, so we want to check that.
                 // TODO: Connection class should expose whether it is still connected or not.
                 String workingDirectory = getWorkingDirectory(n);
@@ -1238,7 +1238,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * If the SSH connection as a whole is lost, report that information.
      */
-    private void reportTransportLoss(Connection c, TaskListener listener) {
+    private boolean reportTransportLoss(Connection c, TaskListener listener) {
         // TODO: switch to Connection.getReasonClosedCause() post build217-jenkins-8
         // in the mean time, rely on reflection to get to the object
 
@@ -1255,13 +1255,15 @@ public class SSHLauncher extends ComputerLauncher {
 
         if (tm==null) {
             listener.error("Couldn't get to TransportManager.");
-            return;
+            return false;
         }
 
         Throwable cause = tm.getReasonClosedCause();
         if (cause!=null) {
             cause.printStackTrace(listener.error("Socket connection to SSH server was lost"));
         }
+
+        return cause!=null;
     }
 
     /**
