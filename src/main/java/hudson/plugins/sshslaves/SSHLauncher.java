@@ -957,6 +957,17 @@ public class SSHLauncher extends ComputerLauncher {
                         cause.printStackTrace(listener.error(hudson.model.Messages.Slave_Terminated(getTimestamp())));
                     }
                     try {
+                        session.waitForCondition(ChannelCondition.EXIT_STATUS|ChannelCondition.EXIT_SIGNAL,3000);
+                        Integer exitCode = session.getExitStatus();
+                        if (exitCode!=null)
+                            listener.getLogger().println("Slave JVM has terminated. Exit code=" + exitCode);
+                        else {
+                            String sig = session.getExitSignal();
+                            if (sig!=null)
+                                listener.getLogger().println("Slave JVM has terminated. Exit signal=" + sig);
+                            else
+                                listener.getLogger().println("Slave JVM has not reported exit code. Is it still running?");
+                        }
                         session.close();
                     } catch (Throwable t) {
                         t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
