@@ -950,7 +950,7 @@ public class SSHLauncher extends ComputerLauncher {
             try {
                 // often times error this early means the JVM has died, so let's see if we can capture all stderr
                 // and exit code
-                throw new IOException2(getSessionOutcomeMessage(session),e);
+                throw new IOException2(getSessionOutcomeMessage(session,false),e);
             } catch (InterruptedException x) {
                 throw (IOException)new IOException().initCause(e);
             }
@@ -1186,14 +1186,13 @@ public class SSHLauncher extends ComputerLauncher {
     public synchronized void afterDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
         if (connection != null) {
             boolean connectionLost = reportTransportLoss(connection, listener);
-
             if (session!=null) {
                 // give the process 3 seconds to write out its dying message before we cut the loss
                 // and give up on this process. if the slave process had JVM crash, OOME, or any other
                 // critical problem, this will allow us to capture that.
                 // exit code is also an useful info to figure out why the process has died.
                 try {
-                    listener.getLogger().println(getSessionOutcomeMessage(session));
+                    listener.getLogger().println(getSessionOutcomeMessage(session,connectionLost));
                     session.getStdout().close();
                     session.close();
                 } catch (Throwable t) {
@@ -1269,7 +1268,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Find the exit code or exit status, which are differentiated in SSH protocol.
      */
-    private String getSessionOutcomeMessage(Session session) throws InterruptedException {
+    private String getSessionOutcomeMessage(Session session, boolean isConnectionLost) throws InterruptedException {
         session.waitForCondition(ChannelCondition.EXIT_STATUS | ChannelCondition.EXIT_SIGNAL, 3000);
 
         Integer exitCode = session.getExitStatus();
@@ -1279,6 +1278,9 @@ public class SSHLauncher extends ComputerLauncher {
         String sig = session.getExitSignal();
         if (sig != null)
             return "Slave JVM has terminated. Exit signal=" + sig;
+
+        if (isConnectionLost)
+            return "Slave JVM has not reported exit code before the socket was lost";
 
         return "Slave JVM has not reported exit code. Is it still running?";
     }
