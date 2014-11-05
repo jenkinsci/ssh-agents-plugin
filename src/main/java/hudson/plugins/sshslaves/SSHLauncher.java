@@ -948,12 +948,7 @@ public class SSHLauncher extends ComputerLauncher {
             try {
                 // often times error this early means the JVM has died, so let's see if we can capture all stderr
                 // and exit code
-                session.waitForCondition(ChannelCondition.EXIT_STATUS, 3000);
-                Integer exitCode = session.getExitStatus();
-                if (exitCode!=null)
-                    throw new IOException2("Slave JVM has terminated. Exit code="+exitCode,e);
-                else
-                    throw new IOException2("Failed to establish channel with slave JVM but it's still running",e);
+                throw new IOException2(getSessionOutcomeMessage(session),e);
             } catch (InterruptedException x) {
                 throw (IOException)new IOException().initCause(e);
             }
@@ -1187,9 +1182,26 @@ public class SSHLauncher extends ComputerLauncher {
      */
     @Override
     public synchronized void afterDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
-        Slave n = slaveComputer.getNode();
         if (connection != null) {
+            if (session!=null) {
+                // give the process 3 seconds to write out its dying message before we cut the loss
+                // and give up on this process. if the slave process had JVM crash, OOME, or any other
+                // critical problem, this will allow us to capture that.
+                // exit code is also an useful info to figure out why the process has died.
+                try {
+                    listener.getLogger().println(getSessionOutcomeMessage(session));
+                    session.getStdout().close();
+                    session.close();
+                } catch (Throwable t) {
+                    t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
+                }
+                session = null;
+            }
+
+            Slave n = slaveComputer.getNode();
             if (n != null) {
+                // this would fail if the connection is already lost, so we want to check that.
+                // TODO: Connection class should expose whether it is still connected or not.
                 String workingDirectory = getWorkingDirectory(n);
                 String fileName = workingDirectory + "/slave.jar";
 
@@ -1217,29 +1229,23 @@ public class SSHLauncher extends ComputerLauncher {
             PluginImpl.unregister(connection);
             cleanupConnection(listener);
         }
+    }
 
-        try {
-            session.waitForCondition(ChannelCondition.EXIT_STATUS|ChannelCondition.EXIT_SIGNAL,3000);
-            Integer exitCode = session.getExitStatus();
-            if (exitCode!=null)
-                listener.getLogger().println("Slave JVM has terminated. Exit code=" + exitCode);
-            else {
-                String sig = session.getExitSignal();
-                if (sig!=null)
-                    listener.getLogger().println("Slave JVM has terminated. Exit signal=" + sig);
-                else
-                    listener.getLogger().println("Slave JVM has not reported exit code. Is it still running?");
-            }
-            session.close();
-        } catch (Throwable t) {
-            t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
-        }
-        try {
-            session.getStdout().close();
-        } catch (Throwable t) {
-            t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
-        }
-        cleanupConnection(listener);
+    /**
+     * Find the exit code or exit status, which are differentiated in SSH protocol.
+     */
+    private String getSessionOutcomeMessage(Session session) throws InterruptedException {
+        session.waitForCondition(ChannelCondition.EXIT_STATUS | ChannelCondition.EXIT_SIGNAL, 3000);
+
+        Integer exitCode = session.getExitStatus();
+        if (exitCode != null)
+            return "Slave JVM has terminated. Exit code=" + exitCode;
+
+        String sig = session.getExitSignal();
+        if (sig != null)
+            return "Slave JVM has terminated. Exit signal=" + sig;
+
+        return "Slave JVM has not reported exit code. Is it still running?";
     }
 
     /**
