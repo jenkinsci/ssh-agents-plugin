@@ -147,7 +147,9 @@ public class SSHConnector extends ComputerConnector {
         try {
             // only ever want from the system
             // lookup every time so that we always have the latest
-            StandardUsernameCredentials credentials = SSHLauncher.lookupSystemCredentials(credentialsId);
+            StandardUsernameCredentials credentials = 
+                    credentialsId == null ? null :
+                    SSHLauncher.lookupSystemCredentials(credentialsId);
             if (credentials != null) {
                 this.credentials = credentials;
                 return credentials;
@@ -259,8 +261,8 @@ public class SSHConnector extends ComputerConnector {
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
-        this.maxNumRetries = maxNumRetries == null || maxNumRetries <= 0 ? 0 : maxNumRetries;
-        this.retryWaitTime = retryWaitTime == null || retryWaitTime <= 0 ? 0 : retryWaitTime;
+        this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : 0;
+        this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : 0;
     }
 
     @Override

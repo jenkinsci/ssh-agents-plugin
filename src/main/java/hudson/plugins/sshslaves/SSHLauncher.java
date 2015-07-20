@@ -122,9 +122,12 @@ import java.util.regex.Pattern;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.*;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import static hudson.Util.*;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import static java.util.logging.Level.*;
 
 /**
@@ -457,8 +460,8 @@ public class SSHLauncher extends ComputerLauncher {
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
-        this.maxNumRetries = maxNumRetries == null || maxNumRetries <= 0 ? 0 : maxNumRetries;
-        this.retryWaitTime = retryWaitTime == null || retryWaitTime <= 0 ? 0 : retryWaitTime;
+        this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : 0;
+        this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : 0;
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String, String)} instead. */
@@ -483,7 +486,8 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             // only ever want from the system
             // lookup every time so that we always have the latest
-            StandardUsernameCredentials credentials = SSHLauncher.lookupSystemCredentials(credentialsId);
+            StandardUsernameCredentials credentials = credentialsId != null ? 
+                    SSHLauncher.lookupSystemCredentials(credentialsId) : null;
             if (credentials != null) {
                 this.credentials = credentials;
                 return credentials;
@@ -673,11 +677,16 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return the remote root workspace (without trailing slash).
      */
+    @CheckForNull
     private static String getWorkingDirectory(SlaveComputer computer) {
         return getWorkingDirectory(computer.getNode());
     }
 
-    private static String getWorkingDirectory(Slave slave) {
+    @CheckForNull
+    private static String getWorkingDirectory(@CheckForNull Slave slave) {
+        if (slave == null) {
+            return null;
+        }
         String workingDirectory = slave.getRemoteFS();
         while (workingDirectory.endsWith("/")) {
             workingDirectory = workingDirectory.substring(0, workingDirectory.length() - 1);
@@ -705,7 +714,11 @@ public class SSHLauncher extends ComputerLauncher {
 
                     String java = resolveJava(computer, listener);
 
-                    String workingDirectory = getWorkingDirectory(computer);
+                    final String workingDirectory = getWorkingDirectory(computer);
+                    if (workingDirectory == null) {
+                        listener.error("Cannot get the working directory for " + computer);
+                        return Boolean.FALSE;
+                    }
                     copySlaveJar(listener, workingDirectory);
 
                     startSlave(computer, listener, java, workingDirectory);
@@ -724,6 +737,8 @@ public class SSHLauncher extends ComputerLauncher {
             }
         });
 
+        final Node node = computer.getNode();
+        final String nodeName = node != null ? node.getNodeName() : "unknown";
         try {
             long time = System.currentTimeMillis();
             List<Future<Boolean>> results;
@@ -741,17 +756,17 @@ public class SSHLauncher extends ComputerLauncher {
             }
             if (!res) {
                 System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
-                        computer.getNode().getNodeName(), host, duration));
+                        nodeName, host, duration));
                 listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
                 cleanupConnection(listener);
             } else {
                 System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
-                        computer.getNode().getNodeName(), host, duration));
+                        nodeName, host, duration));
             }
             executorService.shutdown();
         } catch (InterruptedException e) {
             System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
-                    computer.getNode().getNodeName(), host));
+                    nodeName, host));
         }
 
     }
@@ -778,7 +793,10 @@ public class SSHLauncher extends ComputerLauncher {
             return expandExpression(computer, javaPath);
         }
 
-        String workingDirectory = getWorkingDirectory(computer);
+        final String workingDirectory = getWorkingDirectory(computer);
+        if (workingDirectory == null) {
+            throw new IOException2("Cannot retrieve a working directory of " + computer, null);
+        }
 
         List<String> tried = new ArrayList<String>();
         for (JavaProvider provider : JavaProvider.all()) {
@@ -786,9 +804,7 @@ public class SSHLauncher extends ComputerLauncher {
                 LOGGER.fine("Trying Java at "+javaCommand);
                 try {
                     tried.add(javaCommand);
-                    String java = checkJavaVersion(listener, javaCommand);
-                    if (java != null)
-                        return java;
+                    return checkJavaVersion(listener, javaCommand);
                 } catch (IOException e) {
                     LOGGER.log(FINE, "Failed to check the Java version",e);
                     // try the next one
@@ -811,7 +827,8 @@ public class SSHLauncher extends ComputerLauncher {
     private EnvVars getEnvVars(SlaveComputer computer) {
         final EnvVars global = getEnvVars(Hudson.getInstance());
 
-        final EnvVars local = getEnvVars(computer.getNode());
+        final Node node = computer.getNode();    
+        final EnvVars local = node != null ? getEnvVars(node) : null;
 
         if (global != null) {
             if (local != null) {
@@ -852,7 +869,14 @@ public class SSHLauncher extends ComputerLauncher {
     private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         connection.exec("true",baos);
-        String s = baos.toString();
+        final String s;
+        //TODO: Seems we need to retrieve the encoding from the connection destination
+        try {
+            s = baos.toString(Charset.defaultCharset().name());
+        } catch (UnsupportedEncodingException ex) { // Should not happen
+            throw new IOException("Default encoding is unsupported", ex);
+        }
+        
         if (s.length()!=0) {
             listener.getLogger().println(Messages.SSHLauncher_SSHHeeaderJunkDetected());
             listener.getLogger().println(s);
@@ -883,8 +907,14 @@ public class SSHLauncher extends ComputerLauncher {
         // CYGWIN_NT-5.1 franz 1.7.0(0.185/5/3) 2008-07-22 19:09 i686 Cygwin
         // Windows_NT WINXPIE7 5 01 586
         //        (this one is from MKS)
-
-        String uname = unameOutput.toString();
+        
+        //TODO: Seems we need to retrieve the encoding from the connection destination
+        final String uname;
+        try {
+            uname = unameOutput.toString(Charset.defaultCharset().name());
+        } catch (UnsupportedEncodingException ex) { // Should not happen
+            throw new IOException("Default encoding is unsupported", ex);
+        }
         Platform p = null;
         CPU cpu = null;
         if (uname.contains("GNU/Linux"))        p = Platform.LINUX;
@@ -1012,10 +1042,14 @@ public class SSHLauncher extends ComputerLauncher {
                         os.close();
                     }
                     listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), slaveJar.length));
-                } catch (Exception e) {
+                } catch (Error error) {
+                    throw error;  
+                } catch (Throwable e) {
                     throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarTo(fileName), e);
                 }
-            } catch (Exception e) {
+            } catch (Error error) {
+                throw error;
+            } catch (Throwable e) {
                 throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
             }
         } catch (IOException e) {
@@ -1071,13 +1105,16 @@ public class SSHLauncher extends ComputerLauncher {
         connection.exec("set",listener.getLogger());
     }
 
+    @NonNull
     private String checkJavaVersion(TaskListener listener, String javaCommand) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_CheckingDefaultJava(getTimestamp(),javaCommand));
         StringWriter output = new StringWriter();   // record output from Java
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         connection.exec(javaCommand + " "+getJvmOptions() + " -version",out);
-        BufferedReader r = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(out.toByteArray())));
+        //TODO: Seems we need to retrieve the encoding from the connection destination
+        BufferedReader r = new BufferedReader(new InputStreamReader(
+                new ByteArrayInputStream(out.toByteArray()), Charset.defaultCharset()));
         final String result = checkJavaVersion(listener.getLogger(), javaCommand, r, output);
 
         if(null == result) {
@@ -1103,6 +1140,7 @@ public class SSHLauncher extends ComputerLauncher {
 	 * @param output
 	 *            copy the data from <code>r</code> into this output buffer
 	 */
+	@CheckForNull
 	protected String checkJavaVersion(final PrintStream logger, String javaCommand,
 			final BufferedReader r, final StringWriter output)
 			throws IOException {
@@ -1110,7 +1148,7 @@ public class SSHLauncher extends ComputerLauncher {
 		while (null != (line = r.readLine())) {
 			output.write(line);
 			output.write("\n");
-			line = line.toLowerCase();
+			line = line.toLowerCase(Locale.ENGLISH);
 			if (line.startsWith("java version \"")
 					|| line.startsWith("openjdk version \"")) {
 				final String versionStr = line.substring(
@@ -1216,8 +1254,11 @@ public class SSHLauncher extends ComputerLauncher {
                     if (sftpClient == null) {// system without SFTP
                         try {
                             connection.exec("rm " + fileName, listener.getLogger());
-                        } catch (Exception x) {
+                        } catch (Error error) {
+                            throw error;
+                        } catch (Throwable x) {
                             x.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                            // We ignore other Exception types
                         }
                     } else {
                         e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
@@ -1367,7 +1408,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @return maxNumRetries
      */
     public Integer getMaxNumRetries() {
-        return maxNumRetries == null || maxNumRetries < 0 ? 0 : maxNumRetries;
+        return maxNumRetries == null || maxNumRetries < 0 ? Integer.valueOf(0) : maxNumRetries;
     }
 
     /**
@@ -1429,10 +1470,16 @@ public class SSHLauncher extends ComputerLauncher {
                     "/usr/java/default/bin/java",
                     "/usr/java/latest/bin/java",
                     "/usr/local/bin/java",
-                    "/usr/local/java/bin/java",
-                    getWorkingDirectory(computer)+"/jdk/bin/java")); // this is where we attempt to auto-install
+                    "/usr/local/java/bin/java")); // this is where we attempt to auto-install
 
-            DescribableList<NodeProperty<?>,NodePropertyDescriptor> list = computer.getNode().getNodeProperties();
+            String workingDirectory = getWorkingDirectory(computer);
+            if (workingDirectory != null) {
+                javas.add(workingDirectory + "/jdk/bin/java");
+            }
+               
+            final Node node = computer.getNode();
+            DescribableList<NodeProperty<?>,NodePropertyDescriptor> list = 
+                    node != null ? node.getNodeProperties() : null;
             if (list != null) {
                 Descriptor jdk = Hudson.getInstance().getDescriptorByType(JDK.DescriptorImpl.class);
                 for (NodeProperty prop : list) {
