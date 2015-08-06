@@ -141,8 +141,8 @@ public class SSHLauncher extends ComputerLauncher {
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
 
 
-    public static final String JDKVERSION = "jdk-6u45";
-    public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR@CDS-CDS_Developer";
+    public static final String JDKVERSION = "jdk-7u80";
+    public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR";
 
     /**
      * @deprecated
