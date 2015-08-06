@@ -117,6 +117,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -1221,7 +1222,7 @@ public class SSHLauncher extends ComputerLauncher {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void afterDisconnect(SlaveComputer slaveComputer, TaskListener listener) {
+    public synchronized void afterDisconnect(SlaveComputer slaveComputer, final TaskListener listener) {
         if (connection != null) {
             boolean connectionLost = reportTransportLoss(connection, listener);
             if (session!=null) {
@@ -1241,31 +1242,52 @@ public class SSHLauncher extends ComputerLauncher {
 
             Slave n = slaveComputer.getNode();
             if (n != null && !connectionLost) {
-                // this would fail if the connection is already lost, so we want to check that.
-                // TODO: Connection class should expose whether it is still connected or not.
                 String workingDirectory = getWorkingDirectory(n);
-                String fileName = workingDirectory + "/slave.jar";
+                final String fileName = workingDirectory + "/slave.jar";
+                Future<?> tidyUp = Computer.threadPoolForRemoting.submit(new Runnable() {
+                    public void run() {
+                        // this would fail if the connection is already lost, so we want to check that.
+                        // TODO: Connection class should expose whether it is still connected or not.
 
-                SFTPv3Client sftpClient = null;
-                try {
-                    sftpClient = new SFTPv3Client(connection);
-                    sftpClient.rm(fileName);
-                } catch (Exception e) {
-                    if (sftpClient == null) {// system without SFTP
+                        SFTPv3Client sftpClient = null;
                         try {
-                            connection.exec("rm " + fileName, listener.getLogger());
-                        } catch (Error error) {
-                            throw error;
-                        } catch (Throwable x) {
-                            x.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                            // We ignore other Exception types
+                            sftpClient = new SFTPv3Client(connection);
+                            sftpClient.rm(fileName);
+                        } catch (Exception e) {
+                            if (sftpClient == null) {// system without SFTP
+                                try {
+                                    connection.exec("rm " + fileName, listener.getLogger());
+                                } catch (Error error) {
+                                    throw error;
+                                } catch (Throwable x) {
+                                    x.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                                    // We ignore other Exception types
+                                }
+                            } else {
+                                e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                            }
+                        } finally {
+                            if (sftpClient != null) {
+                                sftpClient.close();
+                            }
                         }
-                    } else {
-                        e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
                     }
+                });
+                try {
+                    // the delete is best effort only and if it takes longer than 60 seconds - or the launch 
+                    // timeout (if specified) - then we should just give up and leave the file there.
+                    tidyUp.get(launchTimeoutSeconds == null ? 60 : launchTimeoutSeconds, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                    // we should either re-apply our interrupt flag or propagate... we don't want to propagate, so...
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException e) {
+                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                } catch (TimeoutException e) {
+                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
                 } finally {
-                    if (sftpClient != null) {
-                        sftpClient.close();
+                    if (!tidyUp.isDone()) {
+                        tidyUp.cancel(true);
                     }
                 }
             }
