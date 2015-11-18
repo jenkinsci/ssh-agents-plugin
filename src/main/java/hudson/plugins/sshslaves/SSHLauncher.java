@@ -1161,7 +1161,7 @@ public class SSHLauncher extends ComputerLauncher {
 				try {
 					final Number version =
 						NumberFormat.getNumberInstance(Locale.US).parse(versionStr);
-					if(version.doubleValue() < 1.5) {
+					if(version.doubleValue() < 1.7) {
 						throw new IOException(Messages
 								.SSHLauncher_NoJavaFound(line));
 					}
