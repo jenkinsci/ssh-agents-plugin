@@ -72,6 +72,7 @@ import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
 import hudson.util.IOException2;
 import hudson.util.ListBoxModel;
+import hudson.util.NamingThreadFactory;
 import hudson.util.NullStream;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
@@ -701,7 +702,8 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         connection = new Connection(host, port);
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        ExecutorService executorService = Executors.newSingleThreadExecutor(
+                new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
         Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
         callables.add(new Callable<Boolean>() {
             public Boolean call() throws InterruptedException {
