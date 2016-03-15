@@ -127,4 +127,22 @@ public class SSHLauncherTest {
         assertNotSame(n.getLauncher(),launcher);
         j.assertEqualDataBoundBeans(n.getLauncher(),launcher);
     }
+
+
+	@Test
+	public void fillCredentials() {
+		SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(
+				new Domain("test", null, Collections.<DomainSpecification>singletonList(
+						new HostnamePortSpecification(null, null)
+				)),
+				Collections.<Credentials>singletonList(
+						new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "john", null, null, null)
+				)
+		);
+
+		SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
+		assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22").size());
+		assertEquals(0, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two").size());
+		assertEquals(0, desc.doFillCredentialsIdItems(j.jenkins, "", "").size());
+	}
 }

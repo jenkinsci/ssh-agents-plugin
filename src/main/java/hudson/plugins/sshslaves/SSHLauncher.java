@@ -1475,10 +1475,14 @@ public class SSHLauncher extends ComputerLauncher {
             if (!(context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance()).hasPermission(Computer.CONFIGURE)) {
                 return new ListBoxModel();
             }
-            int portValue = Integer.parseInt(port);
-            return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
-                    CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
-                            ACL.SYSTEM, SSHLauncher.SSH_SCHEME, new HostnamePortRequirement(host, portValue)));
+            try {
+                int portValue = Integer.parseInt(port);
+                return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
+                        CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
+                                ACL.SYSTEM, SSHLauncher.SSH_SCHEME, new HostnamePortRequirement(host, portValue)));
+            } catch (NumberFormatException ex) {
+                return new ListBoxModel();
+            }
         }
     }
 
