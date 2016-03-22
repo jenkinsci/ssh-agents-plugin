@@ -283,7 +283,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * @deprecated use {@link SSHLauncher#(String,int,String,String,String,String,String,Integer)}
+     * @deprecated use {@link  SSHLauncher#SSHLauncher(String,int,String,String,String,String,String,Integer)}
      */
     @Deprecated
     public SSHLauncher(String host, int port, String credentialsId,
@@ -1472,7 +1472,8 @@ public class SSHLauncher extends ComputerLauncher {
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
                                                      @QueryParameter String host,
                                                      @QueryParameter String port) {
-            if (!(context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance()).hasPermission(Computer.CONFIGURE)) {
+            AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
+            if (_context != null && !_context.hasPermission(Computer.CONFIGURE)) {
                 return new ListBoxModel();
             }
             int portValue = Integer.parseInt(port);

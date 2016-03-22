@@ -51,8 +51,8 @@ import hudson.security.AccessControlled;
 
 /**
  * {@link ComputerConnector} for {@link SSHLauncher}.
- * <p/>
- * <p/>
+ * <p>
+ * <p>
  * Significant code duplication between this and {@link SSHLauncher} because of the historical reason.
  * Newer plugins like this should define a separate Describable connection parameter class and have
  * connector and launcher share them.
@@ -172,7 +172,7 @@ public class SSHConnector extends ComputerConnector {
     }
 
     /**
-     * @see SSHLauncher#(String, int, StandardUsernameCredentials, String, String, String, String, String, Integer, Integer, Integer)
+     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, Integer, Integer, Integer)
      */
     @DataBoundConstructor
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
@@ -183,7 +183,7 @@ public class SSHConnector extends ComputerConnector {
     }
 
     /**
-     * @see SSHLauncher#(String, int, StandardUsernameCredentials, String, String, String, String, String, Integer)
+     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, Integer)
      */
     @Deprecated
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
@@ -193,7 +193,7 @@ public class SSHConnector extends ComputerConnector {
     }
 
     /**
-     * @deprecated Use {@link #(int,String,String,String,String,String,Integer)}
+     * @deprecated Use {@link SSHConnector#SSHConnector(int,String,String,String,String,String,Integer)}
      */
     @Deprecated
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
@@ -279,7 +279,8 @@ public class SSHConnector extends ComputerConnector {
         }
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
-            if (!(context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance()).hasPermission(Computer.CONFIGURE)) {
+            AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
+            if (_context != null && !_context.hasPermission(Computer.CONFIGURE)) {
                 return new ListBoxModel();
             }
             return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
