@@ -280,7 +280,7 @@ public class SSHConnector extends ComputerConnector {
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
             AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context != null && !_context.hasPermission(Computer.CONFIGURE)) {
+            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
                 return new ListBoxModel();
             }
             return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),

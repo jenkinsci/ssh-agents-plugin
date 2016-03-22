@@ -1473,7 +1473,7 @@ public class SSHLauncher extends ComputerLauncher {
                                                      @QueryParameter String host,
                                                      @QueryParameter String port) {
             AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context != null && !_context.hasPermission(Computer.CONFIGURE)) {
+            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
                 return new ListBoxModel();
             }
             int portValue = Integer.parseInt(port);
