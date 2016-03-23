@@ -35,7 +35,6 @@ import hudson.Plugin;
  * Entry point of ssh-slaves plugin.
  *
  * @author Stephen Connolly
- * @plugin
  */
 public class PluginImpl extends Plugin {
 
