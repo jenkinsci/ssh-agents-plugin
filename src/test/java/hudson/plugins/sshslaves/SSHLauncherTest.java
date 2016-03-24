@@ -50,17 +50,42 @@ public class SSHLauncherTest extends HudsonTestCase {
 
 	@Test
 	public void testCheckJavaVersionOpenJDK6Linux() throws Exception {
-		Assert.assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
+		try {
+			checkSupported("openjdk-6-linux.version");
+			fail();
+		} catch (IOException e) {
+			// expected
+		}
 	}
 
 	@Test
 	public void testCheckJavaVersionSun6Linux() throws Exception {
-		Assert.assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
+		try {
+			checkSupported("sun-java-1.6-linux.version");
+			fail();
+		} catch (IOException e) {
+			// expected
+		}
 	}
 
 	@Test
 	public void testCheckJavaVersionSun6Mac() throws Exception {
-		Assert.assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
+		try {
+			checkSupported("sun-java-1.6-mac.version");
+			fail();
+		} catch (IOException e) {
+			// expected
+		}
+	}
+
+	@Test
+	public void testCheckJavaVersionOracle7Mac() throws Exception {
+		Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
+	}
+
+	@Test
+	public void testCheckJavaVersionOracle8Mac() throws Exception {
+		Assert.assertTrue("Oracle 8 on Mac should be supported", checkSupported("oracle-java-1.8-mac.version"));
 	}
 
 	@Test
@@ -69,7 +94,7 @@ public class SSHLauncherTest extends HudsonTestCase {
 		    checkSupported("sun-java-1.4-linux.version");
             fail();
         } catch (IOException e) {
-            //
+            // expected
         }
 	}
 
