@@ -30,37 +30,57 @@ import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.util.Collections;
 
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.domains.DomainSpecification;
+import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
+import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
+import hudson.model.Descriptor;
 import hudson.model.Node.Mode;
 import hudson.model.Slave;
 import hudson.plugins.sshslaves.SSHLauncher.DefaultJDKInstaller;
+import hudson.security.ACL;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
-import junit.framework.TestCase;
 
-import org.junit.Assert;
+import hudson.util.ListBoxModel;
+import org.junit.Rule;
 import org.junit.Test;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
 
-public class SSHLauncherTest extends HudsonTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class SSHLauncherTest {
+
+	@Rule
+	public JenkinsRule j = new JenkinsRule();
 
 	@Test
 	public void testCheckJavaVersionOpenJDK7NetBSD() throws Exception {
-		Assert.assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
+		assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
 	}
 
 	@Test
 	public void testCheckJavaVersionOpenJDK6Linux() throws Exception {
-		Assert.assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
+		assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
 	}
 
 	@Test
 	public void testCheckJavaVersionSun6Linux() throws Exception {
-		Assert.assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
+		assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
 	}
 
 	@Test
 	public void testCheckJavaVersionSun6Mac() throws Exception {
-		Assert.assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
+		assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
 	}
 
 	@Test
@@ -79,7 +99,6 @@ public class SSHLauncherTest extends HudsonTestCase {
 	 * @param testVersionOutput
 	 *            the resource to find relative to this class that contains the
 	 *            output of "java -version"
-	 * @return
 	 */
 	private static boolean checkSupported(final String testVersionOutput) throws IOException {
         final String javaCommand = "testing-java";
@@ -93,18 +112,37 @@ public class SSHLauncherTest extends HudsonTestCase {
         return null != result;
 	}
 
+	@Test
     public void testConfigurationRoundtrip() throws Exception {
         SSHLauncher launcher = new SSHLauncher("localhost", 123, null, "pass", "xyz", new DefaultJDKInstaller(), null, null, null, 0, 0);
         DumbSlave slave = new DumbSlave("slave", "dummy",
-                createTmpDir().getPath(), "1", Mode.NORMAL, "",
+                j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.EMPTY_LIST);
-        hudson.addNode(slave);
+        j.jenkins.addNode(slave);
 
-        submit(createWebClient().getPage(slave,"configure").getFormByName("config"));
-        Slave n = (Slave)hudson.getNode("slave");
+        j.submit(j.createWebClient().getPage(slave,"configure").getFormByName("config"));
+        Slave n = (Slave) j.jenkins.getNode("slave");
 
         assertNotSame(n,slave);
         assertNotSame(n.getLauncher(),launcher);
-        assertEqualDataBoundBeans(n.getLauncher(),launcher);
+        j.assertEqualDataBoundBeans(n.getLauncher(),launcher);
     }
+
+
+	@Test
+	public void fillCredentials() {
+		SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(
+				new Domain("test", null, Collections.<DomainSpecification>singletonList(
+						new HostnamePortSpecification(null, null)
+				)),
+				Collections.<Credentials>singletonList(
+						new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "john", null, null, null)
+				)
+		);
+
+		SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
+		assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22").size());
+		assertEquals(0, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two").size());
+		assertEquals(0, desc.doFillCredentialsIdItems(j.jenkins, "", "").size());
+	}
 }
