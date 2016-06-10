@@ -850,7 +850,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private EnvVars getEnvVars(Hudson h) {
+    private EnvVars getEnvVars(Jenkins h) {
         return getEnvVars(h.getGlobalNodeProperties());
     }
 
