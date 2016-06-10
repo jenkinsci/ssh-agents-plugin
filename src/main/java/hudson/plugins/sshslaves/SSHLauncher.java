@@ -829,7 +829,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private EnvVars getEnvVars(SlaveComputer computer) {
-        final EnvVars global = getEnvVars(Hudson.getInstance());
+        final EnvVars global = getEnvVars(Jenkins.getActiveInstance());
 
         final Node node = computer.getNode();    
         final EnvVars local = node != null ? getEnvVars(node) : null;
@@ -1096,7 +1096,7 @@ public class SSHLauncher extends ComputerLauncher {
             connection.exec("rm " + workingDirectory + "/slave.jar", new NullStream());
 
             // SCP it to the slave. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
-            InputStream is = Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
+            InputStream is = Jenkins.getActiveInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
             listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
             scp.put(IOUtils.toByteArray(is), "slave.jar", workingDirectory, "0644");
         } catch (IOException e) {
@@ -1468,7 +1468,7 @@ public class SSHLauncher extends ComputerLauncher {
         public String getHelpFile(String fieldName) {
             String n = super.getHelpFile(fieldName);
             if (n==null)
-                n = Hudson.getInstance().getDescriptor(SSHConnector.class).getHelpFile(fieldName);
+                n = Jenkins.getActiveInstance().getDescriptor(SSHConnector.class).getHelpFile(fieldName);
             return n;
         }
 
@@ -1566,7 +1566,7 @@ public class SSHLauncher extends ComputerLauncher {
             DescribableList<NodeProperty<?>,NodePropertyDescriptor> list = 
                     node != null ? node.getNodeProperties() : null;
             if (list != null) {
-                Descriptor jdk = Hudson.getInstance().getDescriptorByType(JDK.DescriptorImpl.class);
+                Descriptor jdk = Jenkins.getActiveInstance().getDescriptorByType(JDK.DescriptorImpl.class);
                 for (NodeProperty prop : list) {
                     if (prop instanceof EnvironmentVariablesNodeProperty) {
                         EnvVars env = ((EnvironmentVariablesNodeProperty)prop).getEnvVars();

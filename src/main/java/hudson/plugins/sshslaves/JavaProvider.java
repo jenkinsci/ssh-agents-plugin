@@ -59,7 +59,7 @@ public abstract class JavaProvider implements ExtensionPoint {
      * All regsitered instances.
      */
     public static ExtensionList<JavaProvider> all() {
-        return Hudson.getInstance().getExtensionList(JavaProvider.class);
+        return ExtensionList.lookup(JavaProvider.class);
     }
 
 }
