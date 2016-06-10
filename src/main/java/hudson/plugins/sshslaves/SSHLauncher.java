@@ -1119,60 +1119,60 @@ public class SSHLauncher extends ComputerLauncher {
         final String result = checkJavaVersion(listener.getLogger(), javaCommand, r, output);
 
         if(null == result) {
-        	listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
-        	listener.getLogger().println(output);
-        	throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+            listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+            listener.getLogger().println(output);
+            throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
         } else {
-        	return result;
+            return result;
         }
     }
 
     // XXX switch to standard method in 1.479+
-	/**
-	 * Given the output of "java -version" in <code>r</code>, determine if this
-	 * version of Java is supported. This method has default visiblity for testing.
-	 *
-	 * @param logger
-	 *            where to log the output
-	 * @param javaCommand
-	 *            the command executed, used for logging
-	 * @param r
-	 *            the output of "java -version"
-	 * @param output
-	 *            copy the data from <code>r</code> into this output buffer
-	 */
-	@CheckForNull
-	protected String checkJavaVersion(final PrintStream logger, String javaCommand,
-			final BufferedReader r, final StringWriter output)
-			throws IOException {
-		String line;
-		while (null != (line = r.readLine())) {
-			output.write(line);
-			output.write("\n");
-			line = line.toLowerCase(Locale.ENGLISH);
-			if (line.startsWith("java version \"")
-					|| line.startsWith("openjdk version \"")) {
-				final String versionStr = line.substring(
-						line.indexOf('\"') + 1, line.lastIndexOf('\"'));
-				logger.println(Messages.SSHLauncher_JavaVersionResult(
-						getTimestamp(), javaCommand, versionStr));
+    /**
+     * Given the output of "java -version" in <code>r</code>, determine if this
+     * version of Java is supported. This method has default visiblity for testing.
+     *
+     * @param logger
+     *            where to log the output
+     * @param javaCommand
+     *            the command executed, used for logging
+     * @param r
+     *            the output of "java -version"
+     * @param output
+     *            copy the data from <code>r</code> into this output buffer
+     */
+    @CheckForNull
+    protected String checkJavaVersion(final PrintStream logger, String javaCommand,
+            final BufferedReader r, final StringWriter output)
+            throws IOException {
+        String line;
+        while (null != (line = r.readLine())) {
+            output.write(line);
+            output.write("\n");
+            line = line.toLowerCase(Locale.ENGLISH);
+            if (line.startsWith("java version \"")
+                    || line.startsWith("openjdk version \"")) {
+                final String versionStr = line.substring(
+                        line.indexOf('\"') + 1, line.lastIndexOf('\"'));
+                logger.println(Messages.SSHLauncher_JavaVersionResult(
+                        getTimestamp(), javaCommand, versionStr));
 
-				// parse as a number and we should be OK as all we care about is up through the first dot.
-				try {
-					final Number version =
-						NumberFormat.getNumberInstance(Locale.US).parse(versionStr);
-					if(version.doubleValue() < 1.5) {
-						throw new IOException(Messages
-								.SSHLauncher_NoJavaFound(line));
-					}
-				} catch(final ParseException e) {
-					throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
-				}
-				return javaCommand;
-			}
-		}
-		return null;
-	}
+                // parse as a number and we should be OK as all we care about is up through the first dot.
+                try {
+                    final Number version =
+                        NumberFormat.getNumberInstance(Locale.US).parse(versionStr);
+                    if(version.doubleValue() < 1.5) {
+                        throw new IOException(Messages
+                                .SSHLauncher_NoJavaFound(line));
+                    }
+                } catch(final ParseException e) {
+                    throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
+                }
+                return javaCommand;
+            }
+        }
+        return null;
+    }
 
     protected void openConnection(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
