@@ -141,8 +141,9 @@ public class SSHLauncherTest {
 		);
 
 		SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
-		assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22").size());
-		assertEquals(0, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two").size());
-		assertEquals(0, desc.doFillCredentialsIdItems(j.jenkins, "", "").size());
+		assertEquals(2, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "does-not-exist").size());
+		assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "dummyCredentialId").size());
+		assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two", "does-not-exist").size());
+		assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "", "does-not-exist").size());
 	}
 }
