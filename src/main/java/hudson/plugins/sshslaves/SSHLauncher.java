@@ -36,6 +36,7 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
@@ -70,10 +71,12 @@ import hudson.tools.JDKInstaller.Platform;
 import hudson.tools.ToolLocationNodeProperty;
 import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
+import hudson.util.FormValidation;
 import hudson.util.IOException2;
 import hudson.util.ListBoxModel;
 import hudson.util.NullStream;
 import hudson.util.Secret;
+import java.util.Collections;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
@@ -1471,18 +1474,73 @@ public class SSHLauncher extends ComputerLauncher {
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
                                                      @QueryParameter String host,
-                                                     @QueryParameter String port) {
+                                                     @QueryParameter String port,
+                                                     @QueryParameter String credentialsId) {
             AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
             if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
-                return new ListBoxModel();
+                return new StandardUsernameListBoxModel()
+                        .includeCurrentValue(credentialsId);
             }
             try {
                 int portValue = Integer.parseInt(port);
-                return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
-                        CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
-                                ACL.SYSTEM, SSHLauncher.SSH_SCHEME, new HostnamePortRequirement(host, portValue)));
+                return new StandardUsernameListBoxModel()
+                        .includeMatchingAs(
+                                ACL.SYSTEM,
+                                Jenkins.getActiveInstance(),
+                                StandardUsernameCredentials.class,
+                                Collections.<DomainRequirement>singletonList(
+                                        new HostnamePortRequirement(host, portValue)
+                                ),
+                                SSHAuthenticator.matcher(Connection.class))
+                        .includeCurrentValue(credentialsId); // always add the current value last in case already present
             } catch (NumberFormatException ex) {
-                return new ListBoxModel();
+                return new StandardUsernameListBoxModel()
+                        .includeCurrentValue(credentialsId);
+            }
+        }
+
+        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
+                                                   @QueryParameter String host,
+                                                   @QueryParameter String port,
+                                                   @QueryParameter String value) {
+            AccessControlled _context =
+                    (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
+            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
+                return FormValidation.ok(); // no need to alarm a user that cannot configure
+            }
+            try {
+                int portValue = Integer.parseInt(port);
+                for (ListBoxModel.Option o : CredentialsProvider
+                        .listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
+                                Collections.<DomainRequirement>singletonList(
+                                        new HostnamePortRequirement(host, portValue)
+                                ),
+                                SSHAuthenticator.matcher(Connection.class))) {
+                    if (StringUtils.equals(value, o.value)) {
+                        return FormValidation.ok();
+                    }
+                }
+            } catch (NumberFormatException e) {
+                return FormValidation.warning(e, Messages.SSHLauncher_PortNotANumber());
+            }
+            return FormValidation.error(Messages.SSHLauncher_SelectedCredentialsMissing());
+        }
+
+        public FormValidation doCheckPort(@QueryParameter String value) {
+            if (StringUtils.isEmpty(value)) {
+                return FormValidation.error(Messages.SSHLauncher_PortNotSpecified());
+            }
+            try {
+                int portValue = Integer.parseInt(value);
+                if (portValue <= 0) {
+                    return FormValidation.error(Messages.SSHLauncher_PortLessThanZero());
+                }
+                if (portValue >= 65536) {
+                    return FormValidation.error(Messages.SSHLauncher_PortMoreThan65535());
+                }
+                return FormValidation.ok();
+            } catch (NumberFormatException e) {
+                return FormValidation.error(e, Messages.SSHLauncher_PortNotANumber());
             }
         }
     }

@@ -17,7 +17,7 @@
   <properties>
     <findbugs-maven-plugin.version>3.0.1</findbugs-maven-plugin.version>
     <findbugs.failOnError>true</findbugs.failOnError>
-    <jenkins.version>1.580.1</jenkins.version>
+    <jenkins.version>1.609</jenkins.version>
     <java.level>6</java.level>
   </properties>
 
@@ -62,7 +62,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>1.9.4</version>
+      <version>2.1.0</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
