@@ -23,6 +23,10 @@
  */
 package hudson.plugins.sshslaves;
 
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import hudson.slaves.NodeProperty;
+import hudson.tools.JDKInstaller;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,67 +64,74 @@ import static org.junit.Assert.fail;
 
 public class SSHLauncherTest {
 
-	@Rule
-	public JenkinsRule j = new JenkinsRule();
+    @Rule
+    public JenkinsRule j = new JenkinsRule();
 
-	@Test
-	public void testCheckJavaVersionOpenJDK7NetBSD() throws Exception {
-		assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
-	}
+    @Test
+    public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
+        assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
+    }
 
-	@Test
-	public void testCheckJavaVersionOpenJDK6Linux() throws Exception {
-		assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
-	}
+    @Test
+    public void checkJavaVersionOpenJDK6Linux() throws Exception {
+        assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
+    }
 
-	@Test
-	public void testCheckJavaVersionSun6Linux() throws Exception {
-		assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
-	}
+    @Test
+    public void checkJavaVersionSun6Linux() throws Exception {
+        assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
+    }
 
-	@Test
-	public void testCheckJavaVersionSun6Mac() throws Exception {
-		assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
-	}
+    @Test
+    public void checkJavaVersionSun6Mac() throws Exception {
+        assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
+    }
 
-	@Test
-	public void testCheckJavaVersionSun4Linux() {
+    @Test
+    public void checkJavaVersionSun4Linux() {
         try {
-		    checkSupported("sun-java-1.4-linux.version");
+            checkSupported("sun-java-1.4-linux.version");
             fail();
         } catch (IOException e) {
             //
         }
-	}
+    }
 
-	/**
-	 * Returns true if the version is supported.
-	 *
-	 * @param testVersionOutput
-	 *            the resource to find relative to this class that contains the
-	 *            output of "java -version"
-	 */
-	private static boolean checkSupported(final String testVersionOutput) throws IOException {
+    /**
+     * Returns true if the version is supported.
+     *
+     * @param testVersionOutput
+     *            the resource to find relative to this class that contains the
+     *            output of "java -version"
+     */
+    private static boolean checkSupported(final String testVersionOutput) throws IOException {
         final String javaCommand = "testing-java";
         final InputStream versionStream = SSHLauncherTest.class
                 .getResourceAsStream(testVersionOutput);
         final BufferedReader r = new BufferedReader(new InputStreamReader(
                 versionStream));
         final StringWriter output = new StringWriter();
-        final String result = new SSHLauncher(null,0,null,null,null,null,null, new DefaultJDKInstaller(), null, null).checkJavaVersion(System.out,
-                javaCommand, r, output);
+        final String result = new SSHLauncher(null,0,null,null,null,
+                new JDKInstaller(SSHLauncher.DEFAULT_JDK, true), null, null, 1, 1, 1)
+                .checkJavaVersion(System.out,javaCommand, r, output);
         return null != result;
-	}
+    }
 
-	@Test
-    public void testConfigurationRoundtrip() throws Exception {
-        SSHLauncher launcher = new SSHLauncher("localhost", 123, null, "pass", "xyz", new DefaultJDKInstaller(), null, null, null, 0, 0);
+    @Test
+    public void configurationRoundtrip() throws Exception {
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
+                Collections.<Credentials>singletonList(
+                        new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
+                )
+        );
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
         DumbSlave slave = new DumbSlave("slave", "dummy",
                 j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-                launcher, RetentionStrategy.NOOP, Collections.EMPTY_LIST);
+                launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
         j.jenkins.addNode(slave);
 
-        j.submit(j.createWebClient().getPage(slave,"configure").getFormByName("config"));
+        HtmlPage p = j.createWebClient().getPage(slave, "configure");
+        j.submit(p.getFormByName("config"));
         Slave n = (Slave) j.jenkins.getNode("slave");
 
         assertNotSame(n,slave);
@@ -129,20 +140,21 @@ public class SSHLauncherTest {
     }
 
 
-	@Test
-	public void fillCredentials() {
-		SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(
-				new Domain("test", null, Collections.<DomainSpecification>singletonList(
-						new HostnamePortSpecification(null, null)
-				)),
-				Collections.<Credentials>singletonList(
-						new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "john", null, null, null)
-				)
-		);
+    @Test
+    public void fillCredentials() {
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(
+                new Domain("test", null, Collections.<DomainSpecification>singletonList(
+                        new HostnamePortSpecification(null, null)
+                )),
+                Collections.<Credentials>singletonList(
+                        new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "john", null, null, null)
+                )
+        );
 
-		SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
-		assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22").size());
-		assertEquals(0, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two").size());
-		assertEquals(0, desc.doFillCredentialsIdItems(j.jenkins, "", "").size());
-	}
+        SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
+        assertEquals(2, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "does-not-exist").size());
+        assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "dummyCredentialId").size());
+        assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two", "does-not-exist").size());
+        assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "", "does-not-exist").size());
+    }
 }

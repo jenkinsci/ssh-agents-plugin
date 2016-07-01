@@ -27,6 +27,7 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.trilead.ssh2.Connection;
 import hudson.Extension;
 import hudson.model.ItemGroup;
@@ -38,6 +39,7 @@ import hudson.tools.JDKInstaller;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
+import java.util.Collections;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
@@ -48,6 +50,7 @@ import java.io.IOException;
 import static hudson.Util.fixEmpty;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
+import org.kohsuke.stapler.QueryParameter;
 
 /**
  * {@link ComputerConnector} for {@link SSHLauncher}.
@@ -278,14 +281,38 @@ public class SSHConnector extends ComputerConnector {
             return Messages.SSHLauncher_DescriptorDisplayName();
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String credentialsId) {
             AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
             if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
-                return new ListBoxModel();
+                return new StandardUsernameListBoxModel()
+                        .includeCurrentValue(credentialsId);
             }
-            return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
-                    CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
-                            ACL.SYSTEM, SSHLauncher.SSH_SCHEME));
+            return new StandardUsernameListBoxModel()
+                    .includeMatchingAs(
+                            ACL.SYSTEM,
+                            context,
+                            StandardUsernameCredentials.class,
+                            Collections.<DomainRequirement>singletonList(SSHLauncher.SSH_SCHEME),
+                            SSHAuthenticator.matcher(Connection.class)
+                    )
+                    .includeCurrentValue(credentialsId);
+        }
+
+        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
+                                                   @QueryParameter String value) {
+            AccessControlled _context =
+                    (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
+            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
+                return FormValidation.ok(); // no need to alarm a user that cannot configure
+            }
+            for (ListBoxModel.Option o : CredentialsProvider.listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
+                    Collections.<DomainRequirement>singletonList(SSHLauncher.SSH_SCHEME),
+                    SSHAuthenticator.matcher(Connection.class))) {
+                if (StringUtils.equals(value, o.value)) {
+                    return FormValidation.ok();
+                }
+            }
+            return FormValidation.error(Messages.SSHLauncher_SelectedCredentialsMissing());
         }
 
         public FormValidation doCheckLaunchTimeoutSeconds(String value) {

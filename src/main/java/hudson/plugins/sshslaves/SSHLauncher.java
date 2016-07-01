@@ -36,6 +36,7 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
@@ -70,10 +71,12 @@ import hudson.tools.JDKInstaller.Platform;
 import hudson.tools.ToolLocationNodeProperty;
 import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
+import hudson.util.FormValidation;
 import hudson.util.IOException2;
 import hudson.util.ListBoxModel;
 import hudson.util.NullStream;
 import hudson.util.Secret;
+import java.util.Collections;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
@@ -826,7 +829,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private EnvVars getEnvVars(SlaveComputer computer) {
-        final EnvVars global = getEnvVars(Hudson.getInstance());
+        final EnvVars global = getEnvVars(Jenkins.getActiveInstance());
 
         final Node node = computer.getNode();    
         final EnvVars local = node != null ? getEnvVars(node) : null;
@@ -847,7 +850,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private EnvVars getEnvVars(Hudson h) {
+    private EnvVars getEnvVars(Jenkins h) {
         return getEnvVars(h.getGlobalNodeProperties());
     }
 
@@ -1093,7 +1096,7 @@ public class SSHLauncher extends ComputerLauncher {
             connection.exec("rm " + workingDirectory + "/slave.jar", new NullStream());
 
             // SCP it to the slave. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
-            InputStream is = Hudson.getInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
+            InputStream is = Jenkins.getActiveInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
             listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
             scp.put(IOUtils.toByteArray(is), "slave.jar", workingDirectory, "0644");
         } catch (IOException e) {
@@ -1465,24 +1468,79 @@ public class SSHLauncher extends ComputerLauncher {
         public String getHelpFile(String fieldName) {
             String n = super.getHelpFile(fieldName);
             if (n==null)
-                n = Hudson.getInstance().getDescriptor(SSHConnector.class).getHelpFile(fieldName);
+                n = Jenkins.getActiveInstance().getDescriptor(SSHConnector.class).getHelpFile(fieldName);
             return n;
         }
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
                                                      @QueryParameter String host,
-                                                     @QueryParameter String port) {
+                                                     @QueryParameter String port,
+                                                     @QueryParameter String credentialsId) {
             AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
             if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
-                return new ListBoxModel();
+                return new StandardUsernameListBoxModel()
+                        .includeCurrentValue(credentialsId);
             }
             try {
                 int portValue = Integer.parseInt(port);
-                return new StandardUsernameListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
-                        CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
-                                ACL.SYSTEM, SSHLauncher.SSH_SCHEME, new HostnamePortRequirement(host, portValue)));
+                return new StandardUsernameListBoxModel()
+                        .includeMatchingAs(
+                                ACL.SYSTEM,
+                                Jenkins.getActiveInstance(),
+                                StandardUsernameCredentials.class,
+                                Collections.<DomainRequirement>singletonList(
+                                        new HostnamePortRequirement(host, portValue)
+                                ),
+                                SSHAuthenticator.matcher(Connection.class))
+                        .includeCurrentValue(credentialsId); // always add the current value last in case already present
             } catch (NumberFormatException ex) {
-                return new ListBoxModel();
+                return new StandardUsernameListBoxModel()
+                        .includeCurrentValue(credentialsId);
+            }
+        }
+
+        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
+                                                   @QueryParameter String host,
+                                                   @QueryParameter String port,
+                                                   @QueryParameter String value) {
+            AccessControlled _context =
+                    (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
+            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
+                return FormValidation.ok(); // no need to alarm a user that cannot configure
+            }
+            try {
+                int portValue = Integer.parseInt(port);
+                for (ListBoxModel.Option o : CredentialsProvider
+                        .listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
+                                Collections.<DomainRequirement>singletonList(
+                                        new HostnamePortRequirement(host, portValue)
+                                ),
+                                SSHAuthenticator.matcher(Connection.class))) {
+                    if (StringUtils.equals(value, o.value)) {
+                        return FormValidation.ok();
+                    }
+                }
+            } catch (NumberFormatException e) {
+                return FormValidation.warning(e, Messages.SSHLauncher_PortNotANumber());
+            }
+            return FormValidation.error(Messages.SSHLauncher_SelectedCredentialsMissing());
+        }
+
+        public FormValidation doCheckPort(@QueryParameter String value) {
+            if (StringUtils.isEmpty(value)) {
+                return FormValidation.error(Messages.SSHLauncher_PortNotSpecified());
+            }
+            try {
+                int portValue = Integer.parseInt(value);
+                if (portValue <= 0) {
+                    return FormValidation.error(Messages.SSHLauncher_PortLessThanZero());
+                }
+                if (portValue >= 65536) {
+                    return FormValidation.error(Messages.SSHLauncher_PortMoreThan65535());
+                }
+                return FormValidation.ok();
+            } catch (NumberFormatException e) {
+                return FormValidation.error(e, Messages.SSHLauncher_PortNotANumber());
             }
         }
     }
@@ -1508,7 +1566,7 @@ public class SSHLauncher extends ComputerLauncher {
             DescribableList<NodeProperty<?>,NodePropertyDescriptor> list = 
                     node != null ? node.getNodeProperties() : null;
             if (list != null) {
-                Descriptor jdk = Hudson.getInstance().getDescriptorByType(JDK.DescriptorImpl.class);
+                Descriptor jdk = Jenkins.getActiveInstance().getDescriptorByType(JDK.DescriptorImpl.class);
                 for (NodeProperty prop : list) {
                     if (prop instanceof EnvironmentVariablesNodeProperty) {
                         EnvVars env = ((EnvironmentVariablesNodeProperty)prop).getEnvVars();
