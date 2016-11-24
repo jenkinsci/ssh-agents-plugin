@@ -13,6 +13,7 @@
 
   <name>Jenkins SSH Slaves plugin</name>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
+  <description>Allows to manage slaves running on Unix machines over SSH.</description>
 
   <properties>
     <jenkins.version>1.609.1</jenkins.version>
