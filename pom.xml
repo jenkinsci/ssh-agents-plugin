@@ -33,6 +33,10 @@
       <id>olamy</id>
       <name>Olivier Lamy</name>
     </developer>
+    <developer>
+      <id>mc1arke</id>
+      <name>Michael Clarke</name>
+    </developer>
   </developers>
 
   <scm>

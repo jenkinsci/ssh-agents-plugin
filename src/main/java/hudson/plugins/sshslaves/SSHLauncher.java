@@ -45,10 +45,12 @@ import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
 import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
+import com.trilead.ssh2.ServerHostKeyVerifier;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.transport.TransportManager;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
+import hudson.DescriptorExtensionList;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
@@ -59,6 +61,10 @@ import hudson.model.JDK;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
+import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostIdentifier;
+import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
+import hudson.plugins.sshslaves.verifiers.HostKeyVerifier;
+import hudson.plugins.sshslaves.verifiers.NonVerifyingHostKeyVerifier;
 import hudson.security.ACL;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
@@ -264,6 +270,12 @@ public class SSHLauncher extends ComputerLauncher {
     public final Integer retryWaitTime;
 
     /**
+     * The verifier to use for checking the SSH key presented by the host
+     * responding to the connection
+     */
+    private final HostKeyVerifier hostKeyVerifier;
+
+    /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
      * @param host       The host to connect to.
@@ -280,9 +292,31 @@ public class SSHLauncher extends ComputerLauncher {
     @DataBoundConstructor
     public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
+             Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, HostKeyVerifier hostKeyVerifier) {
+        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
+             suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, hostKeyVerifier);
+    }
+
+    /**
+     * Constructor SSHLauncher creates a new SSHLauncher instance.
+     *
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param credentialsId The credentials id to connect as.
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param launchTimeoutSeconds Launch timeout in seconds
+     * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
+     * @param retryWaitTime The number of seconds to wait between retries
+     */
+    @Deprecated
+    public SSHLauncher(String host, int port, String credentialsId,
+             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
              Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
         this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
-             suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
+             suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, null);
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, String, String, String, String, String, Integer, Integer, Integer)} instead. */
@@ -419,6 +453,7 @@ public class SSHLauncher extends ComputerLauncher {
         this.launchTimeoutSeconds = null;
         this.maxNumRetries = null;
         this.retryWaitTime = null;
+        this.hostKeyVerifier = null;
     }
 
     /**
@@ -440,6 +475,7 @@ public class SSHLauncher extends ComputerLauncher {
         this(host, port, credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
     }
 
+    @Deprecated
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
@@ -458,6 +494,32 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
                                     String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
+
+
+        this(host, port, credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, null);
+    }
+
+
+    /**
+     * Constructor SSHLauncher creates a new SSHLauncher instance.
+     *
+     * @param host       The host to connect to.
+     * @param port       The port to connect on.
+     * @param credentials The credentials to connect as.
+     * @param jvmOptions Options passed to the java vm.
+     * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
+     * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
+     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param launchTimeoutSeconds Launch timeout in seconds
+     * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
+     * @param retryWaitTime The number of seconds to wait between retries
+     */
+    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
+                                    String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
+                                    String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, HostKeyVerifier hostKeyVerifier) {
+
+
         this.host = host;
         this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
@@ -475,6 +537,8 @@ public class SSHLauncher extends ComputerLauncher {
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
         this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : 0;
         this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : 0;
+        this.hostKeyVerifier = hostKeyVerifier;
+
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String, String)} instead. */
@@ -490,6 +554,10 @@ public class SSHLauncher extends ComputerLauncher {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public HostKeyVerifier getHostKeyVerifier() {
+        return hostKeyVerifier;
     }
 
     public StandardUsernameCredentials getCredentials() {
@@ -679,7 +747,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return the formatted current time stamp.
      */
-    protected String getTimestamp() {
+    public static String getTimestamp() {
         return String.format("[%1$tD %1$tT]", new Date());
     }
 
@@ -721,7 +789,7 @@ public class SSHLauncher extends ComputerLauncher {
                 Boolean rval = Boolean.FALSE;
                 try {
 
-                    openConnection(listener);
+                    openConnection(listener, computer);
 
                     verifyNoHeaderJunk(listener);
                     reportEnvironment(listener);
@@ -1186,16 +1254,33 @@ public class SSHLauncher extends ComputerLauncher {
         return null;
     }
 
-    protected void openConnection(TaskListener listener) throws IOException, InterruptedException {
+    protected void openConnection(final TaskListener listener, final SlaveComputer computer) throws IOException, InterruptedException {
         PrintStream logger = listener.getLogger();
         logger.println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(true);
 
         int maxNumRetries = this.maxNumRetries == null || this.maxNumRetries < 0 ? 0 : this.maxNumRetries;
-
         for (int i = 0; i <= maxNumRetries; i++) {
             try {
-                connection.connect();
+                connection.connect(new ServerHostKeyVerifier() {
+
+                    @Override
+                    public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey)
+                            throws Exception {
+
+                        final HostIdentifier identifier = new HostIdentifier(hostname, port);
+                        final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
+
+                        final HostKeyVerifier targetHostKeyVerifier;
+                        if (null == hostKeyVerifier) {
+                            targetHostKeyVerifier = new NonVerifyingHostKeyVerifier();
+                        } else {
+                            targetHostKeyVerifier = hostKeyVerifier;
+                        }
+
+                        return targetHostKeyVerifier.verify(computer, identifier, key, listener);
+                    }
+                });
                 break;
             } catch (IOException ioexception) {
                 String message = "";
@@ -1560,6 +1645,10 @@ public class SSHLauncher extends ComputerLauncher {
             } catch (NumberFormatException e) {
                 return FormValidation.error(e, Messages.SSHLauncher_PortNotANumber());
             }
+        }
+
+        public DescriptorExtensionList<HostKeyVerifier, Descriptor<HostKeyVerifier>> getHostKeyVerifierExtensionList() {
+            return Jenkins.getInstance().getDescriptorList(HostKeyVerifier.class);
         }
     }
 

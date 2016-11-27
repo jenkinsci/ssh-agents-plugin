@@ -5,6 +5,16 @@
       <c:select/>
   </f:entry>
 
+  <j:set var="currentVerifier" value="${it.hostKeyVerifier}"/>
+  <f:dropdownList title="${%Host Key Verifier}" name="hostKeyVerifier">
+    <j:forEach var="desc" items="${descriptor.hostKeyVerifierExtensionList}" varStatus="loop">
+      <j:set var="verifier" value="${desc == currentVerifier.descriptor ? currentVerifier : null}"/>
+      <f:dropdownListBlock title="${desc.displayName}" id="${loop.index}" selected="${verifier!=null}" staplerClass="${desc.clazz.name}">
+        <st:include page="${desc.configPage}" from="${desc}"/>
+      </f:dropdownListBlock>
+    </j:forEach>
+  </f:dropdownList>
+
   <f:advanced>
       <f:entry title="${%Port}" field="port">
           <f:textbox default="22" />
