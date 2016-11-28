@@ -26,7 +26,6 @@ package hudson.plugins.sshslaves.verifiers;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostIdentifier;
 import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
 import hudson.slaves.SlaveComputer;
 import jenkins.model.Jenkins;
@@ -48,17 +47,13 @@ public abstract class HostKeyVerifier implements Describable<HostKeyVerifier> {
     /**
      * Check if the given key is valid for the host identifier.
      * @param computer the computer this connection is being initiated for
-     * @param hostIdentifier the identifier for the host we're currently connecting to. This identifier will be the
-     *                       same for any <tt>Computer</tt>s that have the same host-name/IP address and port number
-     *                       so may not be unique for all slaves in a Jenkins cluster, should two services launch off
-     *                       the same host and port.
      * @param hostKey the key that was transmitted by the remote host for the current connection. This is the key
      *                that should be checked to see if we trust it by the current verifier.
      * @param listener the connection listener to write any output log to
      * @return whether the provided HostKey is trusted and the current connection can therefore continue.
      * @since 1.12
      */
-    public abstract boolean verify(SlaveComputer computer, HostIdentifier hostIdentifier, HostKey hostKey, TaskListener listener);
+    public abstract boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception;
     
     public static abstract class HostKeyVerifierDescriptor extends Descriptor<HostKeyVerifier> {
         

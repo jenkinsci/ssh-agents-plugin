@@ -27,134 +27,63 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.WeakHashMap;
 
 import com.trilead.ssh2.KnownHosts;
 
-import hudson.BulkChange;
 import hudson.XmlFile;
-import hudson.model.Saveable;
-import hudson.model.listeners.SaveableListener;
+import hudson.model.Computer;
+import hudson.model.Node;
 import jenkins.model.Jenkins;
 
-public final class HostKeyManager implements Saveable {
+public final class HostKeyManager {
 
     private static final HostKeyManager INSTANCE = new HostKeyManager();
-    private static final Logger LOGGER = Logger.getLogger(HostKeyManager.class.getName());
-
-    private final Map<HostIdentifier, HostKey> trustedKeys = new HashMap<HostIdentifier, HostKey>();
-
+    
+    private final Map<Computer, HostKey> cache = new WeakHashMap<Computer, HostKey>();
 
     private HostKeyManager() {
         super();
-        try {
-            load();
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, "Could not load known hosts entries", ex);
-        }
     }
-
-
 
     public static HostKeyManager getInstance() {
         return INSTANCE;
     }
 
 
-    public HostKey getHostKey(HostIdentifier host) {
-        return trustedKeys.get(host);
+    public HostKey getHostKey(Computer host) throws IOException {
+        HostKey key = cache.get(host);
+        if (null == key) {
+            File hostKeyFile = new File(new File(new File(Jenkins.getInstance().getRootDir(), "nodes"), host.getName()), "ssh-host-key.xml");
+            if (hostKeyFile.exists()) {
+                XmlFile xmlHostKeyFile = new XmlFile(hostKeyFile);
+                key = (HostKey) xmlHostKeyFile.read();
+            } else {
+                key = null;
+            }
+            cache.put(host, key);
+        }
+        return key;
     }
 
-    public void saveHostKey(HostIdentifier host, HostKey hostKey) {
-        trustedKeys.put(host, hostKey);
-        try {
-            save();
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, "Could not save changes to known hosts entries", ex);
-        }
+    public void saveHostKey(Computer host, HostKey hostKey) throws IOException {
+        cache.put(host, hostKey);
+        XmlFile xmlHostKeyFile = new XmlFile(getSshHostKeyFile(host.getNode()));
+        xmlHostKeyFile.write(hostKey);
     }
-
-     void load() throws IOException {
-        XmlFile file = getConfigFile();
-        if(!file.exists()) {
-            return;
-        }
-
-        file.unmarshal(this);
+    
+    private File getSshHostKeyFile(Node node) {
+        return new File(getNodeDirectory(node), "ssh-host-key.xml");
     }
-
-
-
-
-
-    public synchronized void save() throws IOException {
-        if(BulkChange.contains(this)) {
-            return;
-        }
-        getConfigFile().write(this);
-        SaveableListener.fireOnChange(this, getConfigFile());
+    
+    private File getNodeDirectory(Node node) {
+        return new File(getNodesDirectory(), node.getNodeName());
     }
-
-    private XmlFile getConfigFile() {
-        return new XmlFile(new File(Jenkins.getInstance().getRootDir(), "ssh-known-hosts.xml"));
+    
+    private File getNodesDirectory() {
+        return new File(Jenkins.getInstance().getRootDir(), "nodes");
     }
-
-
-
-    public static class HostIdentifier implements Serializable {
-
-        private static final long serialVersionUID = -8438646557775748159L;
-
-        private final String hostname;
-        private final int port;
-
-        public HostIdentifier(String hostname, int port) {
-            super();
-            this.hostname = hostname;
-            this.port = port;
-        }
-
-        public String getHostname() {
-            return hostname;
-        }
-
-        public int getPort() {
-            return port;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((hostname == null) ? 0 : hostname.hashCode());
-            result = prime * result + port;
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            HostIdentifier other = (HostIdentifier) obj;
-            if (hostname == null) {
-                if (other.hostname != null)
-                    return false;
-            } else if (!hostname.equals(other.hostname))
-                return false;
-            if (port != other.port)
-                return false;
-            return true;
-        }
-    }
-
-
 
     public static final class HostKey implements Serializable {
 

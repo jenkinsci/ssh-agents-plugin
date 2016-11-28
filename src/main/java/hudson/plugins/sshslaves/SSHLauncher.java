@@ -61,7 +61,6 @@ import hudson.model.JDK;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostIdentifier;
 import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
 import hudson.plugins.sshslaves.verifiers.HostKeyVerifier;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingHostKeyVerifier;
@@ -1265,10 +1264,8 @@ public class SSHLauncher extends ComputerLauncher {
                 connection.connect(new ServerHostKeyVerifier() {
 
                     @Override
-                    public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey)
-                            throws Exception {
+                    public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey) throws Exception {
 
-                        final HostIdentifier identifier = new HostIdentifier(hostname, port);
                         final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
 
                         final HostKeyVerifier targetHostKeyVerifier;
@@ -1278,7 +1275,7 @@ public class SSHLauncher extends ComputerLauncher {
                             targetHostKeyVerifier = hostKeyVerifier;
                         }
 
-                        return targetHostKeyVerifier.verify(computer, identifier, key, listener);
+                        return targetHostKeyVerifier.verify(computer, key, listener);
                     }
                 });
                 break;

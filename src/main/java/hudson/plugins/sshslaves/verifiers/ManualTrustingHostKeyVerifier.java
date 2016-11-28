@@ -23,14 +23,14 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import java.io.IOException;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.Extension;
-import hudson.model.Action;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostIdentifier;
 import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
 import hudson.slaves.SlaveComputer;
 
@@ -53,15 +53,15 @@ public class ManualTrustingHostKeyVerifier extends HostKeyVerifier {
     }
     
     @Override
-    public boolean verify(final SlaveComputer computer, HostIdentifier hostIdentifier, HostKey hostKey, TaskListener listener) {
+    public boolean verify(final SlaveComputer computer, HostKey hostKey, TaskListener listener) throws IOException {
         HostKeyManager hostManager = HostKeyManager.getInstance();
         
-        HostKey existingHostKey = hostManager.getHostKey(hostIdentifier);
+        HostKey existingHostKey = hostManager.getHostKey(computer);
         
         if (null == existingHostKey || !existingHostKey.equals(hostKey)) {
             listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
-            if (!hasExistingTrustAction(computer, hostIdentifier, hostKey)) {
-                computer.addAction(new TrustHostKeyAction(computer, hostIdentifier, hostKey));
+            if (!hasExistingTrustAction(computer, hostKey)) {
+                computer.addAction(new TrustHostKeyAction(computer, hostKey));
             }
             return false;
         }
@@ -71,14 +71,10 @@ public class ManualTrustingHostKeyVerifier extends HostKeyVerifier {
         }
     }
     
-    private boolean hasExistingTrustAction(SlaveComputer computer, HostIdentifier hostIdentifier, HostKey hostKey) {
-        for (Action action : computer.getActions()) {
-            if (action instanceof TrustHostKeyAction) {
-                TrustHostKeyAction trustAction = (TrustHostKeyAction) action;
-                if (!trustAction.isComplete() && trustAction.getHostIdentifier().equals(hostIdentifier)
-                        && trustAction.getHostKey().equals(hostKey)) {
-                    return true;
-                }
+    private boolean hasExistingTrustAction(SlaveComputer computer, HostKey hostKey) {
+        for (TrustHostKeyAction action : computer.getActions(TrustHostKeyAction.class)) {
+            if (!action.isComplete() && action.getHostKey().equals(hostKey)) {
+                return true;
             }
         }
         

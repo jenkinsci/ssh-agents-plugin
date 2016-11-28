@@ -29,7 +29,6 @@ import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostIdentifier;
 import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
 import hudson.slaves.SlaveComputer;
 
@@ -49,7 +48,7 @@ public class NonVerifyingHostKeyVerifier extends HostKeyVerifier {
     }
     
     @Override
-    public boolean verify(SlaveComputer computer, HostIdentifier hostIdentifier, HostKey hostKey, TaskListener listener) {
+    public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
         listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
         return true;
     }

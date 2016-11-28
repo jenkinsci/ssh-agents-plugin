@@ -37,10 +37,10 @@ THE SOFTWARE.
             <j:set var="existingHostKey" value="${it.existingHostKey}" />
             <j:choose>
                <j:when test="${null == existingHostKey}">
-                  <p>${%newKeyTrust(it.hostKey.fingerprint, it.hostIdentifier.hostname, it.hostIdentifier.port)}</p>
+                  <p>${%newKeyTrust(it.hostKey.fingerprint)}</p>
                </j:when>
                <j:otherwise>
-                  <p>${%replaceKeyTrust(existingHostKey.fingerprint, it.hostKey.fingerprint, it.hostIdentifier.hostname, it.hostIdentifier.port)}</p>
+                  <p>${%replaceKeyTrust(existingHostKey.fingerprint, it.hostKey.fingerprint)}</p>
                </j:otherwise>
             </j:choose>
             <f:submit name="Yes" value="${%Yes}" />
