@@ -47,9 +47,16 @@ import hudson.slaves.SlaveComputer;
  */
 public class ManualTrustingHostKeyVerifier extends HostKeyVerifier {
     
+    private final boolean requireInitialManualTrust;
+    
     @DataBoundConstructor
-    public ManualTrustingHostKeyVerifier() {
+    public ManualTrustingHostKeyVerifier(boolean requireInitialManualTrust) {
         super();
+        this.requireInitialManualTrust = requireInitialManualTrust;
+    }
+    
+    public boolean isRequireInitialManualTrust() {
+        return requireInitialManualTrust;
     }
     
     @Override
@@ -57,8 +64,21 @@ public class ManualTrustingHostKeyVerifier extends HostKeyVerifier {
         HostKeyManager hostManager = HostKeyManager.getInstance();
         
         HostKey existingHostKey = hostManager.getHostKey(computer);
-        
-        if (null == existingHostKey || !existingHostKey.equals(hostKey)) {
+        if (null == existingHostKey) {
+            if (isRequireInitialManualTrust()) {
+                listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
+                if (!hasExistingTrustAction(computer, hostKey)) {
+                    computer.addAction(new TrustHostKeyAction(computer, hostKey));
+                }
+                return false;
+            }
+            else {
+                listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyAutoTrusted(SSHLauncher.getTimestamp(), hostKey.getFingerprint()));
+                HostKeyManager.getInstance().saveHostKey(computer, hostKey);
+                return true;
+            }
+        }
+        else if (!existingHostKey.equals(hostKey)) {
             listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
             if (!hasExistingTrustAction(computer, hostKey)) {
                 computer.addAction(new TrustHostKeyAction(computer, hostKey));

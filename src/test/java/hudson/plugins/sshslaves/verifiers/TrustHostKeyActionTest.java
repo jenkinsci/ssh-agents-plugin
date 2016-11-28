@@ -100,7 +100,7 @@ public class TrustHostKeyActionTest {
         server.start();
         
         
-        SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManualTrustingHostKeyVerifier());
+        SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManualTrustingHostKeyVerifier(true));
         DumbSlave slave = new DumbSlave("test-slave", "SSH Test slave",
                 temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
@@ -108,7 +108,6 @@ public class TrustHostKeyActionTest {
         jenkins.getInstance().addNode(slave);
         SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-slave");
 
-        //launcher.launch(computer, ((TaskListener) (new StreamTaskListener(System.out, Charset.defaultCharset()))));
         try {
             computer.connect(false).get();
         } catch (ExecutionException ex){
