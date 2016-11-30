@@ -10,8 +10,9 @@
     <j:forEach var="desc" items="${descriptor.hostKeyVerifierExtensionList}" varStatus="loop">
       <j:set var="verifier" value="${desc == currentVerifier.descriptor ? currentVerifier : null}"/>
       <f:dropdownListBlock title="${desc.displayName}" id="${loop.index}" selected="${verifier!=null}" staplerClass="${desc.clazz.name}">
-        <j:set var="it" value="${verifier}" />
-        <st:include page="${desc.configPage}" from="${desc}" />
+        <j:set var="instance" value="${verifier}" />
+        <j:set var="descriptor" value="${desc}" />
+        <st:include page="${descriptor.configPage}" from="${descriptor}" />
       </f:dropdownListBlock>
     </j:forEach>
   </f:dropdownList>
