@@ -17,12 +17,12 @@ import hudson.remoting.Base64;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 
-public class ManualKeyProvidedHostKeyVerifier extends HostKeyVerifier {
+public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     private final HostKey key;
     
     @DataBoundConstructor
-    public ManualKeyProvidedHostKeyVerifier(String key) {
+    public ManuallyProvidedKeyVerificationStrategy(String key) {
         super();
         this.key = parseKey(key);
     }
@@ -76,7 +76,7 @@ public class ManualKeyProvidedHostKeyVerifier extends HostKeyVerifier {
     }
     
     @Extension
-    public static class ManualKeyProvidedHostKeyVerifierDescriptor extends HostKeyVerifierDescriptor {
+    public static class ManuallyProvidedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
         @Override
         public String getDisplayName() {
@@ -85,7 +85,7 @@ public class ManualKeyProvidedHostKeyVerifier extends HostKeyVerifier {
         
         public FormValidation doCheckKey(@QueryParameter String key) {
             try {
-                ManualKeyProvidedHostKeyVerifier.parseKey(key);
+                ManuallyProvidedKeyVerificationStrategy.parseKey(key);
                 return FormValidation.ok();
             } catch (IllegalArgumentException ex) {
                 return FormValidation.error(ex.getMessage());

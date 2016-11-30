@@ -100,7 +100,7 @@ public class TrustHostKeyActionTest {
         server.start();
         
         
-        SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManualTrustingHostKeyVerifier(true));
+        SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManuallyTrustedKeyVerificationStrategy(true));
         DumbSlave slave = new DumbSlave("test-slave", "SSH Test slave",
                 temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());

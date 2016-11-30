@@ -44,12 +44,12 @@ import hudson.slaves.SlaveComputer;
  * @author Michael Clarke
  * @since 1.12
  */
-public class ManualTrustingHostKeyVerifier extends HostKeyVerifier {
+public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
     
     private final boolean requireInitialManualTrust;
     
     @DataBoundConstructor
-    public ManualTrustingHostKeyVerifier(boolean requireInitialManualTrust) {
+    public ManuallyTrustedKeyVerificationStrategy(boolean requireInitialManualTrust) {
         super();
         this.requireInitialManualTrust = requireInitialManualTrust;
     }
@@ -101,7 +101,7 @@ public class ManualTrustingHostKeyVerifier extends HostKeyVerifier {
     }
     
     @Extension
-    public static class ManualTrustingHostKeyVerifierDescriptor extends HostKeyVerifierDescriptor {
+    public static class ManuallyTrustedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
         @Override
         public String getDisplayName() {

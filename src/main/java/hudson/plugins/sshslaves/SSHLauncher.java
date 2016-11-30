@@ -62,8 +62,8 @@ import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.verifiers.HostKey;
-import hudson.plugins.sshslaves.verifiers.HostKeyVerifier;
-import hudson.plugins.sshslaves.verifiers.NonVerifyingHostKeyVerifier;
+import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
+import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import hudson.security.ACL;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
@@ -272,7 +272,7 @@ public class SSHLauncher extends ComputerLauncher {
      * The verifier to use for checking the SSH key presented by the host
      * responding to the connection
      */
-    private final HostKeyVerifier hostKeyVerifier;
+    private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -291,9 +291,9 @@ public class SSHLauncher extends ComputerLauncher {
     @DataBoundConstructor
     public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
-             Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, HostKeyVerifier hostKeyVerifier) {
+             Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
         this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
-             suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, hostKeyVerifier);
+             suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
     }
 
     /**
@@ -452,7 +452,7 @@ public class SSHLauncher extends ComputerLauncher {
         this.launchTimeoutSeconds = null;
         this.maxNumRetries = null;
         this.retryWaitTime = null;
-        this.hostKeyVerifier = null;
+        this.sshHostKeyVerificationStrategy = null;
     }
 
     /**
@@ -516,8 +516,7 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
-                                    String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, HostKeyVerifier hostKeyVerifier) {
-
+                                    String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
 
         this.host = host;
         this.jvmOptions = fixEmpty(jvmOptions);
@@ -536,8 +535,7 @@ public class SSHLauncher extends ComputerLauncher {
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
         this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : 0;
         this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : 0;
-        this.hostKeyVerifier = hostKeyVerifier;
-
+        this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String, String)} instead. */
@@ -555,8 +553,8 @@ public class SSHLauncher extends ComputerLauncher {
         return credentialsId;
     }
 
-    public HostKeyVerifier getHostKeyVerifier() {
-        return hostKeyVerifier;
+    public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
+        return sshHostKeyVerificationStrategy;
     }
 
     public StandardUsernameCredentials getCredentials() {
@@ -1268,14 +1266,14 @@ public class SSHLauncher extends ComputerLauncher {
 
                         final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
 
-                        final HostKeyVerifier targetHostKeyVerifier;
-                        if (null == hostKeyVerifier) {
-                            targetHostKeyVerifier = new NonVerifyingHostKeyVerifier();
+                        final SshHostKeyVerificationStrategy hostKeyVerificationStrategy;
+                        if (null == sshHostKeyVerificationStrategy) {
+                            hostKeyVerificationStrategy = new NonVerifyingKeyVerificationStrategy();
                         } else {
-                            targetHostKeyVerifier = hostKeyVerifier;
+                            hostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
                         }
 
-                        return targetHostKeyVerifier.verify(computer, key, listener);
+                        return hostKeyVerificationStrategy.verify(computer, key, listener);
                     }
                 });
                 break;
@@ -1644,8 +1642,8 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
 
-        public DescriptorExtensionList<HostKeyVerifier, Descriptor<HostKeyVerifier>> getHostKeyVerifierExtensionList() {
-            return Jenkins.getInstance().getDescriptorList(HostKeyVerifier.class);
+        public DescriptorExtensionList<SshHostKeyVerificationStrategy, Descriptor<SshHostKeyVerificationStrategy>> getSshHostKeyVerificationStrategyExtensionList() {
+            return Jenkins.getInstance().getDescriptorList(SshHostKeyVerificationStrategy.class);
         }
     }
 

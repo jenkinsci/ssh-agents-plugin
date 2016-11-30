@@ -23,41 +23,36 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import hudson.model.Describable;
-import hudson.model.Descriptor;
-import hudson.model.TaskListener;
+import hudson.Extension;
+import hudson.model.AdministrativeMonitor;
+import hudson.model.Computer;
+import hudson.plugins.sshslaves.SSHLauncher;
+import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
 import jenkins.model.Jenkins;
 
 /**
- * A method for verifying the host key provided by the remote host during the
- * initiation of each connection.
- * 
+ * An administrative warning that checks all SSH slaves have a {@link SshHostKeyVerificationStrategy}
+ * set against them and prompts the admin to update the settings as needed.
  * @author Michael Clarke
  * @since 1.12
  */
-public abstract class HostKeyVerifier implements Describable<HostKeyVerifier> {
+@Extension
+public class MissingVerificationStrategyAdministrativeMonitor extends AdministrativeMonitor {
 
     @Override
-    public HostKeyVerifierDescriptor getDescriptor() {
-        return (HostKeyVerifierDescriptor)Jenkins.getInstance().getDescriptorOrDie(getClass());
+    public boolean isActivated() {
+        for (Computer computer : Jenkins.getInstance().getComputers()) {
+            if (computer instanceof SlaveComputer) {
+                ComputerLauncher launcher = ((SlaveComputer) computer).getLauncher();
+                
+                if (launcher instanceof SSHLauncher && null == ((SSHLauncher) launcher).getSshHostKeyVerificationStrategy()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
-    /**
-     * Check if the given key is valid for the host identifier.
-     * @param computer the computer this connection is being initiated for
-     * @param hostKey the key that was transmitted by the remote host for the current connection. This is the key
-     *                that should be checked to see if we trust it by the current verifier.
-     * @param listener the connection listener to write any output log to
-     * @return whether the provided HostKey is trusted and the current connection can therefore continue.
-     * @since 1.12
-     */
-    public abstract boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception;
-    
-    public static abstract class HostKeyVerifierDescriptor extends Descriptor<HostKeyVerifier> {
-        
-    }
-    
-
-    
 }

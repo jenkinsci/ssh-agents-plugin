@@ -23,43 +23,41 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import org.kohsuke.stapler.DataBoundConstructor;
-
-import hudson.Extension;
+import hudson.model.Describable;
+import hudson.model.Descriptor;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.Messages;
-import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
+import jenkins.model.Jenkins;
 
 /**
- * A verifier that performs no action on the host key, thereby allowing all connections. To
- * make it clear that no verification is being performed, a message is printed to connection
- * logs to indicate the key is not being checked and a man-in-the-middle attach may therefore
- * be possible against this connection.
+ * A method for verifying the host key provided by the remote host during the
+ * initiation of each connection.
+ * 
  * @author Michael Clarke
  * @since 1.12
  */
-public class NonVerifyingHostKeyVerifier extends HostKeyVerifier {
+public abstract class SshHostKeyVerificationStrategy implements Describable<SshHostKeyVerificationStrategy> {
 
-    @DataBoundConstructor
-    public NonVerifyingHostKeyVerifier() {
-        super();
-    }
-    
     @Override
-    public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
-        listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
-        return true;
+    public SshHostKeyVerificationStrategyDescriptor getDescriptor() {
+        return (SshHostKeyVerificationStrategyDescriptor)Jenkins.getInstance().getDescriptorOrDie(getClass());
     }
-    
-    @Extension
-    public static class NonVerifyingHostKeyVerifierDescriptor extends HostKeyVerifierDescriptor {
 
-        @Override
-        public String getDisplayName() {
-            return Messages.NonVerifyingHostKeyVerifier_DescriptorDisplayName();
-        }
+    /**
+     * Check if the given key is valid for the host identifier.
+     * @param computer the computer this connection is being initiated for
+     * @param hostKey the key that was transmitted by the remote host for the current connection. This is the key
+     *                that should be checked to see if we trust it by the current verifier.
+     * @param listener the connection listener to write any output log to
+     * @return whether the provided HostKey is trusted and the current connection can therefore continue.
+     * @since 1.12
+     */
+    public abstract boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception;
+    
+    public static abstract class SshHostKeyVerificationStrategyDescriptor extends Descriptor<SshHostKeyVerificationStrategy> {
         
     }
+    
+
     
 }

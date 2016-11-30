@@ -23,36 +23,43 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import org.kohsuke.stapler.DataBoundConstructor;
+
 import hudson.Extension;
-import hudson.model.AdministrativeMonitor;
-import hudson.model.Computer;
+import hudson.model.TaskListener;
+import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
-import jenkins.model.Jenkins;
 
 /**
- * An administrative warning that checks all SSH slaves have a {@link HostKeyVerifier}
- * set against them and prompts the admin to update the settings as needed.
+ * A verifier that performs no action on the host key, thereby allowing all connections. To
+ * make it clear that no verification is being performed, a message is printed to connection
+ * logs to indicate the key is not being checked and a man-in-the-middle attach may therefore
+ * be possible against this connection.
  * @author Michael Clarke
  * @since 1.12
  */
-@Extension
-public class MissingVerifierAdministrativeMonitor extends AdministrativeMonitor {
+public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
-    @Override
-    public boolean isActivated() {
-        for (Computer computer : Jenkins.getInstance().getComputers()) {
-            if (computer instanceof SlaveComputer) {
-                ComputerLauncher launcher = ((SlaveComputer) computer).getLauncher();
-                
-                if (launcher instanceof SSHLauncher && null == ((SSHLauncher) launcher).getHostKeyVerifier()) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+    @DataBoundConstructor
+    public NonVerifyingKeyVerificationStrategy() {
+        super();
     }
+    
+    @Override
+    public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
+        listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
+        return true;
+    }
+    
+    @Extension
+    public static class NonVerifyingKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
+        @Override
+        public String getDisplayName() {
+            return Messages.NonVerifyingHostKeyVerifier_DescriptorDisplayName();
+        }
+        
+    }
+    
 }

@@ -32,7 +32,7 @@ import com.trilead.ssh2.Connection;
 import hudson.Extension;
 import hudson.model.ItemGroup;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.verifiers.HostKeyVerifier;
+import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.security.ACL;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
@@ -144,7 +144,7 @@ public class SSHConnector extends ComputerConnector {
      */
     public final Integer retryWaitTime;
     
-    public final HostKeyVerifier hostKeyVerifier;
+    public final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     public StandardUsernameCredentials getCredentials() {
         String credentialsId = this.credentialsId == null
@@ -266,7 +266,7 @@ public class SSHConnector extends ComputerConnector {
     public SSHConnector(int port, StandardUsernameCredentials credentials, String username, String password,
                         String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime, HostKeyVerifier hostKeyVerifier) {
+                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
         this.jvmOptions = jvmOptions;
         this.port = port == 0 ? 22 : port;
         this.credentials = credentials;
@@ -281,13 +281,13 @@ public class SSHConnector extends ComputerConnector {
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
         this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : 0;
         this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : 0;
-        this.hostKeyVerifier = hostKeyVerifier;
+        this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
         return new SSHLauncher(host, port, getCredentials(), jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, hostKeyVerifier);
+                suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
     }
 
     @Extension
