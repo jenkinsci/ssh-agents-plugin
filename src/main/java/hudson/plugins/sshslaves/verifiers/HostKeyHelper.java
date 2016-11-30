@@ -39,7 +39,7 @@ import jenkins.model.Jenkins;
  * they're created, so can only load the existing key to run comparisons against at the
  * point the verifier is invoked during the connection attempt. 
  * @author Michael Clarke
- *
+ * @since 1.12
  */
 public final class HostKeyHelper {
 

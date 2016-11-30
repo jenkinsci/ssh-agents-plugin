@@ -32,7 +32,7 @@ import com.trilead.ssh2.KnownHosts;
  * A representation of the SSH key provided by a remote host to verify itself
  * and secure the initial setup of the SSH connection.
  * @author Michael Clarke
- *
+ * @since 1.12
  */
 public final class HostKey implements Serializable {
 

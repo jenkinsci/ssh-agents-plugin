@@ -34,13 +34,13 @@ import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 
 /**
- * A host key verifier that works in a similar way to host key verification on Unix/Linux:
- * requiring manual intervention if no key has previously been seen for this host, or if
- * the key provided by the remote host differs from the one currently saved in the known
- * hosts file. This manual verification is achieved through adding a {@link TrustHostKeyAction }
- * to the Computer the connection is being initiated for that can be actioned by a user with
- * the appropriate permission to add a new key or replace an existing key in the known hosts
- * database.
+ * A host key verification strategy that works in a similar way to host key verification on
+ * Unix/Linux this host (depending on how this strategy has been configured), and manual
+ * verification if the key provided by the remote host differs from the one currently saved
+ * in as the known key for this host. This manual verification is achieved through adding a
+ * {@link TrustHostKeyAction } to the Computer the connection is being initiated for that can
+ * be actioned by a user with the appropriate permission to add a new key or replace an existing
+ * key in the known hosts database.
  * @author Michael Clarke
  * @since 1.12
  */

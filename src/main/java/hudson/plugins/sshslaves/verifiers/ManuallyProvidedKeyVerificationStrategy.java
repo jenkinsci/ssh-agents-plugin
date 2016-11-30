@@ -17,6 +17,13 @@ import hudson.remoting.Base64;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 
+/**
+ * Checks a key provided by a remote hosts matches a key specified as being required by the
+ * user that configured this strategy. This would be equivelnt of someone manually setting a
+ * value in their known hosts file before attempting an SSH connection on a Unix/Linux machine.
+ * @author Michael Clarke
+ * @since 1.12
+ */
 public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     private final HostKey key;
