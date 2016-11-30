@@ -31,7 +31,6 @@ import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
 import hudson.slaves.SlaveComputer;
 
 /**
@@ -61,7 +60,7 @@ public class ManualTrustingHostKeyVerifier extends HostKeyVerifier {
     
     @Override
     public boolean verify(final SlaveComputer computer, HostKey hostKey, TaskListener listener) throws IOException {
-        HostKeyManager hostManager = HostKeyManager.getInstance();
+        HostKeyHelper hostManager = HostKeyHelper.getInstance();
         
         HostKey existingHostKey = hostManager.getHostKey(computer);
         if (null == existingHostKey) {
@@ -74,7 +73,7 @@ public class ManualTrustingHostKeyVerifier extends HostKeyVerifier {
             }
             else {
                 listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyAutoTrusted(SSHLauncher.getTimestamp(), hostKey.getFingerprint()));
-                HostKeyManager.getInstance().saveHostKey(computer, hostKey);
+                HostKeyHelper.getInstance().saveHostKey(computer, hostKey);
                 return true;
             }
         }

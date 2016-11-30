@@ -25,37 +25,48 @@ package hudson.plugins.sshslaves.verifiers;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.WeakHashMap;
-
-import com.trilead.ssh2.KnownHosts;
 
 import hudson.XmlFile;
 import hudson.model.Computer;
 import hudson.model.Node;
 import jenkins.model.Jenkins;
 
-public final class HostKeyManager {
+/**
+ * Helper methods to allow loading and saving of host keys for a computer. Verifiers
+ * don't have a reference to the Node or Computer that they're running for at the point
+ * they're created, so can only load the existing key to run comparisons against at the
+ * point the verifier is invoked during the connection attempt. 
+ * @author Michael Clarke
+ *
+ */
+public final class HostKeyHelper {
 
-    private static final HostKeyManager INSTANCE = new HostKeyManager();
+    private static final HostKeyHelper INSTANCE = new HostKeyHelper();
     
     private final Map<Computer, HostKey> cache = new WeakHashMap<Computer, HostKey>();
 
-    private HostKeyManager() {
+    private HostKeyHelper() {
         super();
     }
 
-    public static HostKeyManager getInstance() {
+    public static HostKeyHelper getInstance() {
         return INSTANCE;
     }
 
 
+    /**
+     * Retrieve the currently trusted host key for the requested computer, or null if
+     * no key is currently trusted.
+     * @param host the Computer to retrieve the key for.
+     * @return the currently trusted key for the requested host, or null if no key is trusted.
+     * @throws IOException if the host key can not be read from storage
+     */
     public HostKey getHostKey(Computer host) throws IOException {
         HostKey key = cache.get(host);
         if (null == key) {
-            File hostKeyFile = new File(new File(new File(Jenkins.getInstance().getRootDir(), "nodes"), host.getName()), "ssh-host-key.xml");
+            File hostKeyFile = getSshHostKeyFile(host.getNode());
             if (hostKeyFile.exists()) {
                 XmlFile xmlHostKeyFile = new XmlFile(hostKeyFile);
                 key = (HostKey) xmlHostKeyFile.read();
@@ -67,10 +78,19 @@ public final class HostKeyManager {
         return key;
     }
 
+    
+    /**
+     * Persists an SSH key to disk for the requested host. This effectively marks
+     * the requested key as trusted for all future connections to the host, until
+     * any future save attempt replaces this key.
+     * @param host the host the key is being saved for
+     * @param hostKey the key to be saved as the trusted key for this host
+     * @throws IOException on failure saving the key for the host
+     */
     public void saveHostKey(Computer host, HostKey hostKey) throws IOException {
-        cache.put(host, hostKey);
         XmlFile xmlHostKeyFile = new XmlFile(getSshHostKeyFile(host.getNode()));
         xmlHostKeyFile.write(hostKey);
+        cache.put(host, hostKey);
     }
     
     private File getSshHostKeyFile(Node node) {
@@ -82,60 +102,7 @@ public final class HostKeyManager {
     }
     
     private File getNodesDirectory() {
+    	// jenkins.model.Nodes#getNodesDirectory() is private, so we have to duplicate it here.
         return new File(Jenkins.getInstance().getRootDir(), "nodes");
-    }
-
-    public static final class HostKey implements Serializable {
-
-        private static final long serialVersionUID = -5131839381842616910L;
-
-        private final String algorithm;
-        private final byte[] key;
-
-        public HostKey(String algorithm, byte[] key) {
-            super();
-            this.algorithm = algorithm;
-            this.key = key;
-        }
-
-        public String getAlgorithm() {
-            return algorithm;
-        }
-
-        public byte[] getKey() {
-            return key;
-        }
-
-        public String getFingerprint() {
-            return KnownHosts.createHexFingerprint(getAlgorithm(), getKey());
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((algorithm == null) ? 0 : algorithm.hashCode());
-            result = prime * result + Arrays.hashCode(key);
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            HostKey other = (HostKey) obj;
-            if (algorithm == null) {
-                if (other.algorithm != null)
-                    return false;
-            } else if (!algorithm.equals(other.algorithm))
-                return false;
-            if (!Arrays.equals(key, other.key))
-                return false;
-            return true;
-        }
     }
 }

@@ -61,7 +61,7 @@ import hudson.model.JDK;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
+import hudson.plugins.sshslaves.verifiers.HostKey;
 import hudson.plugins.sshslaves.verifiers.HostKeyVerifier;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingHostKeyVerifier;
 import hudson.security.ACL;

@@ -34,7 +34,6 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 import hudson.model.Computer;
 import hudson.model.TaskAction;
 import hudson.plugins.sshslaves.Messages;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
 import hudson.security.ACL;
 import hudson.security.Permission;
 
@@ -67,7 +66,7 @@ public class TrustHostKeyAction extends TaskAction  {
     }
 
     public HostKey getExistingHostKey() throws IOException {
-        return HostKeyManager.getInstance().getHostKey(getComputer());
+        return HostKeyHelper.getInstance().getHostKey(getComputer());
     }
 
     public Computer getComputer() {
@@ -79,7 +78,7 @@ public class TrustHostKeyAction extends TaskAction  {
         getACL().checkPermission(getPermission());
 
         if (null != request.getParameter("Yes")) {
-            HostKeyManager.getInstance().saveHostKey(getComputer(), getHostKey());
+            HostKeyHelper.getInstance().saveHostKey(getComputer(), getHostKey());
         } else if (null == request.getParameter("No")) {
             throw new IOException("Invalid action");
         }

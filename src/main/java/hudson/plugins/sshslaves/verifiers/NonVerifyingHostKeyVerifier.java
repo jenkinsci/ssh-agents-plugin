@@ -29,7 +29,6 @@ import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
 import hudson.slaves.SlaveComputer;
 
 /**

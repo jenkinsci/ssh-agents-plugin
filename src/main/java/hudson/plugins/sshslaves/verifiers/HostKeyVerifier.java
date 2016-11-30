@@ -26,7 +26,6 @@ package hudson.plugins.sshslaves.verifiers;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.verifiers.HostKeyManager.HostKey;
 import hudson.slaves.SlaveComputer;
 import jenkins.model.Jenkins;
 
