@@ -102,7 +102,7 @@ public final class HostKeyHelper {
     }
     
     private File getNodesDirectory() {
-    	// jenkins.model.Nodes#getNodesDirectory() is private, so we have to duplicate it here.
+        // jenkins.model.Nodes#getNodesDirectory() is private, so we have to duplicate it here.
         return new File(Jenkins.getInstance().getRootDir(), "nodes");
     }
 }
