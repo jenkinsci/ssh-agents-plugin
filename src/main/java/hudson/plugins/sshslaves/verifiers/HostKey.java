@@ -1,3 +1,26 @@
+/*
+ * The MIT License
+ *
+ * Copyright (c) 2016, Michael Clarke
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 package hudson.plugins.sshslaves.verifiers;
 
 import java.io.Serializable;
@@ -5,6 +28,12 @@ import java.util.Arrays;
 
 import com.trilead.ssh2.KnownHosts;
 
+/**
+ * A representation of the SSH key provided by a remote host to verify itself
+ * and secure the initial setup of the SSH connection.
+ * @author Michael Clarke
+ *
+ */
 public final class HostKey implements Serializable {
 
     private static final long serialVersionUID = -5131839381842616910L;
@@ -18,10 +47,18 @@ public final class HostKey implements Serializable {
         this.key = key;
     }
 
+    /**
+     * Get the algorithm used during key generation.
+     * @return the agorithm used to generate the key, such as ssh-rsa.
+     */
     public String getAlgorithm() {
         return algorithm;
     }
 
+    /**
+     * Get the unencoded content of the key, without any algorithm prefix.
+     * @return a byte representation of the raw key value.
+     */
     public byte[] getKey() {
         return key;
     }
