@@ -82,7 +82,6 @@ import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.putty.PuTTYKey;
@@ -96,7 +95,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -1058,6 +1056,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
         } catch (IOException e) {
             if (sftpClient == null) {
+                e.printStackTrace(listener.error(Messages.SSHLauncher_StartingSCPClient(getTimestamp())));
                 // lets try to recover if the slave doesn't have an SFTP service
                 copySlaveJarUsingSCP(listener, workingDirectory);
             } else {
@@ -1079,7 +1078,6 @@ public class SSHLauncher extends ComputerLauncher {
      * @throws InterruptedException If something goes wrong.
      */
     private void copySlaveJarUsingSCP(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
-        listener.getLogger().println(Messages.SSHLauncher_StartingSCPClient(getTimestamp()));
         SCPClient scp = new SCPClient(connection);
         try {
             // check if the working directory exists
@@ -1096,9 +1094,8 @@ public class SSHLauncher extends ComputerLauncher {
             connection.exec("rm " + workingDirectory + "/slave.jar", new NullStream());
 
             // SCP it to the slave. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
-            InputStream is = Jenkins.getActiveInstance().servletContext.getResourceAsStream("/WEB-INF/slave.jar");
             listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
-            scp.put(IOUtils.toByteArray(is), "slave.jar", workingDirectory, "0644");
+            scp.put(new Slave.JnlpJar("slave.jar").readFully(), "slave.jar", workingDirectory, "0644");
         } catch (IOException e) {
             throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
         }
