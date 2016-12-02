@@ -33,6 +33,7 @@ import hudson.Extension;
 import hudson.model.ItemGroup;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
+import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy.SshHostKeyVerificationStrategyDescriptor;
 import hudson.security.ACL;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
@@ -41,6 +42,10 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import java.util.Collections;
+import java.util.List;
+
+import javax.servlet.ServletException;
+
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
@@ -52,6 +57,9 @@ import static hudson.Util.fixEmpty;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 
 /**
  * {@link ComputerConnector} for {@link SSHLauncher}.
@@ -341,6 +349,17 @@ public class SSHConnector extends ComputerConnector {
             } catch (NumberFormatException e) {
                 return FormValidation.error(Messages.SSHConnector_LaunchTimeoutMustBeANumber());
             }
+        }
+        
+        public List<SshHostKeyVerificationStrategyDescriptor> getHostKeyVerificationStrategyDescriptors() {
+        	return Jenkins.getInstance().<SshHostKeyVerificationStrategy, SshHostKeyVerificationStrategyDescriptor>getDescriptorList(SshHostKeyVerificationStrategy.class);
+        }
+        
+        @Override
+        public void doHelp(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
+            Stapler.getCurrentRequest().setAttribute("descriptor", this);
+            
+            super.doHelp(req, resp);
         }
 
     }

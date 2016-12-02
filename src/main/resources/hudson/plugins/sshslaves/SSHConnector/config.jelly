@@ -6,7 +6,7 @@
   </f:entry>
 
   <j:set var="currentVerifier" value="${it.launcher.sshHostKeyVerificationStrategy}"/>
-  <f:dropdownList title="${%Host Key Verification Strategy}" name="sshHostKeyVerificationStrategy">
+  <f:dropdownList title="${%Host Key Verification Strategy}" name="sshHostKeyVerificationStrategy" help="${descriptor.getHelpFile('verificationStrategy')}">
     <j:forEach var="desc" items="${descriptor.sshHostKeyVerificationStrategyExtensionList}" varStatus="loop">
       <j:set var="verifier" value="${desc == currentVerifier.descriptor ? currentVerifier : null}"/>
       <f:dropdownListBlock title="${desc.displayName}" id="${loop.index}" selected="${verifier!=null}" staplerClass="${desc.clazz.name}">
