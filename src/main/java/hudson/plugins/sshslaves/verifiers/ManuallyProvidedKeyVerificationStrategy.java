@@ -84,7 +84,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
         String algorithm = tokenizer.nextToken();
         byte[] keyValue = Base64.decode(tokenizer.nextToken());
         if (null == keyValue) {
-        throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
+            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
         }
         
         try {
