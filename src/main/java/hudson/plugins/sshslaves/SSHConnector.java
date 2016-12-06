@@ -145,7 +145,7 @@ public class SSHConnector extends ComputerConnector {
      */
     public final Integer retryWaitTime;
     
-    public final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
+    private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     public StandardUsernameCredentials getCredentials() {
         String credentialsId = this.credentialsId == null
@@ -289,6 +289,10 @@ public class SSHConnector extends ComputerConnector {
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
         return new SSHLauncher(host, port, getCredentials(), jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
                 suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+    }
+    
+    public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
+    	return sshHostKeyVerificationStrategy;
     }
 
     @Extension
