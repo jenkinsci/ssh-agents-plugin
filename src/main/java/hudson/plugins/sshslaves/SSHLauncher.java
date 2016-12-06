@@ -50,7 +50,6 @@ import com.trilead.ssh2.Session;
 import com.trilead.ssh2.transport.TransportManager;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
-import hudson.DescriptorExtensionList;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
@@ -1642,9 +1641,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
 
-        public DescriptorExtensionList<SshHostKeyVerificationStrategy, Descriptor<SshHostKeyVerificationStrategy>> getSshHostKeyVerificationStrategyExtensionList() {
-            return Jenkins.getInstance().getDescriptorList(SshHostKeyVerificationStrategy.class);
-        }
+
     }
 
     @Extension
