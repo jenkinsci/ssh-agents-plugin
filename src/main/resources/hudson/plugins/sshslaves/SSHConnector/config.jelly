@@ -5,17 +5,7 @@
       <c:select/>
   </f:entry>
 
-  <j:set var="currentVerifier" value="${it.launcher.sshHostKeyVerificationStrategy}"/>
-  <f:dropdownList title="${%Host Key Verification Strategy}" name="sshHostKeyVerificationStrategy" help="${descriptor.getHelpFile('verificationStrategy')}">
-    <j:forEach var="desc" items="${descriptor.sshHostKeyVerificationStrategyExtensionList}" varStatus="loop">
-      <j:set var="verifier" value="${desc == currentVerifier.descriptor ? currentVerifier : null}"/>
-      <f:dropdownListBlock title="${desc.displayName}" id="${loop.index}" selected="${verifier!=null}" staplerClass="${desc.clazz.name}">
-        <j:set var="instance" value="${verifier}" />
-        <j:set var="descriptor" value="${desc}" />
-        <st:include page="${descriptor.configPage}" from="${descriptor}" />
-      </f:dropdownListBlock>
-    </j:forEach>
-  </f:dropdownList>
+  <f:dropdownDescriptorSelector title="${%Host Key Verification Strategy}" field="sshHostKeyVerificationStrategy" />
 
   <f:advanced>
       <f:entry title="${%Port}" field="port">

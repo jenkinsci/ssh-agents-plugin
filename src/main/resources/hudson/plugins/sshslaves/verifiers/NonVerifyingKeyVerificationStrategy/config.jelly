@@ -24,4 +24,14 @@ THE SOFTWARE.
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
 
+	<!-- the enclosing drop down list does not show a changeable help field for each type so we manually show one in its absence -->
+	<j:set var="help" value="${descriptor.helpFile}"/>
+    <j:if test="${help != null}">
+        <tr>
+            <td colspan="3"/>
+            <f:helpLink url="${help}"/>
+        </tr>
+        <f:helpArea/>
+    </j:if>
+    
 </j:jelly>
