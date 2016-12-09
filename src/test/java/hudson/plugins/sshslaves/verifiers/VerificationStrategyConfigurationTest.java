@@ -25,7 +25,8 @@ package hudson.plugins.sshslaves.verifiers;
 
 import static org.junit.Assert.assertNotSame;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,16 +36,11 @@ import org.jvnet.hudson.test.JenkinsRule;
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
-import hudson.model.Slave;
-import hudson.model.Node.Mode;
-import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.slaves.DumbSlave;
-import hudson.slaves.NodeProperty;
-import hudson.slaves.RetentionStrategy;
+import hudson.plugins.sshslaves.SSHConnector;
 
 public class VerificationStrategyConfigurationTest {
 
@@ -76,26 +72,18 @@ public class VerificationStrategyConfigurationTest {
     
     
     public void testConfigureRoundTrip(SshHostKeyVerificationStrategy strategy) throws Exception {
+        StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "dummyUser", "dummyPassword");
 
-        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-                Collections.<Credentials>singletonList(
-                        new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
-                )
-        );
+        List<Credentials> credentialsList = new ArrayList<Credentials>();
+        credentialsList.add(credentials);
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(), credentialsList);
         
-        SSHLauncher launcher = new SSHLauncher("localhost", 12, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, strategy);
-        DumbSlave slave = new DumbSlave("test-slave", "SSH Test slave", temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "", launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+        SSHConnector connector = new SSHConnector(12, credentials, null, null, null, "", "xyz", null, "", "", 30, 1, 1, strategy);
         
-        jenkins.getInstance().addNode(slave);
+        SSHConnector output = jenkins.configRoundtrip(connector);
 
-        HtmlPage p = jenkins.createWebClient().getPage(slave, "configure");
-        jenkins.submit(p.getFormByName("config"));
-        Slave n = (Slave) jenkins.getInstance().getNode("test-slave");
-
-        assertNotSame(n,slave);
-        assertNotSame(n.getLauncher(),launcher);
-        assertNotSame(((SSHLauncher) n.getLauncher()).getSshHostKeyVerificationStrategy(), strategy);
-        jenkins.assertEqualDataBoundBeans(((SSHLauncher) n.getLauncher()).getSshHostKeyVerificationStrategy(), strategy);
+        assertNotSame(connector, output);
+        jenkins.assertEqualDataBoundBeans(connector, output);
         
         
     }
