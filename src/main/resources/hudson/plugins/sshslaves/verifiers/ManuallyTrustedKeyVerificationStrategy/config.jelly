@@ -35,6 +35,6 @@ THE SOFTWARE.
     </j:if>
 	
 	<f:entry title="${%Require manual verification of initial connection}" field="requireInitialManualTrust">
-		<f:checkbox field="requireInitialManualTrust" checked="${it.requireInitialManualTrust}" />
+		<f:checkbox />
 	</f:entry>
 </j:jelly>
