@@ -70,8 +70,12 @@ public class VerificationStrategyConfigurationTest {
         testConfigureRoundTrip(new ManuallyProvidedKeyVerificationStrategy("ssh-rsa " + key));
     }
     
+    @Test
+    public void testConfigureRoundTripKnownHostsVerifyingStrategy() throws Exception {
+        testConfigureRoundTrip(new KnownHostsFileKeyVerificationStrategy());
+    }
     
-    public void testConfigureRoundTrip(SshHostKeyVerificationStrategy strategy) throws Exception {
+    private void testConfigureRoundTrip(SshHostKeyVerificationStrategy strategy) throws Exception {
         StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "dummyUser", "dummyPassword");
 
         List<Credentials> credentialsList = new ArrayList<Credentials>();
