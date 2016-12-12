@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+  Allows to launch agents running on Unix machines over SSH.
+</div>
