@@ -37,7 +37,7 @@ import hudson.slaves.SlaveComputer;
  * logs to indicate the key is not being checked and a man-in-the-middle attach may therefore
  * be possible against this connection.
  * @author Michael Clarke
- * @since 1.12
+ * @since 1.13
  */
 public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 

@@ -35,7 +35,7 @@ import jenkins.model.Jenkins;
  * An administrative warning that checks all SSH slaves have a {@link SshHostKeyVerificationStrategy}
  * set against them and prompts the admin to update the settings as needed.
  * @author Michael Clarke
- * @since 1.12
+ * @since 1.13
  */
 @Extension
 public class MissingVerificationStrategyAdministrativeMonitor extends AdministrativeMonitor {

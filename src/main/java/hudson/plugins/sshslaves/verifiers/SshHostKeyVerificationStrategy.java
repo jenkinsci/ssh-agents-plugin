@@ -34,7 +34,7 @@ import jenkins.model.Jenkins;
  * initiation of each connection.
  * 
  * @author Michael Clarke
- * @since 1.12
+ * @since 1.13
  */
 public abstract class SshHostKeyVerificationStrategy implements Describable<SshHostKeyVerificationStrategy> {
 

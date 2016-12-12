@@ -43,7 +43,7 @@ import hudson.security.Permission;
  * be prompted to replace the existing key, otherwise they will be prompted to add a new
  * key.
  * @author Michael Clarke
- * @since 1.12
+ * @since 1.13
  */
 public class TrustHostKeyAction extends TaskAction  {
 

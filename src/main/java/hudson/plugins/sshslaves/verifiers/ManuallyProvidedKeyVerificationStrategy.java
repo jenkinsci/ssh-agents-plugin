@@ -45,7 +45,7 @@ import hudson.util.FormValidation;
  * user that configured this strategy. This would be equivalent of someone manually setting a
  * value in their known hosts file before attempting an SSH connection on a Unix/Linux machine.
  * @author Michael Clarke
- * @since 1.12
+ * @since 1.13
  */
 public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 

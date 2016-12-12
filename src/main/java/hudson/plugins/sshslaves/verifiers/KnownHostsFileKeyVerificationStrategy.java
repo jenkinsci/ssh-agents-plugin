@@ -39,7 +39,7 @@ import hudson.slaves.SlaveComputer;
  * A verifier that reads host keys from the Jenkins users' SSH known_hosts file.
  *
  * @author Michael Clarke
- * @since 1.12
+ * @since 1.13
  */
 public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 	

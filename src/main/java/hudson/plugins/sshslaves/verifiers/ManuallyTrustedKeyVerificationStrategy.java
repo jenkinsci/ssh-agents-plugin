@@ -42,7 +42,7 @@ import hudson.slaves.SlaveComputer;
  * be actioned by a user with the appropriate permission to add a new key or replace an existing
  * key in the known hosts database.
  * @author Michael Clarke
- * @since 1.12
+ * @since 1.13
  */
 public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
     
