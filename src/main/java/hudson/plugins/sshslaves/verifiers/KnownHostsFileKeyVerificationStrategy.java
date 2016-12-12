@@ -42,6 +42,8 @@ import hudson.slaves.SlaveComputer;
  * @since 1.12
  */
 public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
+	
+	private static final File KNOWN_HOSTS_FILE = new File(new File(new File(System.getProperty("user.home")), ".ssh"), "known_hosts");
 
     @DataBoundConstructor
     public KnownHostsFileKeyVerificationStrategy() {
@@ -50,14 +52,13 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
     
     @Override
     public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
-        File knownHostsFile = new File(new File(new File(System.getProperty("user.home")), ".ssh"), "known_hosts");
 
-        if (!knownHostsFile.exists()) {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NoKnownHostsFile(knownHostsFile.getAbsolutePath()));
+        if (!KNOWN_HOSTS_FILE.exists()) {
+            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NoKnownHostsFile(KNOWN_HOSTS_FILE.getAbsolutePath()));
             return false;
         }
         
-        KnownHosts knownHosts = new KnownHosts(knownHostsFile);
+        KnownHosts knownHosts = new KnownHosts(KNOWN_HOSTS_FILE);
         int result = knownHosts.verifyHostkey(((SSHLauncher)computer.getLauncher()).getHost(), hostKey.getAlgorithm(), hostKey.getKey());
         
         if (KnownHosts.HOSTKEY_IS_OK == result) {
