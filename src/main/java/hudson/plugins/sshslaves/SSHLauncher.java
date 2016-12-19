@@ -144,7 +144,9 @@ public class SSHLauncher extends ComputerLauncher {
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
 
 
-    public static final String JDKVERSION = "jdk-7u80";
+    public static final int JDK_MAJOR_VERSION = 7;
+    public static final int JDK_MINOR_VERSION = 80;
+    public static final String JDKVERSION = "jdk-" + JDK_MAJOR_VERSION + "u" + JDK_MINOR_VERSION;
     public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR";
 
     /**
@@ -1163,7 +1165,7 @@ public class SSHLauncher extends ComputerLauncher {
                 try {
                     final Number version =
                         NumberFormat.getNumberInstance(Locale.US).parse(versionStr);
-                    if(version.doubleValue() < 1.5) {
+                    if(version.doubleValue() < requiredJavaVersion()) {
                         throw new IOException(Messages
                                 .SSHLauncher_NoJavaFound(line));
                     }
@@ -1174,6 +1176,10 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
         return null;
+    }
+
+    private double requiredJavaVersion() {
+        return Double.valueOf("1." + JDK_MAJOR_VERSION);
     }
 
     protected void openConnection(TaskListener listener) throws IOException, InterruptedException {

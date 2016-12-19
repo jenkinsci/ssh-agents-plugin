@@ -68,33 +68,48 @@ public class SSHLauncherTest {
     public JenkinsRule j = new JenkinsRule();
 
     @Test
+    public void checkJavaVersionOpenJDK8Linux() throws Exception {
+        assertTrue("OpenJDK8 on Linux should be supported", checkSupported("openjdk-8-linux.version"));
+    }
+
+    @Test
+    public void checkJavaVersionSun8Linux() throws Exception {
+        assertTrue("Sun 8 on Linux should be supported", checkSupported("sun-java-1.8-linux.version"));
+    }
+
+    @Test
     public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
         assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
     }
 
     @Test
-    public void checkJavaVersionOpenJDK6Linux() throws Exception {
-        assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
+    public void checkJavaVersionOpenJDK7Linux() throws Exception {
+        assertTrue("OpenJDK7 on Linux should be supported", checkSupported("openjdk-7-linux.version"));
     }
 
     @Test
-    public void checkJavaVersionSun6Linux() throws Exception {
-        assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
+    public void checkJavaVersionSun7Linux() throws Exception {
+        assertTrue("Sun 7 on Linux should be supported", checkSupported("sun-java-1.7-linux.version"));
     }
 
     @Test
-    public void checkJavaVersionSun6Mac() throws Exception {
-        assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
+    public void checkJavaVersionSun7Mac() throws Exception {
+        assertTrue("Sun 7 on Mac should be supported", checkSupported("sun-java-1.7-mac.version"));
     }
 
-    @Test
-    public void checkJavaVersionSun4Linux() {
-        try {
-            checkSupported("sun-java-1.4-linux.version");
-            fail();
-        } catch (IOException e) {
-            //
-        }
+    @Test(expected = IOException.class)
+    public void checkJavaVersionOpenJDK6Linux() throws IOException {
+        checkSupported("openjdk-6-linux.version");
+    }
+
+    @Test(expected = IOException.class)
+    public void checkJavaVersionSun6Linux() throws IOException {
+        checkSupported("sun-java-1.6-linux.version");
+    }
+
+    @Test(expected = IOException.class)
+    public void checkJavaVersionSun6Mac() throws IOException {
+        checkSupported("sun-java-1.6-mac.version");
     }
 
     /**
