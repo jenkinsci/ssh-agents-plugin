@@ -44,6 +44,8 @@ import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import java.io.IOException;
 
@@ -68,6 +70,11 @@ public class SSHConnector extends ComputerConnector {
      */
     public final int port;
 
+    private String remotePortsForwardings;
+
+    public String getRemotePortsForwardings() {
+        return remotePortsForwardings;
+    }
     /**
      * The id of the credentials to use.
      */
@@ -142,7 +149,9 @@ public class SSHConnector extends ComputerConnector {
      *  Field retryWaitTime.
      */
     public final Integer retryWaitTime;
-
+    
+    private static final Logger log = Logger.getLogger(SSHConnector.class.getName());
+ 
     public StandardUsernameCredentials getCredentials() {
         String credentialsId = this.credentialsId == null
                 ? (this.credentials == null ? null : this.credentials.getId())
@@ -177,7 +186,7 @@ public class SSHConnector extends ComputerConnector {
     /**
      * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, Integer, Integer, Integer)
      */
-    @DataBoundConstructor
+   
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
                         Integer maxNumRetries, Integer retryWaitTime) {
@@ -267,10 +276,24 @@ public class SSHConnector extends ComputerConnector {
         this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : 0;
         this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : 0;
     }
+    
+    /**
+     * @see SSHLauncher#SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, JDKInstaller, String,
+     * String)
+     */
+    @DataBoundConstructor
+    public SSHConnector(int port, StandardUsernameCredentials credentials, String remotePortsForwardings, String username, String password,
+                        String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
+                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
+                        Integer maxNumRetries, Integer retryWaitTime) {
+         this(port, credentials, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
+         this.remotePortsForwardings = remotePortsForwardings;
+         log.info("remotePortsForwardings="+remotePortsForwardings);
+     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
-        return new SSHLauncher(host, port, getCredentials(), jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
+        return new SSHLauncher(host, port, getCredentials(), remotePortsForwardings, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
                 suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
     }
 

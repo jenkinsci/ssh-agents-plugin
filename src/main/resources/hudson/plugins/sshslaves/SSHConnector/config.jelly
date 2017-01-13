@@ -10,6 +10,10 @@
           <f:textbox default="22" />
       </f:entry>
 
+     <f:entry title="${%Remote Ports Forwadings}" field="remotePortsForwardings">
+          <f:textbox />
+      </f:entry>
+
       <f:entry title="${%JavaPath}" field="javaPath">
           <f:textbox />
       </f:entry>
