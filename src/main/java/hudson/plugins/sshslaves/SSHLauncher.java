@@ -147,6 +147,16 @@ public class SSHLauncher extends ComputerLauncher {
     public static final String JDKVERSION = "jdk-7u80";
     public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR";
 
+    // Some of the messages observed in the wild:
+    // "Connection refused (Connection refused)"
+    // "Connection reset"
+    // "Connection timed out", "Connection timed out (Connection timed out)"
+    // "No route to host", "No route to host (Host unreachable)"
+    // "Premature connection close"
+    private static final List<String> RECOVERABLE_FAILURES = Arrays.asList(
+            "Connection refused", "Connection reset", "Connection timed out", "No route to host", "Premature connection close"
+    );
+
     /**
      * @deprecated
      *      Subtype of {@link JDKInstaller} causes JENKINS-10641.
@@ -1177,7 +1187,8 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     protected void openConnection(TaskListener listener) throws IOException, InterruptedException {
-        listener.getLogger().println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
+        PrintStream logger = listener.getLogger();
+        logger.println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(true);
 
         int maxNumRetries = this.maxNumRetries == null || this.maxNumRetries < 0 ? 0 : this.maxNumRetries;
@@ -1187,20 +1198,21 @@ public class SSHLauncher extends ComputerLauncher {
                 connection.connect();
                 break;
             } catch (IOException ioexception) {
-                listener.getLogger().println(ioexception.getCause().getMessage());
-                String ioExceptionMessageCause = "";
-                if (ioexception.getCause() != null) {
-                    ioExceptionMessageCause = ioexception.getCause().getMessage();
+                String message = "";
+                Throwable cause = ioexception.getCause();
+                if (cause != null) {
+                    message = cause.getMessage();
+                    logger.println(message);
                 }
-                if (!ioExceptionMessageCause.equals("Connection refused")) {
-                    break;
+                if (cause == null || !isRecoverable(message)) {
+                    throw ioexception;
                 }
                 if (maxNumRetries - i > 0) {
-                    listener.getLogger().println("SSH Connection failed with IOException: \"" + ioExceptionMessageCause
+                    logger.println("SSH Connection failed with IOException: \"" + message
                                                          + "\", retrying in " + retryWaitTime + " seconds.  There are "
                                                          + (maxNumRetries - i) + " more retries left.");
                 } else {
-                    listener.getLogger().println("SSH Connection failed with IOException: \"" + ioExceptionMessageCause + "\".");
+                    logger.println("SSH Connection failed with IOException: \"" + message + "\".");
                     throw ioexception;
                 }
             }
@@ -1213,11 +1225,18 @@ public class SSHLauncher extends ComputerLauncher {
         }
         if (SSHAuthenticator.newInstance(connection, credentials).authenticate(listener)
                 && connection.isAuthenticationComplete()) {
-            listener.getLogger().println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
+            logger.println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
         } else {
-            listener.getLogger().println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
+            logger.println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
             throw new AbortException(Messages.SSHLauncher_AuthenticationFailedException());
         }
+    }
+
+    private boolean isRecoverable(String message) {
+        for (String s : RECOVERABLE_FAILURES) {
+            if (message.startsWith(s)) return true;
+        }
+        return false;
     }
 
     /**
