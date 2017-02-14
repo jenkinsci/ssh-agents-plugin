@@ -13,7 +13,7 @@
 
   <name>Jenkins SSH Slaves plugin</name>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
-  <description>Allows to launch agents running on Unix machines over SSH, using a Java implementation of the SSH protocol</description>
+  <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
 
   <properties>
     <jenkins.version>1.609.1</jenkins.version>
