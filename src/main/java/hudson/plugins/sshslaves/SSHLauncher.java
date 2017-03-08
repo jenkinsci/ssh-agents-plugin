@@ -742,6 +742,8 @@ public class SSHLauncher extends ComputerLauncher {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
                 } catch (Error e) {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                } catch (AbortException e) {
+                    listener.getLogger().println(e.getMessage());
                 } catch (IOException e) {
                     e.printStackTrace(listener.getLogger());
                 } finally {
@@ -993,9 +995,9 @@ public class SSHLauncher extends ComputerLauncher {
             try {
                 // often times error this early means the JVM has died, so let's see if we can capture all stderr
                 // and exit code
-                throw new IOException(getSessionOutcomeMessage(session,false),e);
+                throw new AbortException(getSessionOutcomeMessage(session,false));
             } catch (InterruptedException x) {
-                throw new IOException("Unable to get agent goodbye message", e);
+                throw new IOException(e);
             }
         }
     }
