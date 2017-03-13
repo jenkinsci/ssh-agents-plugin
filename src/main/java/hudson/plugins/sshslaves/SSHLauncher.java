@@ -72,7 +72,6 @@ import hudson.tools.ToolLocationNodeProperty;
 import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
-import hudson.util.IOException2;
 import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
 import hudson.util.NullStream;
@@ -743,6 +742,8 @@ public class SSHLauncher extends ComputerLauncher {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
                 } catch (Error e) {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                } catch (AbortException e) {
+                    listener.getLogger().println(e.getMessage());
                 } catch (IOException e) {
                     e.printStackTrace(listener.getLogger());
                 } finally {
@@ -801,7 +802,7 @@ public class SSHLauncher extends ComputerLauncher {
      * return javaPath if specified in the configuration.
      * Finds local Java, and if none exist, install one.
      */
-    protected String resolveJava(SlaveComputer computer, TaskListener listener) throws InterruptedException, IOException2 {
+    protected String resolveJava(SlaveComputer computer, TaskListener listener) throws InterruptedException, IOException {
 
         if (StringUtils.isNotBlank(javaPath)) {
             return expandExpression(computer, javaPath);
@@ -809,7 +810,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         final String workingDirectory = getWorkingDirectory(computer);
         if (workingDirectory == null) {
-            throw new IOException2("Cannot retrieve a working directory of " + computer, null);
+            throw new IOException("Cannot retrieve a working directory of " + computer, null);
         }
 
         List<String> tried = new ArrayList<String>();
@@ -830,7 +831,7 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             return attemptToInstallJDK(listener, workingDirectory);
         } catch (IOException e) {
-            throw new IOException2("Could not find any known supported java version in "+tried+", and we also failed to install JDK as a fallback",e);
+            throw new IOException("Could not find any known supported java version in "+tried+", and we also failed to install JDK as a fallback",e);
         }
     }
 
@@ -989,14 +990,14 @@ public class SSHLauncher extends ComputerLauncher {
             computer.setChannel(session.getStdout(), session.getStdin(), listener.getLogger(), null);
         } catch (InterruptedException e) {
             session.close();
-            throw new IOException2(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
+            throw new IOException(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
         } catch (IOException e) {
             try {
                 // often times error this early means the JVM has died, so let's see if we can capture all stderr
                 // and exit code
-                throw new IOException2(getSessionOutcomeMessage(session,false),e);
+                throw new AbortException(getSessionOutcomeMessage(session,false));
             } catch (InterruptedException x) {
-                throw (IOException)new IOException().initCause(e);
+                throw new IOException(e);
             }
         }
     }
@@ -1059,12 +1060,12 @@ public class SSHLauncher extends ComputerLauncher {
                 } catch (Error error) {
                     throw error;  
                 } catch (Throwable e) {
-                    throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarTo(fileName), e);
+                    throw new IOException(Messages.SSHLauncher_ErrorCopyingSlaveJarTo(fileName), e);
                 }
             } catch (Error error) {
                 throw error;
             } catch (Throwable e) {
-                throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
+                throw new IOException(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
             }
         } catch (IOException e) {
             if (sftpClient == null) {
@@ -1109,7 +1110,7 @@ public class SSHLauncher extends ComputerLauncher {
             listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
             scp.put(new Slave.JnlpJar("slave.jar").readFully(), "slave.jar", workingDirectory, "0644");
         } catch (IOException e) {
-            throw new IOException2(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
+            throw new IOException(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
         }
     }
 
