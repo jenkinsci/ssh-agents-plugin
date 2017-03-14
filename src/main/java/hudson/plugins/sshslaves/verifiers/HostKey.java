@@ -44,7 +44,7 @@ public final class HostKey implements Serializable {
     public HostKey(String algorithm, byte[] key) {
         super();
         this.algorithm = algorithm;
-        this.key = key;
+        this.key = key.clone();
     }
 
     /**
@@ -60,7 +60,7 @@ public final class HostKey implements Serializable {
      * @return a byte representation of the raw key value.
      */
     public byte[] getKey() {
-        return key;
+        return key.clone();
     }
 
     public String getFingerprint() {

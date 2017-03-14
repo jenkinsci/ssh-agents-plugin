@@ -93,16 +93,23 @@ public final class HostKeyHelper {
         cache.put(host, hostKey);
     }
     
-    private File getSshHostKeyFile(Node node) {
+    private File getSshHostKeyFile(Node node) throws IOException {
         return new File(getNodeDirectory(node), "ssh-host-key.xml");
     }
     
-    private File getNodeDirectory(Node node) {
+    private File getNodeDirectory(Node node) throws IOException {
+        if (null == node) {
+            throw new IOException("Could not load key for the requested node");
+        }
         return new File(getNodesDirectory(), node.getNodeName());
     }
     
-    private File getNodesDirectory() {
+    private File getNodesDirectory() throws IOException {
         // jenkins.model.Nodes#getNodesDirectory() is private, so we have to duplicate it here.
-        return new File(Jenkins.getInstance().getRootDir(), "nodes");
+        File nodesDir = new File(Jenkins.getActiveInstance().getRootDir(), "nodes");
+        if (!nodesDir.exists() || !nodesDir.isDirectory()) {
+            throw new IOException("Nodes directory does not exist");
+        }
+        return nodesDir;
     }
 }

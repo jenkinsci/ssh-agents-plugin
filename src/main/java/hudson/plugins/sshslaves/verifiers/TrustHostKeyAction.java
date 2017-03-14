@@ -27,6 +27,7 @@ import java.io.IOException;
 
 import javax.servlet.ServletException;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -54,6 +55,8 @@ public class TrustHostKeyAction extends TaskAction  {
 
     private boolean complete;
 
+    @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD",
+            justification = "Need a static counter of all instances that have been created")
     TrustHostKeyAction(Computer computer, HostKey hostKey) {
         super();
         this.hostKey = hostKey;
