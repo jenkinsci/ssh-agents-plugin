@@ -40,13 +40,6 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import com.trilead.ssh2.ChannelCondition;
-import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.SCPClient;
-import com.trilead.ssh2.SFTPv3Client;
-import com.trilead.ssh2.SFTPv3FileAttributes;
-import com.trilead.ssh2.Session;
-import com.trilead.ssh2.transport.TransportManager;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
@@ -80,6 +73,7 @@ import java.util.Collections;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.apache.sshd.SshServer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -230,7 +224,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * SSH connection to the slave.
      */
-    private transient Connection connection;
+    private transient SshServer connection;
 
     /**
      * The session inside {@link #connection} that controls the slave process.
@@ -711,7 +705,9 @@ public class SSHLauncher extends ComputerLauncher {
      */
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
-        connection = new Connection(host, port);
+        connection = SshServer.setUpDefaultServer();
+        connection.setHost( host );
+        connection.setPort( port ); 
         ExecutorService executorService = Executors.newSingleThreadExecutor(
                 new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
         Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
