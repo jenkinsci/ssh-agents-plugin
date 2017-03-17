@@ -74,6 +74,7 @@ import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.apache.sshd.SshServer;
+import org.apache.sshd.server.session.ServerSession; 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -229,7 +230,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * The session inside {@link #connection} that controls the slave process.
      */
-    private transient Session session;
+    private transient ServerSession session;
 
     /**
      * Field prefixStartSlaveCmd.
@@ -970,7 +971,8 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void startSlave(SlaveComputer computer, final TaskListener listener, String java,
                             String workingDirectory) throws IOException {
-        session = connection.openSession();
+        connection.start();
+        session = connection.connect(host, port).await().getSession();
         expandChannelBufferSize(session,listener);
         String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar";
 
