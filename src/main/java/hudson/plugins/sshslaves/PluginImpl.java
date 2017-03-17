@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.trilead.ssh2.Connection;
+import org.apache.sshd.SshServer;
 import hudson.Plugin;
 
 /**
@@ -41,7 +41,7 @@ public class PluginImpl extends Plugin {
     /**
      * The connections to close when the plugin is stopped.
      */
-    private static final List<Connection> activeConnections = new ArrayList<Connection>();
+    private static final List<SshServer> activeConnections = new ArrayList<SshServer>();
 
     /**
      * {@inheritDoc}
@@ -79,7 +79,7 @@ public class PluginImpl extends Plugin {
      *
      * @param connection The connection.
      */
-    public static synchronized void register(Connection connection) {
+    public static synchronized void register(SshServer connection) {
         if (!activeConnections.contains(connection)) {
             activeConnections.add(connection);
         }
@@ -90,7 +90,7 @@ public class PluginImpl extends Plugin {
      *
      * @param connection The connection.
      */
-    public static synchronized void unregister(Connection connection) {
+    public static synchronized void unregister(SshServer connection) {
         activeConnections.remove(connection);
     }
 
