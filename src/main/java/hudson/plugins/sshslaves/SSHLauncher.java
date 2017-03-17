@@ -1320,7 +1320,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * If the SSH connection as a whole is lost, report that information.
      */
-    private boolean reportTransportLoss(Connection c, TaskListener listener) {
+    private boolean reportTransportLoss(SshServer c, TaskListener listener) {
         // TODO: switch to Connection.getReasonClosedCause() post build217-jenkins-8
         // in the mean time, rely on reflection to get to the object
 
@@ -1351,7 +1351,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Find the exit code or exit status, which are differentiated in SSH protocol.
      */
-    private String getSessionOutcomeMessage(Session session, boolean isConnectionLost) throws InterruptedException {
+    private String getSessionOutcomeMessage(ServerSession session, boolean isConnectionLost) throws InterruptedException {
         session.waitForCondition(ChannelCondition.EXIT_STATUS | ChannelCondition.EXIT_SIGNAL, 3000);
 
         Integer exitCode = session.getExitStatus();
