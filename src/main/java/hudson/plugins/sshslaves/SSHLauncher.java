@@ -1419,7 +1419,7 @@ public class SSHLauncher extends ComputerLauncher {
         return privatekey;
     }
 
-    public Connection getConnection() {
+    public SshServer getConnection() {
         return connection;
     }
 
