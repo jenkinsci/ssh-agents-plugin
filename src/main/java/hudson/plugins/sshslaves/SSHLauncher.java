@@ -1565,7 +1565,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Extension
     public static class DefaultJavaProvider extends JavaProvider {
         @Override
-        public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
+        public List<String> getJavas(SlaveComputer computer, TaskListener listener, SshServer connection) {
             List<String> javas = new ArrayList<String>(Arrays.asList(
                     "java",
                     "/usr/bin/java",
