@@ -25,6 +25,7 @@ package hudson.plugins.sshslaves;
 
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
 import hudson.slaves.NodeProperty;
 import hudson.tools.JDKInstaller;
 import java.io.BufferedReader;
@@ -124,7 +125,7 @@ public class SSHLauncherTest {
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
                 )
         );
-        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1, new KnownHostsFileKeyVerificationStrategy());
         DumbSlave slave = new DumbSlave("slave", "dummy",
                 j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
