@@ -65,10 +65,6 @@ import hudson.slaves.SlaveComputer;
 
 public class TrustHostKeyActionTest {
     
-    
-    
-    
-    
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
     
@@ -131,7 +127,7 @@ public class TrustHostKeyActionTest {
         try {
             computer.connect(false).get();
         } catch (ExecutionException ex){
-            if (!ex.getMessage().startsWith("java.io.IOException: Slave failed")) {
+            if (!ex.getMessage().startsWith("java.io.IOException: Slave failed") && !ex.getMessage().startsWith("java.io.IOException: Agent failed")) {
                 throw ex;
             }
         }
