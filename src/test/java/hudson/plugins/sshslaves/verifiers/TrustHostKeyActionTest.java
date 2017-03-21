@@ -133,7 +133,7 @@ public class TrustHostKeyActionTest {
         }
         
         List<TrustHostKeyAction> actions = computer.getActions(TrustHostKeyAction.class);
-        assertEquals(1, actions.size());
+        assertEquals(computer.getLog(), 1, actions.size());
         assertNull(actions.get(0).getExistingHostKey());
         
         HtmlPage p = jenkins.createWebClient().getPage(slave, actions.get(0).getUrlName());
