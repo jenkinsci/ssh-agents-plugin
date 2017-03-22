@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
-  <version>1.15-SNAPSHOT</version>
+  <version>1.16-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Jenkins SSH Slaves plugin</name>
@@ -18,6 +18,7 @@
   <properties>
     <jenkins.version>1.609.1</jenkins.version>
     <java.level>6</java.level>
+    <jenkins-test-harness.version>2.18</jenkins-test-harness.version>
   </properties>
 
   <developers>
@@ -32,6 +33,10 @@
     <developer>
       <id>olamy</id>
       <name>Olivier Lamy</name>
+    </developer>
+    <developer>
+      <id>mc1arke</id>
+      <name>Michael Clarke</name>
     </developer>
   </developers>
 

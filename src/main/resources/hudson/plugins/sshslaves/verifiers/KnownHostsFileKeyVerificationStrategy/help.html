@@ -1,0 +1,2 @@
+<p>Checks the known_hosts file (~/.ssh/known_hosts) for the user Jenkins is executing under, to see if an entry exists that matches the current connection.</p>
+<p>This method does not make any updates to the Known Hosts file, instead using the file as a read-only source and expecting someone with suitable access to the appropriate user account on the Jenkins master to update the file as required, potentially using the <code>ssh <i>hostname</i></code> command to initiate a connection and update the file appropriately.</p>
