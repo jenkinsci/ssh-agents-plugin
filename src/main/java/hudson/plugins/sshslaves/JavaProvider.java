@@ -23,7 +23,7 @@
  */
 package hudson.plugins.sshslaves;
 
-import com.trilead.ssh2.Connection;
+import org.apache.sshd.SshServer;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.slaves.SlaveComputer;
@@ -41,7 +41,7 @@ public abstract class JavaProvider implements ExtensionPoint {
      * @deprecated
      *      Override {@link #getJavas(SlaveComputer, TaskListener, Connection)} instead.
      */
-    public List<String> getJavas(TaskListener listener, Connection connection) {
+    public List<String> getJavas(TaskListener listener, SshServer connection) {
         return Collections.emptyList();
     }
 
@@ -51,7 +51,7 @@ public abstract class JavaProvider implements ExtensionPoint {
      * @return
      *      Can be empty but never null. Absolute path to the possible locations of Java.
      */
-    public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
+    public List<String> getJavas(SlaveComputer computer, TaskListener listener, SshServer connection) {
         return getJavas(listener,connection);
     }
 
