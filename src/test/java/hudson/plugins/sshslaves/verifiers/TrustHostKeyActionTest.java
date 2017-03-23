@@ -65,10 +65,6 @@ import hudson.slaves.SlaveComputer;
 
 public class TrustHostKeyActionTest {
     
-    
-    
-    
-    
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
     
@@ -131,13 +127,13 @@ public class TrustHostKeyActionTest {
         try {
             computer.connect(false).get();
         } catch (ExecutionException ex){
-            if (!ex.getMessage().startsWith("java.io.IOException: Slave failed")) {
+            if (!ex.getMessage().startsWith("java.io.IOException: Slave failed") && !ex.getMessage().startsWith("java.io.IOException: Agent failed")) {
                 throw ex;
             }
         }
         
         List<TrustHostKeyAction> actions = computer.getActions(TrustHostKeyAction.class);
-        assertEquals(1, actions.size());
+        assertEquals(computer.getLog(), 1, actions.size());
         assertNull(actions.get(0).getExistingHostKey());
         
         HtmlPage p = jenkins.createWebClient().getPage(slave, actions.get(0).getUrlName());

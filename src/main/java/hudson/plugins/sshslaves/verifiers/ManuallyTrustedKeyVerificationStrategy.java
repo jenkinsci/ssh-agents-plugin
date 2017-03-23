@@ -23,15 +23,21 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import java.io.IOException;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import hudson.Extension;
+import hudson.model.Action;
+import hudson.model.Actionable;
+import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Nonnull;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * A host key verification strategy that works in a similar way to host key verification on
@@ -45,6 +51,8 @@ import hudson.slaves.SlaveComputer;
  * @since 1.13
  */
 public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
+
+    private static final Logger LOGGER = Logger.getLogger(ManuallyTrustedKeyVerificationStrategy.class.getName());
     
     private final boolean requireInitialManualTrust;
     
@@ -67,7 +75,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
             if (isRequireInitialManualTrust()) {
                 listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
                 if (!hasExistingTrustAction(computer, hostKey)) {
-                    computer.addAction(new TrustHostKeyAction(computer, hostKey));
+                    addAction(computer, new TrustHostKeyAction(computer, hostKey));
                 }
                 return false;
             }
@@ -80,13 +88,30 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
         else if (!existingHostKey.equals(hostKey)) {
             listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
             if (!hasExistingTrustAction(computer, hostKey)) {
-                computer.addAction(new TrustHostKeyAction(computer, hostKey));
+                addAction(computer, new TrustHostKeyAction(computer, hostKey));
             }
             return false;
         }
         else {
             listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyTrused(SSHLauncher.getTimestamp()));
             return true;
+        }
+    }
+
+    /** TODO replace with {@link Computer#addAction} after core baseline picks up JENKINS-42969 fix */
+    private static void addAction(@Nonnull Computer c, @Nonnull Action a) {
+        try {
+            c.addAction(a);
+        } catch (UnsupportedOperationException x) {
+            try {
+                Field actionsF = Actionable.class.getDeclaredField("actions");
+                actionsF.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                List<Action> actions = (List) actionsF.get(c);
+                actions.add(a);
+            } catch (Exception x2) {
+                LOGGER.log(Level.WARNING, null, x2);
+            }
         }
     }
     
