@@ -857,9 +857,9 @@ public class SSHLauncher extends ComputerLauncher {
         // we might be called multiple times from multiple finally/catch block, 
         if (connection!=null) {
             try {
-                sshd.stop(true);
+                connection.stop(true);
             } finally {
-                sshd = null;
+                connection = null;
             }
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
         }
