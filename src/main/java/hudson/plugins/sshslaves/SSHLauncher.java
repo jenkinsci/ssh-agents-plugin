@@ -77,8 +77,8 @@ import java.util.Collections;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
-import org.apache.sshd.client.channel.ClientChannel;
-import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.ClientChannel;
+import org.apache.sshd.ClientSession;
 import org.apache.sshd.SshClient;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.server.session.ServerSession;
@@ -244,7 +244,7 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private transient ServerSession session;
 
-    private transient ServerClient sessionClient;
+    private transient ClientSession sessionClient;
 
     /**
      * Field prefixStartSlaveCmd.
