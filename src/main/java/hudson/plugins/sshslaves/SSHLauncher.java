@@ -77,8 +77,11 @@ import java.util.Collections;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
-import org.apache.sshd.SshServer;
-import org.apache.sshd.server.session.ServerSession; 
+import org.apache.sshd.client.channel.ClientChannel;
+import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.client.SshClient;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.session.ServerSession;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -233,10 +236,14 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private transient SshServer connection;
 
+    private transient SshClient connectionClient;
+
     /**
      * The session inside {@link #connection} that controls the slave process.
      */
     private transient ServerSession session;
+
+    private transient ServerClient sessionClient;
 
     /**
      * Field prefixStartSlaveCmd.
@@ -950,19 +957,41 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        connection.exec("true",baos);
-        final String s;
-        //TODO: Seems we need to retrieve the encoding from the connection destination
+
+        SshClient client = SshClient.setUpDefaultClient();
+    	client.start();
+
         try {
-            s = baos.toString(Charset.defaultCharset().name());
-        } catch (UnsupportedEncodingException ex) { // Should not happen
-            throw new IOException("Default encoding is unsupported", ex);
-        }
-        
-        if (s.length()!=0) {
-            listener.getLogger().println(Messages.SSHLauncher_SSHHeeaderJunkDetected());
-            listener.getLogger().println(s);
-            throw new AbortException();
+            ClientSession session = client.connect((StandardUsernameCredentials) credentials, host, port).await().getSession();
+            int response = ClientSession.WAIT_AUTH;
+            while ((response & ClientSession.WAIT_AUTH) != 0) {
+                session.authPassword((StandardUsernameCredentials) credentials, password);
+                response = session.waitFor(ClientSession.WAIT_AUTH | ClientSession.CLOSED | ClientSession.AUTHED, 0);
+            }
+
+            ChannelExec channel = session.createExecChannel("true");
+            channel.setOut(baos);
+            channel.open();
+
+            final String s;
+            //TODO: Seems we need to retrieve the encoding from the connection destination
+            try {
+                s = baos.toString(Charset.defaultCharset().name());
+            } catch (UnsupportedEncodingException ex) { // Should not happen
+                throw new IOException("Default encoding is unsupported", ex);
+            }
+
+            if (s.length()!=0) {
+                listener.getLogger().println(Messages.SSHLauncher_SSHHeeaderJunkDetected());
+                listener.getLogger().println(s);
+                throw new AbortException();
+            }
+            channel.waitFor(ClientChannel.CLOSED, 120000);
+            channel.close(true);
+            session.close(true);
+            client.stop();
+        } finally {
+            client.stop();
         }
     }
 
