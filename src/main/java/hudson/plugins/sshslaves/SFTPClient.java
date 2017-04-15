@@ -34,8 +34,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStream;
 
-import hudson.util.IOException2;
-
 /**
  * TODO: moved to Jenkins core, so pick it up from there.
  * @author Kohsuke Kawaguchi
@@ -82,7 +80,7 @@ public class SFTPClient extends SFTPv3Client {
         try {
             mkdir(path, posixPermission);
         } catch (IOException e) {
-            throw new IOException2("Failed to mkdir "+path,e);
+            throw new IOException("Failed to mkdir "+path,e);
         }
     }
 

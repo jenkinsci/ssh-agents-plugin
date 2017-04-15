@@ -5,6 +5,8 @@
       <c:select/>
   </f:entry>
 
+  <f:dropdownDescriptorSelector title="${%Host Key Verification Strategy}" field="sshHostKeyVerificationStrategy" />
+
   <f:advanced>
       <f:entry title="${%Port}" field="port">
           <f:textbox default="22" />
