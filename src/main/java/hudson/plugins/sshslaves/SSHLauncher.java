@@ -1046,7 +1046,7 @@ public class SSHLauncher extends ComputerLauncher {
         String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar";
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
-        cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
+        cmd = getPrefixStartSlaveCmd() + " " + cmd + " " + getSuffixStartSlaveCmd();
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
