@@ -40,14 +40,6 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import com.trilead.ssh2.ChannelCondition;
-import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.SCPClient;
-import com.trilead.ssh2.SFTPv3Client;
-import com.trilead.ssh2.SFTPv3FileAttributes;
-import com.trilead.ssh2.ServerHostKeyVerifier;
-import com.trilead.ssh2.Session;
-import com.trilead.ssh2.transport.TransportManager;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
@@ -78,12 +70,19 @@ import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
+
 import hudson.util.NullStream;
 import hudson.util.Secret;
 import java.util.Collections;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.apache.sshd.ClientChannel;
+import org.apache.sshd.ClientSession;
+import org.apache.sshd.SshClient;
+import org.apache.sshd.SshServer;
+import org.apache.sshd.server.session.ServerSession;
+import org.apache.sshd.client.channel.ChannelExec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -236,12 +235,16 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * SSH connection to the slave.
      */
-    private transient Connection connection;
+    private transient SshServer connection;
+
+    private transient SshClient connectionClient;
 
     /**
      * The session inside {@link #connection} that controls the slave process.
      */
-    private transient Session session;
+    private transient ServerSession session;
+
+    private transient ClientSession sessionClient;
 
     /**
      * Field prefixStartSlaveCmd.
@@ -778,7 +781,9 @@ public class SSHLauncher extends ComputerLauncher {
      */
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
-        connection = new Connection(host, port);
+        connection = SshServer.setUpDefaultServer();
+        connection.setHost( host );
+        connection.setPort( port ); 
         ExecutorService executorService = Executors.newSingleThreadExecutor(
                 new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
         Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
@@ -859,8 +864,11 @@ public class SSHLauncher extends ComputerLauncher {
     private void cleanupConnection(TaskListener listener) {
         // we might be called multiple times from multiple finally/catch block, 
         if (connection!=null) {
-            connection.close();
-            connection = null;
+            try {
+                connection.stop(true);
+            } finally {
+                connection = null;
+            }
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
         }
     }
@@ -950,19 +958,41 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        connection.exec("true",baos);
-        final String s;
-        //TODO: Seems we need to retrieve the encoding from the connection destination
+
+        SshClient client = SshClient.setUpDefaultClient();
+    	client.start();
+
         try {
-            s = baos.toString(Charset.defaultCharset().name());
-        } catch (UnsupportedEncodingException ex) { // Should not happen
-            throw new IOException("Default encoding is unsupported", ex);
-        }
-        
-        if (s.length()!=0) {
-            listener.getLogger().println(Messages.SSHLauncher_SSHHeeaderJunkDetected());
-            listener.getLogger().println(s);
-            throw new AbortException();
+            ClientSession session = client.connect((StandardUsernameCredentials) credentials, host, port).await().getSession();
+            int response = ClientSession.WAIT_AUTH;
+            while ((response & ClientSession.WAIT_AUTH) != 0) {
+                session.authPassword((StandardUsernameCredentials) credentials, password);
+                response = session.waitFor(ClientSession.WAIT_AUTH | ClientSession.CLOSED | ClientSession.AUTHED, 0);
+            }
+
+            ChannelExec channel = session.createExecChannel("true");
+            channel.setOut(baos);
+            channel.open();
+
+            final String s;
+            //TODO: Seems we need to retrieve the encoding from the connection destination
+            try {
+                s = baos.toString(Charset.defaultCharset().name());
+            } catch (UnsupportedEncodingException ex) { // Should not happen
+                throw new IOException("Default encoding is unsupported", ex);
+            }
+
+            if (s.length()!=0) {
+                listener.getLogger().println(Messages.SSHLauncher_SSHHeeaderJunkDetected());
+                listener.getLogger().println(s);
+                throw new AbortException();
+            }
+            channel.waitFor(ClientChannel.CLOSED, 120000);
+            channel.close(true);
+            session.close(true);
+            client.stop();
+        } finally {
+            client.stop();
         }
     }
 
@@ -1041,7 +1071,8 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void startSlave(SlaveComputer computer, final TaskListener listener, String java,
                             String workingDirectory) throws IOException {
-        session = connection.openSession();
+        connection.start();
+        session = connection.connect(host, port).await().getSession();
         expandChannelBufferSize(session,listener);
         String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar";
 
@@ -1069,7 +1100,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private void expandChannelBufferSize(Session session, TaskListener listener) {
+    private void expandChannelBufferSize(ServerSession session, TaskListener listener) {
             // see hudson.remoting.Channel.PIPE_WINDOW_SIZE for the discussion of why 1MB is in the right ball park
             // but this particular session is where all the master/slave communication will happen, so
             // it's worth using a bigger buffer to really better utilize bandwidth even when the latency is even larger
@@ -1404,7 +1435,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * If the SSH connection as a whole is lost, report that information.
      */
-    private boolean reportTransportLoss(Connection c, TaskListener listener) {
+    private boolean reportTransportLoss(SshServer c, TaskListener listener) {
         // TODO: switch to Connection.getReasonClosedCause() post build217-jenkins-8
         // in the mean time, rely on reflection to get to the object
 
@@ -1435,7 +1466,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Find the exit code or exit status, which are differentiated in SSH protocol.
      */
-    private String getSessionOutcomeMessage(Session session, boolean isConnectionLost) throws InterruptedException {
+    private String getSessionOutcomeMessage(ServerSession session, boolean isConnectionLost) throws InterruptedException {
         session.waitForCondition(ChannelCondition.EXIT_STATUS | ChannelCondition.EXIT_SIGNAL, 3000);
 
         Integer exitCode = session.getExitStatus();
@@ -1503,7 +1534,7 @@ public class SSHLauncher extends ComputerLauncher {
         return privatekey;
     }
 
-    public Connection getConnection() {
+    public SshServer getConnection() {
         return connection;
     }
 
@@ -1651,7 +1682,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Extension
     public static class DefaultJavaProvider extends JavaProvider {
         @Override
-        public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
+        public List<String> getJavas(SlaveComputer computer, TaskListener listener, SshServer connection) {
             List<String> javas = new ArrayList<String>(Arrays.asList(
                     "java",
                     "/usr/bin/java",
