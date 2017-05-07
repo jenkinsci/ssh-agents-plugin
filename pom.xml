@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>2.11</version>
+    <version>2.27</version>
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
@@ -16,8 +16,8 @@
   <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
 
   <properties>
-    <jenkins.version>1.609.1</jenkins.version>
-    <java.level>6</java.level>
+    <jenkins.version>2.58</jenkins.version>
+    <java.level>8</java.level>
     <jenkins-test-harness.version>2.18</jenkins-test-harness.version>
   </properties>
 
