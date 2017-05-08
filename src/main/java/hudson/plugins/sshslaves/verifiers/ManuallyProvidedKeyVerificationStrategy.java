@@ -24,6 +24,7 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.StringTokenizer;
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -92,17 +93,35 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
                 RSASHA1Verify.decodeSSHRSAPublicKey(keyValue);
             } else if ("ssh-dss".equals(algorithm)) {
                 DSASHA1Verify.decodeSSHDSAPublicKey(keyValue);
+            } else if (isClass("com.trilead.ssh2.signature.ED25519KeyAlgorithm") && "ssh-ed25519".equals(algorithm)) {
+                decodePublicKey("com.trilead.ssh2.signature.ED25519KeyAlgorithm", keyValue);
+            } else if (isClass("com.trilead.ssh2.signature.ECDSAKeyAlgorithm") && "ecdsa-sha2-nistp256".equals(algorithm)) {
+                decodePublicKey("com.trilead.ssh2.signature.ECDSAKeyAlgorithm", keyValue);
+            } else if (isClass("com.trilead.ssh2.signature.ECDSAKeyAlgorithm") && "ecdsa-sha2-nistp384".equals(algorithm)) {
+                decodePublicKey("com.trilead.ssh2.signature.ECDSAKeyAlgorithm", keyValue);
+            } else if (isClass("ECDSAKeyAlgorithm") && "ecdsa-sha2-nistp521".equals(algorithm)) {
+                decodePublicKey("com.trilead.ssh2.signature.ECDSAKeyAlgorithm", keyValue);
             } else {
-                throw new IllegalArgumentException("Key algorithm should be one of ssh-rsa or ssh-dss");
+                throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_UnknownKeyAlgorithm());
             }
-        } catch (IOException ex) {
-            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
-        }  catch (StringIndexOutOfBoundsException ex) {
-            // can happen in DSASHA1Verifier with certain values (from quick testing)
+        } catch (IOException | StringIndexOutOfBoundsException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException ex) {
             throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
         }
         
         return new HostKey(algorithm, keyValue);
+    }
+
+    private static void decodePublicKey(String className, byte[] keyValue) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Class.forName(className).getMethod("decodePublicKey", byte[].class).invoke(keyValue);
+    }
+
+    private static boolean isClass(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException ex) {
+            return false;
+        }
     }
     
     @Extension

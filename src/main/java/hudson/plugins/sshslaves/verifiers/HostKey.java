@@ -49,7 +49,7 @@ public final class HostKey implements Serializable {
 
     /**
      * Get the algorithm used during key generation.
-     * @return the agorithm used to generate the key, such as ssh-rsa.
+     * @return the algorithm used to generate the key, such as ssh-rsa.
      */
     public String getAlgorithm() {
         return algorithm;
