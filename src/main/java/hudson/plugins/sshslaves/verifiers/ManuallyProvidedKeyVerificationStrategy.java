@@ -93,7 +93,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             } else if ("ssh-dss".equals(algorithm)) {
                 DSASHA1Verify.decodeSSHDSAPublicKey(keyValue);
             } else {
-                throw new IllegalArgumentException("Key algorithm should be one of ssh-rsa or ssh-dss");
+                throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_UnknownKeyAlgorithm());
             }
         } catch (IOException ex) {
             throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
