@@ -24,6 +24,7 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -72,6 +73,16 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
             return false;
         }
         
+    }
+
+    @Override
+    public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
+        if (!KNOWN_HOSTS_FILE.exists()) {
+            return super.getPreferredKeyAlgorithms(computer);
+        }
+
+        KnownHosts knownHosts = new KnownHosts(KNOWN_HOSTS_FILE);
+        return knownHosts.getPreferredServerHostkeyAlgorithmOrder(((SSHLauncher) computer.getLauncher()).getHost());
     }
     
     @Extension

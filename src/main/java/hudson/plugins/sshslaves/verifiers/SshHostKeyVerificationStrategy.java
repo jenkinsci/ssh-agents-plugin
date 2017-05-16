@@ -29,6 +29,8 @@ import hudson.model.TaskListener;
 import hudson.slaves.SlaveComputer;
 import jenkins.model.Jenkins;
 
+import java.io.IOException;
+
 /**
  * A method for verifying the host key provided by the remote host during the
  * initiation of each connection.
@@ -53,6 +55,10 @@ public abstract class SshHostKeyVerificationStrategy implements Describable<SshH
      * @since 1.12
      */
     public abstract boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception;
+
+    public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
+        return TrileadVersionSupportManager.getTrileadSupport().getSupportedAlgorithms();
+    }
     
     public static abstract class SshHostKeyVerificationStrategyDescriptor extends Descriptor<SshHostKeyVerificationStrategy> {
         

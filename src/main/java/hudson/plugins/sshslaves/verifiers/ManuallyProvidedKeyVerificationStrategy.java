@@ -24,13 +24,14 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import com.trilead.ssh2.signature.DSASHA1Verify;
-import com.trilead.ssh2.signature.RSASHA1Verify;
 
 import hudson.Extension;
 import hudson.model.TaskListener;
@@ -75,6 +76,16 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             return false;
         }
     }
+
+    @Override
+    public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
+        List<String> sortedAlgorithms = new ArrayList<>(Arrays.asList(super.getPreferredKeyAlgorithms(computer)));
+
+        sortedAlgorithms.remove(key.getAlgorithm());
+        sortedAlgorithms.add(0, key.getAlgorithm());
+
+        return sortedAlgorithms.toArray(new String[sortedAlgorithms.size()]);
+    }
     
     private static HostKey parseKey(String key) {
         if (!key.contains(" ")) {
@@ -87,22 +98,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
         }
         
-        try {
-            if ("ssh-rsa".equals(algorithm)) {
-                RSASHA1Verify.decodeSSHRSAPublicKey(keyValue);
-            } else if ("ssh-dss".equals(algorithm)) {
-                DSASHA1Verify.decodeSSHDSAPublicKey(keyValue);
-            } else {
-                throw new IllegalArgumentException("Key algorithm should be one of ssh-rsa or ssh-dss");
-            }
-        } catch (IOException ex) {
-            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
-        }  catch (StringIndexOutOfBoundsException ex) {
-            // can happen in DSASHA1Verifier with certain values (from quick testing)
-            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
-        }
-        
-        return new HostKey(algorithm, keyValue);
+        return TrileadVersionSupportManager.getTrileadSupport().parseKey(algorithm, keyValue);
     }
     
     @Extension
