@@ -26,6 +26,7 @@ package hudson.plugins.sshslaves.verifiers;
 import java.io.File;
 import java.io.IOException;
 
+import hudson.slaves.ComputerLauncher;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.trilead.ssh2.KnownHosts;
@@ -53,6 +54,10 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
     
     @Override
     public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
+        ComputerLauncher launcher = computer.getLauncher();
+        if (!(launcher instanceof SSHLauncher)) {
+            return false;
+        }
 
         if (!KNOWN_HOSTS_FILE.exists()) {
             listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NoKnownHostsFile(KNOWN_HOSTS_FILE.getAbsolutePath()));
@@ -60,7 +65,7 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
         }
         
         KnownHosts knownHosts = new KnownHosts(KNOWN_HOSTS_FILE);
-        int result = knownHosts.verifyHostkey(((SSHLauncher)computer.getLauncher()).getHost(), hostKey.getAlgorithm(), hostKey.getKey());
+        int result = knownHosts.verifyHostkey(((SSHLauncher)launcher).getHost(), hostKey.getAlgorithm(), hostKey.getKey());
         
         if (KnownHosts.HOSTKEY_IS_OK == result) {
             listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_KeyTrused(SSHLauncher.getTimestamp()));
