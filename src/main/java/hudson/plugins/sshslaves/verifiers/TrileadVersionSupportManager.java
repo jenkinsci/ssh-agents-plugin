@@ -7,6 +7,8 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Michael Clarke
@@ -15,22 +17,32 @@ import java.io.IOException;
 @Restricted(NoExternalUse.class)
 final class TrileadVersionSupportManager {
 
+    private static final Logger LOGGER = Logger.getLogger(TrileadVersionSupportManager.class.getName());
+
     static TrileadVersionSupport getTrileadSupport() {
         try {
-            Thread.currentThread().getContextClassLoader().loadClass("com.trilead.ssh2.signature.KeyAlgorithmManager");
-            return createVersion9Instance();
-        } catch (ReflectiveOperationException e) {
-            // KeyAlgorithmManager doesn't exist, fall back to legacy trilead handler
-            return new LegacyTrileadVersionSupport();
+            if (isAfterTrilead8()) {
+                return createVersion9Instance();
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Could not create Trilead support class. Using legacy Trilead features", e);
         }
+        // We're on an old version of Triilead or couldn't create a new handler, fall back to legacy trilead handler
+        return new LegacyTrileadVersionSupport();
     }
 
-    private static TrileadVersionSupport createVersion9Instance() {
+    private static boolean isAfterTrilead8() {
         try {
-            return (TrileadVersionSupport) Thread.currentThread().getContextClassLoader().loadClass("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport").newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalArgumentException("Could not create Trilead support class", e);
+            Thread.currentThread().getContextClassLoader().loadClass("com.trilead.ssh2.signature.KeyAlgorithmManager");
+        } catch (ClassNotFoundException ex) {
+            return false;
         }
+        return true;
+    }
+
+    private static TrileadVersionSupport createVersion9Instance() throws ReflectiveOperationException {
+        return (TrileadVersionSupport) Thread.currentThread().getContextClassLoader()
+                .loadClass("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport").newInstance();
 
     }
 
