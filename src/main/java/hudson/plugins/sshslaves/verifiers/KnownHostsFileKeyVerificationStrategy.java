@@ -82,13 +82,16 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
 
     @Override
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
-        if (!KNOWN_HOSTS_FILE.exists()) {
+        ComputerLauncher launcher = computer.getLauncher();
+
+        if (!(launcher instanceof SSHLauncher) || !KNOWN_HOSTS_FILE.exists()) {
             return super.getPreferredKeyAlgorithms(computer);
         }
 
         KnownHosts knownHosts = new KnownHosts(KNOWN_HOSTS_FILE);
-        return knownHosts.getPreferredServerHostkeyAlgorithmOrder(((SSHLauncher) computer.getLauncher()).getHost());
+        return knownHosts.getPreferredServerHostkeyAlgorithmOrder(((SSHLauncher) launcher).getHost());
     }
+
     
     @Extension
     public static class KnownHostsFileKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
