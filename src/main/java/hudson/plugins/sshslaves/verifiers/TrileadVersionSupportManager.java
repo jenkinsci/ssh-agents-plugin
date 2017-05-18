@@ -18,14 +18,14 @@ final class TrileadVersionSupportManager {
     static TrileadVersionSupport getTrileadSupport() {
         try {
             Thread.currentThread().getContextClassLoader().loadClass("com.trilead.ssh2.signature.KeyAlgorithmManager");
-            return createaVersion9Instance();
+            return createVersion9Instance();
         } catch (ReflectiveOperationException e) {
             // KeyAlgorithmManager doesn't exist, fall back to legacy trilead handler
             return new LegacyTrileadVersionSupport();
         }
     }
 
-    private static TrileadVersionSupport createaVersion9Instance() {
+    private static TrileadVersionSupport createVersion9Instance() {
         try {
             return (TrileadVersionSupport) Class.forName("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport").newInstance();
         } catch (ReflectiveOperationException e) {
