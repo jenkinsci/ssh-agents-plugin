@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * An abstraction layer to allow handling of feature changes (e.g. new key types) between different Trilead versions.
  * @author Michael Clarke
  * @since 1.18
  */
@@ -19,6 +20,12 @@ final class TrileadVersionSupportManager {
 
     private static final Logger LOGGER = Logger.getLogger(TrileadVersionSupportManager.class.getName());
 
+    /**
+     * Craetes an instance of TrileadVersionSupport that can provide functionality relevant to the version of Trilead
+     * available in the current executing instance of Jenkins.
+     * @return an instance of TrileadVersionSupport that provides functionality relevant for the version of Trilead
+     * currently on the classpath
+     */
     static TrileadVersionSupport getTrileadSupport() {
         try {
             if (isAfterTrilead8()) {
@@ -53,8 +60,19 @@ final class TrileadVersionSupportManager {
             super();
         }
 
+        /**
+         * Returns an array of all Key algorithms supported by Yrilead, e.g. ssh-rsa, ssh-dsa, ssh-eds25519
+         * @return an array containing all the key algorithms the version of Trilead in use can support.
+         */
         public abstract String[] getSupportedAlgorithms();
 
+        /**
+         * Parses a raw key into a {@link HostKey} for later storage or comparison.
+         * @param algorithm the algorithm the key has been generated with, e.h. ssh-rsa, ssh-dss, ssh-ed25519
+         * @param keyValue the value of the key, typically encoded in PEM format.
+         * @return the input key in a format that can be compared to other keys
+         * @throws KeyParseException on any failure parsing the key, such as an unknown algorithm or invalid keyValue
+         */
         public abstract HostKey parseKey(String algorithm, byte[] keyValue) throws KeyParseException;
     }
 
