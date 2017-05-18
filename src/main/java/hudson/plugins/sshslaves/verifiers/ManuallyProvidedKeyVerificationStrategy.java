@@ -55,7 +55,11 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     @DataBoundConstructor
     public ManuallyProvidedKeyVerificationStrategy(String key) {
         super();
-        this.key = parseKey(key);
+        try {
+            this.key = parseKey(key);
+        } catch (KeyParseException e) {
+            throw new IllegalArgumentException("Invalid key: " + e.getMessage(), e);
+        }
     }
     
     public String getKey() {
@@ -87,7 +91,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
         return sortedAlgorithms.toArray(new String[sortedAlgorithms.size()]);
     }
     
-    private static HostKey parseKey(String key) {
+    private static HostKey parseKey(String key) throws KeyParseException {
         if (!key.contains(" ")) {
             throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_TwoPartKey());
         }
@@ -95,7 +99,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
         String algorithm = tokenizer.nextToken();
         byte[] keyValue = Base64.decode(tokenizer.nextToken());
         if (null == keyValue) {
-            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
+            throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
         }
         
         return TrileadVersionSupportManager.getTrileadSupport().parseKey(algorithm, keyValue);
@@ -113,7 +117,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             try {
                 ManuallyProvidedKeyVerificationStrategy.parseKey(key);
                 return FormValidation.ok();
-            } catch (IllegalArgumentException ex) {
+            } catch (KeyParseException ex) {
                 return FormValidation.error(ex.getMessage());
             }
         }

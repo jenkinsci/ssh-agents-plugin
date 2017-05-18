@@ -39,7 +39,7 @@ final class TrileadVersionSupportManager {
 
         public abstract String[] getSupportedAlgorithms();
 
-        public abstract HostKey parseKey(String algorithm, byte[] keyValue);
+        public abstract HostKey parseKey(String algorithm, byte[] keyValue) throws KeyParseException;
     }
 
     private static class LegacyTrileadVersionSupport extends TrileadVersionSupport {
@@ -50,17 +50,17 @@ final class TrileadVersionSupportManager {
         }
 
         @Override
-        public HostKey parseKey(String algorithm, byte[] keyValue) {
+        public HostKey parseKey(String algorithm, byte[] keyValue) throws KeyParseException {
             try {
                 if ("ssh-rsa".equals(algorithm)) {
                     RSASHA1Verify.decodeSSHRSAPublicKey(keyValue);
                 } else if ("ssh-dss".equals(algorithm)) {
                     DSASHA1Verify.decodeSSHDSAPublicKey(keyValue);
                 } else {
-                    throw new IllegalArgumentException("Key algorithm should be one of ssh-rsa or ssh-dss");
+                    throw new KeyParseException("Key algorithm should be one of ssh-rsa or ssh-dss");
                 }
             } catch (IOException | StringIndexOutOfBoundsException ex) {
-                throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
+                throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
             }
 
             return new HostKey(algorithm, keyValue);

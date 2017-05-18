@@ -23,7 +23,7 @@ class JenkinsTrilead9VersionSupport extends TrileadVersionSupportManager.Trilead
     }
 
     @Override
-    public HostKey parseKey(String algorithm, byte[] keyValue) {
+    public HostKey parseKey(String algorithm, byte[] keyValue) throws KeyParseException {
         for (KeyAlgorithm<?, ?> keyAlgorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
             try {
                 if (keyAlgorithm.getKeyFormat().equals(algorithm)) {
@@ -31,9 +31,9 @@ class JenkinsTrilead9VersionSupport extends TrileadVersionSupportManager.Trilead
                     return new HostKey(algorithm, keyValue);
                 }
             } catch (IOException ex) {
-                throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
+                throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
             }
         }
-        throw new IllegalArgumentException("Unexpected key algorithm " + algorithm);
+        throw new KeyParseException("Unexpected key algorithm: " + algorithm);
     }
 }
