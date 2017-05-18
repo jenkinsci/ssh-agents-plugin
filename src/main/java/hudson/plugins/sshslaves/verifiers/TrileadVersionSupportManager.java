@@ -27,7 +27,7 @@ final class TrileadVersionSupportManager {
 
     private static TrileadVersionSupport createVersion9Instance() {
         try {
-            return (TrileadVersionSupport) Class.forName("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport").newInstance();
+            return (TrileadVersionSupport) Thread.currentThread().getContextClassLoader().loadClass("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport").newInstance();
         } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException("Could not create Trilead support class", e);
         }
