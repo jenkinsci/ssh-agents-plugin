@@ -435,7 +435,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Deprecated
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this.host = host;
+        this.host = host.trim();
         this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
         this.username = fixEmpty(username);
