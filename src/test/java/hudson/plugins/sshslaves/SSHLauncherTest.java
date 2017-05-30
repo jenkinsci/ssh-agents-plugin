@@ -125,7 +125,7 @@ public class SSHLauncherTest {
                 )
         );
         SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1, new KnownHostsFileKeyVerificationStrategy());
-        assertEquals(launcher.getHost(), host.trim());
+        assertEquals(host.trim(), launcher.getHost());
         DumbSlave slave = new DumbSlave("slave", "dummy",
                 j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
