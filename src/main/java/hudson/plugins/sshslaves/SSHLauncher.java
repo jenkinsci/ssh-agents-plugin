@@ -435,8 +435,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Deprecated
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        if (host != null) this.host = host.trim();
-        else this.host = host;
+	trimHost(host);
         this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
         this.username = fixEmpty(username);
@@ -518,9 +517,7 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
                                     String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
-
-        if (host != null) this.host = host.trim();
-        else this.host = host;
+	trimHost(host);
         this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
         this.username = null;
@@ -583,6 +580,14 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         return this.credentials;
+    }
+
+    private void trimHost(String host) {
+        if (host != null) {
+            this.host = host.trim();
+        } else {
+            this.host = null;
+        }
     }
 
     /**
