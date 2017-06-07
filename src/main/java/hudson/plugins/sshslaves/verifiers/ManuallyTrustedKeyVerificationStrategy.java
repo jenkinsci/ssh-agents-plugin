@@ -93,7 +93,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
             return false;
         }
         else {
-            listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyTrused(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
             return true;
         }
     }

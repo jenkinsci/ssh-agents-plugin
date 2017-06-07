@@ -960,7 +960,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
         
         if (s.length()!=0) {
-            listener.getLogger().println(Messages.SSHLauncher_SSHHeeaderJunkDetected());
+            listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
             listener.getLogger().println(s);
             throw new AbortException();
         }
@@ -1199,9 +1199,9 @@ public class SSHLauncher extends ComputerLauncher {
         final String result = checkJavaVersion(listener.getLogger(), javaCommand, r, output);
 
         if(null == result) {
-            listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+            listener.getLogger().println(Messages.SSHLauncher_UnknownJavaVersion(javaCommand));
             listener.getLogger().println(output);
-            throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+            throw new IOException(Messages.SSHLauncher_UnknownJavaVersion(javaCommand));
         } else {
             return result;
         }
