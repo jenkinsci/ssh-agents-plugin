@@ -23,6 +23,7 @@
  */
 package hudson.plugins.sshslaves;
 
+import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3DirectoryEntry;
 import hudson.tools.JDKInstaller.FileSystem;
 
@@ -38,9 +39,9 @@ import java.util.List;
  * @author Kohsuke Kawaguchi
  */
 class SFTPFileSystem implements FileSystem {
-    private final SFTPClient sftp;
+    private final SFTPv3Client sftp;
 
-    public SFTPFileSystem(SFTPClient sftp) {
+    public SFTPFileSystem(SFTPv3Client sftp) {
         this.sftp = sftp;
     }
 
