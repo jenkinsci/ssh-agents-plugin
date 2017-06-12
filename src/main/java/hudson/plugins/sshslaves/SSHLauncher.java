@@ -272,6 +272,7 @@ public class SSHLauncher extends ComputerLauncher {
      * The verifier to use for checking the SSH key presented by the host
      * responding to the connection
      */
+    @CheckForNull
     private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     /**
@@ -553,8 +554,14 @@ public class SSHLauncher extends ComputerLauncher {
         return credentialsId;
     }
 
+    @CheckForNull
     public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
         return sshHostKeyVerificationStrategy;
+    }
+
+    @NonNull
+    SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategyDefaulted() {
+        return sshHostKeyVerificationStrategy != null ? sshHostKeyVerificationStrategy : new NonVerifyingKeyVerificationStrategy();
     }
 
     public StandardUsernameCredentials getCredentials() {
@@ -786,7 +793,7 @@ public class SSHLauncher extends ComputerLauncher {
             public Boolean call() throws InterruptedException {
                 Boolean rval = Boolean.FALSE;
                 try {
-                    connection.setServerHostKeyAlgorithms(sshHostKeyVerificationStrategy.getPreferredKeyAlgorithms(computer));
+                    connection.setServerHostKeyAlgorithms(getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer));
 
                     openConnection(listener, computer);
 
@@ -1270,14 +1277,7 @@ public class SSHLauncher extends ComputerLauncher {
 
                         final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
 
-                        final SshHostKeyVerificationStrategy hostKeyVerificationStrategy;
-                        if (null == sshHostKeyVerificationStrategy) {
-                            hostKeyVerificationStrategy = new NonVerifyingKeyVerificationStrategy();
-                        } else {
-                            hostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
-                        }
-
-                        return hostKeyVerificationStrategy.verify(computer, key, listener);
+                        return getSshHostKeyVerificationStrategyDefaulted().verify(computer, key, listener);
                     }
                 });
                 break;

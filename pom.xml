@@ -80,6 +80,12 @@
       <artifactId>ssh-credentials</artifactId>
       <version>1.6.1</version>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.test</groupId>
+      <artifactId>docker-fixtures</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>

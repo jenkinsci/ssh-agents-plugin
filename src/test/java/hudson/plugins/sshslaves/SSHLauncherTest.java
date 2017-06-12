@@ -37,23 +37,22 @@ import java.util.Collections;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
-import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
-import hudson.model.Descriptor;
+import hudson.model.Computer;
+import hudson.model.FreeStyleProject;
+import hudson.model.Node;
 import hudson.model.Node.Mode;
 import hudson.model.Slave;
-import hudson.plugins.sshslaves.SSHLauncher.DefaultJDKInstaller;
-import hudson.security.ACL;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
+import java.util.concurrent.ExecutionException;
+import org.jenkinsci.test.acceptance.docker.DockerRule;
+import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
 
-import hudson.util.ListBoxModel;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -62,11 +61,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.ClassRule;
+import org.jvnet.hudson.test.BuildWatcher;
+import org.jvnet.hudson.test.Issue;
 
 public class SSHLauncherTest {
 
+    @ClassRule
+    public static BuildWatcher buildWatcher = new BuildWatcher();
+
     @Rule
     public JenkinsRule j = new JenkinsRule();
+
+    @Rule
+    public DockerRule<JavaContainer> javaContainer = new DockerRule<>(JavaContainer.class);
 
     @Test
     public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
@@ -158,4 +166,26 @@ public class SSHLauncherTest {
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two", "does-not-exist").size());
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "", "does-not-exist").size());
     }
+
+    @Issue("JENKINS-44830")
+    @Test
+    public void upgrade() throws Exception {
+        JavaContainer c = javaContainer.get();
+        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(),
+                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                // Old constructor passes null sshHostKeyVerificationStrategy:
+                new SSHLauncher(c.ipBound(22), c.port(22), "test", "test", "", ""),
+                RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
+        j.jenkins.addNode(slave);
+        Computer computer = slave.toComputer();
+        try {
+            computer.connect(false).get();
+        } catch (ExecutionException x) {
+            throw new AssertionError("failed to connect: " + computer.getLog(), x);
+        }
+        FreeStyleProject p = j.createFreeStyleProject();
+        p.setAssignedNode(slave);
+        j.buildAndAssertSuccess(p);
+    }
+
 }
