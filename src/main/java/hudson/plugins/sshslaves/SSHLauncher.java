@@ -786,6 +786,7 @@ public class SSHLauncher extends ComputerLauncher {
             public Boolean call() throws InterruptedException {
                 Boolean rval = Boolean.FALSE;
                 try {
+                    connection.setServerHostKeyAlgorithms(sshHostKeyVerificationStrategy.getPreferredKeyAlgorithms(computer));
 
                     openConnection(listener, computer);
 
