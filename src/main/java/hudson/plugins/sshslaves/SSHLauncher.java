@@ -1027,7 +1027,7 @@ public class SSHLauncher extends ComputerLauncher {
         String javaDir = workingDirectory + "/jdk"; // this is where we install Java to
         String bundleFile = workingDirectory + "/" + p.bundleFileName; // this is where we download the bundle to
 
-        SFTPClient sftp = new SFTPClient(connection);
+        SFTPv3Client sftp = new SFTPv3Client(connection);
         // wipe out and recreate the Java directory
         connection.exec("rm -rf "+javaDir,listener.getLogger());
         sftp.mkdirs(javaDir, 0755);
@@ -1104,9 +1104,9 @@ public class SSHLauncher extends ComputerLauncher {
         String fileName = workingDirectory + "/slave.jar";
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
-        SFTPClient sftpClient = null;
+        SFTPv3Client sftpClient = null;
         try {
-            sftpClient = new SFTPClient(connection);
+            sftpClient = new SFTPv3Client(connection);
 
             try {
                 SFTPv3FileAttributes fileAttributes = sftpClient._stat(workingDirectory);
