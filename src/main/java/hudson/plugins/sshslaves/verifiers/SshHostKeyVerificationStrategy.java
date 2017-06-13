@@ -23,6 +23,8 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import com.trilead.ssh2.Connection;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
@@ -56,6 +58,12 @@ public abstract class SshHostKeyVerificationStrategy implements Describable<SshH
      */
     public abstract boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception;
 
+    /**
+     * Provides a list of preferred key algorithms for this strategy and computer.
+     * @return a list of algorithms; empty or null lists will be ignored
+     * @see Connection#setServerHostKeyAlgorithms
+     */
+    @CheckForNull
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
         return TrileadVersionSupportManager.getTrileadSupport().getSupportedAlgorithms();
     }

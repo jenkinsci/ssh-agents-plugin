@@ -793,7 +793,12 @@ public class SSHLauncher extends ComputerLauncher {
             public Boolean call() throws InterruptedException {
                 Boolean rval = Boolean.FALSE;
                 try {
-                    connection.setServerHostKeyAlgorithms(getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer));
+                    String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
+                    if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
+                        connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
+                    } else {
+                        listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
+                    }
 
                     openConnection(listener, computer);
 
