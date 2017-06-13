@@ -40,6 +40,7 @@ import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.remoting.Base64;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
+import java.util.Collections;
 
 /**
  * Checks a key provided by a remote hosts matches a key specified as being required by the
@@ -83,7 +84,8 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
 
     @Override
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
-        List<String> sortedAlgorithms = new ArrayList<>(Arrays.asList(super.getPreferredKeyAlgorithms(computer)));
+        String[] unsortedAlgorithms = super.getPreferredKeyAlgorithms(computer);
+        List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.<String>emptyList());
 
         sortedAlgorithms.remove(key.getAlgorithm());
         sortedAlgorithms.add(0, key.getAlgorithm());
