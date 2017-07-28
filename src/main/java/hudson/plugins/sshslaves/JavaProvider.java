@@ -96,6 +96,6 @@ public abstract class JavaProvider implements ExtensionPoint {
             return JAVA_LEVEL_7;
         }
         
-        return version.isNewerThan(JAVA_8_MINIMAL_SINCE) ? JAVA_LEVEL_7 : JAVA_LEVEL_8;
+        return version.isOlderThan(JAVA_8_MINIMAL_SINCE) ? JAVA_LEVEL_7 : JAVA_LEVEL_8;
     }
 }

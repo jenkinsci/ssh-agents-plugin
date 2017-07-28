@@ -84,32 +84,17 @@ public class SSHLauncherTest {
 
     @Test
     public void checkJavaVersionOpenJDK6Linux() throws Exception {
-        try {
-            checkSupported("openjdk-6-linux.version");
-            fail();
-        } catch (IOException e) {
-            // expected
-        }
+        assertNotSupported("openjdk-6-linux.version");   
     }
 
     @Test
     public void checkJavaVersionSun6Linux() throws Exception {
-        try {
-            checkSupported("sun-java-1.6-linux.version");
-            fail();
-        } catch (IOException e) {
-            // expected
-        }
+        assertNotSupported("sun-java-1.6-linux.version");
     }
 
     @Test
     public void checkJavaVersionSun6Mac() throws Exception {
-        try {
-            checkSupported("sun-java-1.6-mac.version");
-            fail();
-        } catch (IOException e) {
-            // expected
-        }
+        assertNotSupported("sun-java-1.6-mac.version");
     }
 
     @Test
@@ -123,15 +108,10 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void checkJavaVersionSun4Linux() {
-        try {
-            checkSupported("sun-java-1.4-linux.version");
-            fail();
-        } catch (IOException e) {
-            //
-        }
+    public void checkJavaVersionSun4Linux() throws IOException {
+        assertNotSupported("sun-java-1.4-linux.version");
     }
-
+    
     /**
      * Returns true if the version is supported.
      *
@@ -152,6 +132,15 @@ public class SSHLauncherTest {
         return null != result;
     }
 
+    private static void assertNotSupported(final String testVersionOutput) throws AssertionError, IOException {
+        try {
+            checkSupported(testVersionOutput);
+            fail("Expected version " + testVersionOutput + " to be not supported, but it is supported");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+    
     @Test
     public void configurationRoundtrip() throws Exception {
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
