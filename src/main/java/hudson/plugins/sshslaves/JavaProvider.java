@@ -73,13 +73,17 @@ public abstract class JavaProvider implements ExtensionPoint {
 
     /**
      * Gets minimal required Java version.
+     * 
+     * @return Minimal Java version required on the master and agent side.
+     *         It will be {@link #JAVA_LEVEL_7} if the core version cannot be determined due to whatever reason.
      * @since TODO
+     * 
      */
     @Nonnull
     public static VersionNumber getMinJavaLevel() {
-        // Try the new API first, since Jenkins TODO (JENKINS-43500)
+        // TODO: Use reflection to utilize new core API once JENKINS-43500 is integrated
         // TODO: Get rid of it once Jenkins core requirement is bumped
-        try {
+        /*try {
             Method method = Jenkins.class.getMethod("getJavaMinLevel");
             Object res = method.invoke(null);
             if (res instanceof VersionNumber) {
@@ -87,7 +91,7 @@ public abstract class JavaProvider implements ExtensionPoint {
             }
         } catch(SecurityException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             // Fallback to the default behavior, not supported yet
-        }
+        }*/
         
         // Now use the known map of the previous updates
         final VersionNumber version = Jenkins.getVersion();
