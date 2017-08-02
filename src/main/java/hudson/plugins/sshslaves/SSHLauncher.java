@@ -1259,10 +1259,10 @@ public class SSHLauncher extends ComputerLauncher {
                     //TODO: burn it with fire
                     if(version.doubleValue() < Double.parseDouble("1."+minJavaLevel)) {
                         throw new IOException(Messages
-                                .SSHLauncher_NoJavaFound(line, minJavaLevel.toString()));
+                                .SSHLauncher_NoJavaFound2(line, minJavaLevel.toString()));
                     }
                 } catch(final ParseException e) {
-                    throw new IOException(Messages.SSHLauncher_NoJavaFound(line, minJavaLevel));
+                    throw new IOException(Messages.SSHLauncher_NoJavaFound2(line, minJavaLevel));
                 }
                 return javaCommand;
             }
