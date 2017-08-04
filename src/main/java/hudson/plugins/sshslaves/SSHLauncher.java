@@ -159,7 +159,7 @@ public class SSHLauncher extends ComputerLauncher {
     // "No route to host", "No route to host (Host unreachable)"
     // "Premature connection close"
     private static final List<String> RECOVERABLE_FAILURES = Arrays.asList(
-            "Connection refused", "Connection reset", "Connection timed out", "No route to host", "Premature connection close"
+            "Connection refused", "Connection reset", "Connection timed out", "No route to host", "Premature connection close", "Name or service not known"
     );
 
     /**
