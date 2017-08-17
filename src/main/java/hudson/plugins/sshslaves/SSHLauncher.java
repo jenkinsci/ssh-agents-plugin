@@ -134,6 +134,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import static hudson.Util.*;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
+import hudson.util.VersionNumber;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import static java.util.logging.Level.*;
@@ -272,6 +273,7 @@ public class SSHLauncher extends ComputerLauncher {
      * The verifier to use for checking the SSH key presented by the host
      * responding to the connection
      */
+    @CheckForNull
     private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     /**
@@ -553,8 +555,14 @@ public class SSHLauncher extends ComputerLauncher {
         return credentialsId;
     }
 
+    @CheckForNull
     public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
         return sshHostKeyVerificationStrategy;
+    }
+
+    @NonNull
+    SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategyDefaulted() {
+        return sshHostKeyVerificationStrategy != null ? sshHostKeyVerificationStrategy : new NonVerifyingKeyVerificationStrategy();
     }
 
     public StandardUsernameCredentials getCredentials() {
@@ -786,6 +794,12 @@ public class SSHLauncher extends ComputerLauncher {
             public Boolean call() throws InterruptedException {
                 Boolean rval = Boolean.FALSE;
                 try {
+                    String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
+                    if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
+                        connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
+                    } else {
+                        listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
+                    }
 
                     openConnection(listener, computer);
 
@@ -960,7 +974,7 @@ public class SSHLauncher extends ComputerLauncher {
         }
         
         if (s.length()!=0) {
-            listener.getLogger().println(Messages.SSHLauncher_SSHHeeaderJunkDetected());
+            listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
             listener.getLogger().println(s);
             throw new AbortException();
         }
@@ -1199,9 +1213,9 @@ public class SSHLauncher extends ComputerLauncher {
         final String result = checkJavaVersion(listener.getLogger(), javaCommand, r, output);
 
         if(null == result) {
-            listener.getLogger().println(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+            listener.getLogger().println(Messages.SSHLauncher_UnknownJavaVersion(javaCommand));
             listener.getLogger().println(output);
-            throw new IOException(Messages.SSHLauncher_UknownJavaVersion(javaCommand));
+            throw new IOException(Messages.SSHLauncher_UnknownJavaVersion(javaCommand));
         } else {
             return result;
         }
@@ -1238,15 +1252,17 @@ public class SSHLauncher extends ComputerLauncher {
                         getTimestamp(), javaCommand, versionStr));
 
                 // parse as a number and we should be OK as all we care about is up through the first dot.
+                final VersionNumber minJavaLevel = JavaProvider.getMinJavaLevel();
                 try {
                     final Number version =
                         NumberFormat.getNumberInstance(Locale.US).parse(versionStr);
-                    if(version.doubleValue() < 1.5) {
+                    //TODO: burn it with fire
+                    if(version.doubleValue() < Double.parseDouble("1."+minJavaLevel)) {
                         throw new IOException(Messages
-                                .SSHLauncher_NoJavaFound(line));
+                                .SSHLauncher_NoJavaFound2(line, minJavaLevel.toString()));
                     }
                 } catch(final ParseException e) {
-                    throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
+                    throw new IOException(Messages.SSHLauncher_NoJavaFound2(line, minJavaLevel));
                 }
                 return javaCommand;
             }
@@ -1269,14 +1285,7 @@ public class SSHLauncher extends ComputerLauncher {
 
                         final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
 
-                        final SshHostKeyVerificationStrategy hostKeyVerificationStrategy;
-                        if (null == sshHostKeyVerificationStrategy) {
-                            hostKeyVerificationStrategy = new NonVerifyingKeyVerificationStrategy();
-                        } else {
-                            hostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
-                        }
-
-                        return hostKeyVerificationStrategy.verify(computer, key, listener);
+                        return getSshHostKeyVerificationStrategyDefaulted().verify(computer, key, listener);
                     }
                 });
                 break;
@@ -1405,31 +1414,12 @@ public class SSHLauncher extends ComputerLauncher {
      * If the SSH connection as a whole is lost, report that information.
      */
     private boolean reportTransportLoss(Connection c, TaskListener listener) {
-        // TODO: switch to Connection.getReasonClosedCause() post build217-jenkins-8
-        // in the mean time, rely on reflection to get to the object
-
-        TransportManager tm = null;
-        try {
-            Field f = Connection.class.getDeclaredField("tm");
-            f.setAccessible(true);
-            tm = (TransportManager) f.get(c);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace(listener.error("Failed to get to TransportManager"));
-        } catch (IllegalAccessException e) {
-            e.printStackTrace(listener.error("Failed to get to TransportManager"));
-        }
-
-        if (tm==null) {
-            listener.error("Couldn't get to TransportManager.");
-            return false;
-        }
-
-        Throwable cause = tm.getReasonClosedCause();
-        if (cause!=null) {
+        Throwable cause = c.getReasonClosedCause();
+        if (cause != null) {
             cause.printStackTrace(listener.error("Socket connection to SSH server was lost"));
         }
 
-        return cause!=null;
+        return cause != null;
     }
 
     /**
