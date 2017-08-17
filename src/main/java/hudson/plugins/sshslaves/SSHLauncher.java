@@ -1414,31 +1414,12 @@ public class SSHLauncher extends ComputerLauncher {
      * If the SSH connection as a whole is lost, report that information.
      */
     private boolean reportTransportLoss(Connection c, TaskListener listener) {
-        // TODO: switch to Connection.getReasonClosedCause() post build217-jenkins-8
-        // in the mean time, rely on reflection to get to the object
-
-        TransportManager tm = null;
-        try {
-            Field f = Connection.class.getDeclaredField("tm");
-            f.setAccessible(true);
-            tm = (TransportManager) f.get(c);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace(listener.error("Failed to get to TransportManager"));
-        } catch (IllegalAccessException e) {
-            e.printStackTrace(listener.error("Failed to get to TransportManager"));
-        }
-
-        if (tm==null) {
-            listener.error("Couldn't get to TransportManager.");
-            return false;
-        }
-
-        Throwable cause = tm.getReasonClosedCause();
-        if (cause!=null) {
+        Throwable cause = c.getReasonClosedCause();
+        if (cause != null) {
             cause.printStackTrace(listener.error("Socket connection to SSH server was lost"));
         }
 
-        return cause!=null;
+        return cause != null;
     }
 
     /**
