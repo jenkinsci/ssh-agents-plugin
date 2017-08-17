@@ -835,6 +835,9 @@ public class SSHLauncher extends ComputerLauncher {
 
         final Node node = computer.getNode();
         final String nodeName = node != null ? node.getNodeName() : "unknown";
+        if(node != null) {
+            CredentialsProvider.track(node, credentials);
+        }
         try {
             long time = System.currentTimeMillis();
             List<Future<Boolean>> results;

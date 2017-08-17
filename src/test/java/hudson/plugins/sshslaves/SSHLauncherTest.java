@@ -25,6 +25,7 @@ package hudson.plugins.sshslaves;
 
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import hudson.model.Fingerprint;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
 import hudson.slaves.NodeProperty;
 import hudson.tools.JDKInstaller;
@@ -37,6 +38,7 @@ import java.util.Collections;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
@@ -56,8 +58,12 @@ import org.junit.Assert;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -180,6 +186,52 @@ public class SSHLauncherTest {
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "dummyCredentialId").size());
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two", "does-not-exist").size());
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "", "does-not-exist").size());
+    }
+
+    @Issue("JENKINS-38832")
+    @Test
+    public void trackCredentialsWithUsernameAndPassword() throws Exception {
+        UsernamePasswordCredentialsImpl credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass");
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
+          Collections.<Credentials>singletonList(
+            credentials
+          )
+        );
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
+        DumbSlave slave = new DumbSlave("slave", "dummy",
+          j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
+          launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+
+        Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+        assertThat("No fingerprint created until use", fingerprint, nullValue());
+
+        j.jenkins.addNode(slave);
+
+        fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+        assertThat(fingerprint, notNullValue());
+    }
+
+    @Issue("JENKINS-38832")
+    @Test
+    public void trackCredentialsWithUsernameAndPrivateKey() throws Exception {
+        BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
+          Collections.<Credentials>singletonList(
+            credentials
+          )
+        );
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
+        DumbSlave slave = new DumbSlave("slave", "dummy",
+          j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
+          launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+
+        Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+        assertThat("No fingerprint created until use", fingerprint, nullValue());
+
+        j.jenkins.addNode(slave);
+
+        fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+        assertThat(fingerprint, notNullValue());
     }
 
     @Issue("JENKINS-44830")
