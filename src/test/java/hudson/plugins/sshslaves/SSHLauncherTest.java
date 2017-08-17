@@ -52,6 +52,7 @@ import hudson.slaves.RetentionStrategy;
 import java.util.concurrent.ExecutionException;
 import org.jenkinsci.test.acceptance.docker.DockerRule;
 import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
+import org.junit.Assert;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -83,29 +84,34 @@ public class SSHLauncherTest {
 
     @Test
     public void checkJavaVersionOpenJDK6Linux() throws Exception {
-        assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
+        assertNotSupported("openjdk-6-linux.version");   
     }
 
     @Test
     public void checkJavaVersionSun6Linux() throws Exception {
-        assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
+        assertNotSupported("sun-java-1.6-linux.version");
     }
 
     @Test
     public void checkJavaVersionSun6Mac() throws Exception {
-        assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
+        assertNotSupported("sun-java-1.6-mac.version");
     }
 
     @Test
-    public void checkJavaVersionSun4Linux() {
-        try {
-            checkSupported("sun-java-1.4-linux.version");
-            fail();
-        } catch (IOException e) {
-            //
-        }
+    public void testCheckJavaVersionOracle7Mac() throws Exception {
+        Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
     }
 
+    @Test
+    public void testCheckJavaVersionOracle8Mac() throws Exception {
+        Assert.assertTrue("Oracle 8 on Mac should be supported", checkSupported("oracle-java-1.8-mac.version"));
+    }
+
+    @Test
+    public void checkJavaVersionSun4Linux() throws IOException {
+        assertNotSupported("sun-java-1.4-linux.version");
+    }
+    
     /**
      * Returns true if the version is supported.
      *
@@ -126,6 +132,15 @@ public class SSHLauncherTest {
         return null != result;
     }
 
+    private static void assertNotSupported(final String testVersionOutput) throws AssertionError, IOException {
+        try {
+            checkSupported(testVersionOutput);
+            fail("Expected version " + testVersionOutput + " to be not supported, but it is supported");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+    
     @Test
     public void configurationRoundtrip() throws Exception {
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),

@@ -27,16 +27,25 @@ import com.trilead.ssh2.Connection;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.slaves.SlaveComputer;
-import hudson.model.Hudson;
 import hudson.model.TaskListener;
+import hudson.util.VersionNumber;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import java.util.List;
 import java.util.Collections;
+import javax.annotation.Nonnull;
+import jenkins.model.Jenkins;
 
 /**
  * Guess where Java is.
  */
 public abstract class JavaProvider implements ExtensionPoint {
+    
+    private static final VersionNumber JAVA_LEVEL_7 = new VersionNumber("7");
+    private static final VersionNumber JAVA_LEVEL_8 = new VersionNumber("8");
+    private static final VersionNumber JAVA_8_MINIMAL_SINCE = new VersionNumber("2.54");
+    
     /**
      * @deprecated
      *      Override {@link #getJavas(SlaveComputer, TaskListener, Connection)} instead.
@@ -62,4 +71,35 @@ public abstract class JavaProvider implements ExtensionPoint {
         return ExtensionList.lookup(JavaProvider.class);
     }
 
+    /**
+     * Gets minimal required Java version.
+     * 
+     * @return Minimal Java version required on the master and agent side.
+     *         It will be {@link #JAVA_LEVEL_7} if the core version cannot be determined due to whatever reason.
+     * @since TODO
+     * 
+     */
+    @Nonnull
+    public static VersionNumber getMinJavaLevel() {
+        // TODO: Use reflection to utilize new core API once JENKINS-43500 is integrated
+        // TODO: Get rid of it once Jenkins core requirement is bumped
+        /*try {
+            Method method = Jenkins.class.getMethod("getJavaMinLevel");
+            Object res = method.invoke(null);
+            if (res instanceof VersionNumber) {
+                return (VersionNumber) res;
+            }
+        } catch(SecurityException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+            // Fallback to the default behavior, not supported yet
+        }*/
+        
+        // Now use the known map of the previous updates
+        final VersionNumber version = Jenkins.getVersion();
+        if (version == null) {
+            // Version cannot be determined, assume it's an old one to retain compatibility.
+            return JAVA_LEVEL_7;
+        }
+        
+        return version.isOlderThan(JAVA_8_MINIMAL_SINCE) ? JAVA_LEVEL_7 : JAVA_LEVEL_8;
+    }
 }

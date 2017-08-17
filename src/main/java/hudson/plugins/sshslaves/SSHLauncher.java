@@ -134,6 +134,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import static hudson.Util.*;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
+import hudson.util.VersionNumber;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import static java.util.logging.Level.*;
@@ -1251,15 +1252,17 @@ public class SSHLauncher extends ComputerLauncher {
                         getTimestamp(), javaCommand, versionStr));
 
                 // parse as a number and we should be OK as all we care about is up through the first dot.
+                final VersionNumber minJavaLevel = JavaProvider.getMinJavaLevel();
                 try {
                     final Number version =
                         NumberFormat.getNumberInstance(Locale.US).parse(versionStr);
-                    if(version.doubleValue() < 1.5) {
+                    //TODO: burn it with fire
+                    if(version.doubleValue() < Double.parseDouble("1."+minJavaLevel)) {
                         throw new IOException(Messages
-                                .SSHLauncher_NoJavaFound(line));
+                                .SSHLauncher_NoJavaFound2(line, minJavaLevel.toString()));
                     }
                 } catch(final ParseException e) {
-                    throw new IOException(Messages.SSHLauncher_NoJavaFound(line));
+                    throw new IOException(Messages.SSHLauncher_NoJavaFound2(line, minJavaLevel));
                 }
                 return javaCommand;
             }
