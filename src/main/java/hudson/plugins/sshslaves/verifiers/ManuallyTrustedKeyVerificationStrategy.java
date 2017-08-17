@@ -33,6 +33,8 @@ import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,9 +95,27 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
             return false;
         }
         else {
-            listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyTrused(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
             return true;
         }
+    }
+
+    @Override
+    public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
+        String[] algorithms = super.getPreferredKeyAlgorithms(computer);
+
+        HostKey hostKey = HostKeyHelper.getInstance().getHostKey(computer);
+
+        if (null != hostKey) {
+            List<String> sortedAlgorithms = new ArrayList<>(Arrays.asList(algorithms));
+
+            sortedAlgorithms.remove(hostKey.getAlgorithm());
+            sortedAlgorithms.add(0, hostKey.getAlgorithm());
+
+            algorithms = sortedAlgorithms.toArray(new String[sortedAlgorithms.size()]);
+        }
+
+        return algorithms;
     }
 
     /** TODO replace with {@link Computer#addAction} after core baseline picks up JENKINS-42969 fix */

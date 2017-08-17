@@ -38,23 +38,23 @@ import java.util.Collections;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
-import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
-import hudson.model.Descriptor;
+import hudson.model.Computer;
+import hudson.model.FreeStyleProject;
+import hudson.model.Node;
 import hudson.model.Node.Mode;
 import hudson.model.Slave;
-import hudson.plugins.sshslaves.SSHLauncher.DefaultJDKInstaller;
-import hudson.security.ACL;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
+import java.util.concurrent.ExecutionException;
+import org.jenkinsci.test.acceptance.docker.DockerRule;
+import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
+import org.junit.Assert;
 
-import hudson.util.ListBoxModel;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -67,11 +67,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.ClassRule;
+import org.jvnet.hudson.test.BuildWatcher;
+import org.jvnet.hudson.test.Issue;
 
 public class SSHLauncherTest {
 
+    @ClassRule
+    public static BuildWatcher buildWatcher = new BuildWatcher();
+
     @Rule
     public JenkinsRule j = new JenkinsRule();
+
+    @Rule
+    public DockerRule<JavaContainer> javaContainer = new DockerRule<>(JavaContainer.class);
 
     @Test
     public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
@@ -80,29 +89,34 @@ public class SSHLauncherTest {
 
     @Test
     public void checkJavaVersionOpenJDK6Linux() throws Exception {
-        assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
+        assertNotSupported("openjdk-6-linux.version");   
     }
 
     @Test
     public void checkJavaVersionSun6Linux() throws Exception {
-        assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
+        assertNotSupported("sun-java-1.6-linux.version");
     }
 
     @Test
     public void checkJavaVersionSun6Mac() throws Exception {
-        assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
+        assertNotSupported("sun-java-1.6-mac.version");
     }
 
     @Test
-    public void checkJavaVersionSun4Linux() {
-        try {
-            checkSupported("sun-java-1.4-linux.version");
-            fail();
-        } catch (IOException e) {
-            //
-        }
+    public void testCheckJavaVersionOracle7Mac() throws Exception {
+        Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
     }
 
+    @Test
+    public void testCheckJavaVersionOracle8Mac() throws Exception {
+        Assert.assertTrue("Oracle 8 on Mac should be supported", checkSupported("oracle-java-1.8-mac.version"));
+    }
+
+    @Test
+    public void checkJavaVersionSun4Linux() throws IOException {
+        assertNotSupported("sun-java-1.4-linux.version");
+    }
+    
     /**
      * Returns true if the version is supported.
      *
@@ -123,6 +137,15 @@ public class SSHLauncherTest {
         return null != result;
     }
 
+    private static void assertNotSupported(final String testVersionOutput) throws AssertionError, IOException {
+        try {
+            checkSupported(testVersionOutput);
+            fail("Expected version " + testVersionOutput + " to be not supported, but it is supported");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+    
     @Test
     public void configurationRoundtrip() throws Exception {
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
@@ -209,4 +232,26 @@ public class SSHLauncherTest {
         fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat(fingerprint, notNullValue());
     }
+
+    @Issue("JENKINS-44830")
+    @Test
+    public void upgrade() throws Exception {
+        JavaContainer c = javaContainer.get();
+        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(),
+                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                // Old constructor passes null sshHostKeyVerificationStrategy:
+                new SSHLauncher(c.ipBound(22), c.port(22), "test", "test", "", ""),
+                RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
+        j.jenkins.addNode(slave);
+        Computer computer = slave.toComputer();
+        try {
+            computer.connect(false).get();
+        } catch (ExecutionException x) {
+            throw new AssertionError("failed to connect: " + computer.getLog(), x);
+        }
+        FreeStyleProject p = j.createFreeStyleProject();
+        p.setAssignedNode(slave);
+        j.buildAndAssertSuccess(p);
+    }
+
 }
