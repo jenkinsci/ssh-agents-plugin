@@ -68,7 +68,7 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
         int result = knownHosts.verifyHostkey(((SSHLauncher)launcher).getHost(), hostKey.getAlgorithm(), hostKey.getKey());
         
         if (KnownHosts.HOSTKEY_IS_OK == result) {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_KeyTrused(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
             return true;
         } else if (KnownHosts.HOSTKEY_IS_NEW == result) {
             listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NewKeyNotTrusted(SSHLauncher.getTimestamp()));

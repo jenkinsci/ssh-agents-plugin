@@ -349,7 +349,7 @@ public class SSHConnector extends ComputerConnector {
             if (StringUtils.isBlank(value)) return FormValidation.ok();
             try {
                 if (Integer.parseInt(value.trim()) < 0) {
-                    return FormValidation.error(Messages.SSHConnector_LaunchTimeoutMustBePostive());
+                    return FormValidation.error(Messages.SSHConnector_LaunchTimeoutMustBePositive());
                 }
                 return FormValidation.ok();
             } catch (NumberFormatException e) {
