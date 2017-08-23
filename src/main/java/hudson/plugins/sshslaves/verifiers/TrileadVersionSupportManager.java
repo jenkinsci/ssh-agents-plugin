@@ -40,7 +40,7 @@ final class TrileadVersionSupportManager {
 
     private static boolean isAfterTrilead8() {
         try {
-            Thread.currentThread().getContextClassLoader().loadClass("com.trilead.ssh2.signature.KeyAlgorithmManager");
+            Class.forName("com.trilead.ssh2.signature.KeyAlgorithmManager");
         } catch (ClassNotFoundException ex) {
             return false;
         }
@@ -48,7 +48,7 @@ final class TrileadVersionSupportManager {
     }
 
     private static TrileadVersionSupport createVersion9Instance() throws ReflectiveOperationException {
-        return (TrileadVersionSupport) Thread.currentThread().getContextClassLoader()
+        return (TrileadVersionSupport) TrileadVersionSupportManager.class.getClassLoader()
                 .loadClass("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport").newInstance();
 
     }
