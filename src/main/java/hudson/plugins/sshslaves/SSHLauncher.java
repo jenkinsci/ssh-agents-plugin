@@ -150,7 +150,7 @@ public class SSHLauncher extends ComputerLauncher {
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
 
 
-    public static final String JDKVERSION = "jdk-8u121";
+    public static final String JDKVERSION = "jdk-8u144";
     public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR";
 
     // Some of the messages observed in the wild:
