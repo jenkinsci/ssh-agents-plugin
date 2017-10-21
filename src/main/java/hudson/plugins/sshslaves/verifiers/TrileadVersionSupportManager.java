@@ -31,7 +31,7 @@ final class TrileadVersionSupportManager {
             if (isAfterTrilead8()) {
                 return createVersion9Instance();
             }
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
             LOGGER.log(Level.WARNING, "Could not create Trilead support class. Using legacy Trilead features", e);
         }
         // We're on an old version of Triilead or couldn't create a new handler, fall back to legacy trilead handler

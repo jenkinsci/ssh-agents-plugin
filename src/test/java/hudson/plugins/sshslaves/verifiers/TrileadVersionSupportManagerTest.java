@@ -31,6 +31,16 @@ public class TrileadVersionSupportManagerTest {
     }
 
     @Test
+    public void testLegacyInstanceWithLinkageError() {
+        BlockingClassloader classloader = newBlockingClassloader();
+        classloader.inspectPackage("com.trilead.ssh2.signature");
+        classloader.block("com.trilead.ssh2.signature.KeyAlgorithm");
+
+        Object trileadSupport = invokeGetTrileadSupport(classloader);
+        assertEquals("hudson.plugins.sshslaves.verifiers.TrileadVersionSupportManager$LegacyTrileadVersionSupport", trileadSupport.getClass().getName());
+    }
+
+    @Test
     public void testCurrentInstance() {
         assertEquals(JenkinsTrilead9VersionSupport.class, TrileadVersionSupportManager.getTrileadSupport().getClass());
     }
