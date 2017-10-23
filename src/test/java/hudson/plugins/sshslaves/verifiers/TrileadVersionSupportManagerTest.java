@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -31,6 +32,7 @@ public class TrileadVersionSupportManagerTest {
     }
 
     @Test
+    @Issue("JENKINS-44893")
     public void testLegacyInstanceWithLinkageError() {
         BlockingClassloader classloader = newBlockingClassloader();
         classloader.inspectPackage("com.trilead.ssh2.signature");
@@ -46,6 +48,7 @@ public class TrileadVersionSupportManagerTest {
     }
 
     @Test
+    @Issue("JENKINS-44893")
     public void testCurrentInstanceWithIsolatedClassLoader() {
         BlockingClassloader classloader = newBlockingClassloader();
         Object trileadSupport = invokeGetTrileadSupport(classloader);
