@@ -31,6 +31,8 @@ import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 
 /**
  * An administrative warning that checks all SSH slaves have a {@link SshHostKeyVerificationStrategy}
@@ -61,6 +63,7 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
      *
      * @return If this version of the plugin is running on a Jenkins version where JENKINS-43786 is included.
      */
+    @Restricted(DoNotUse.class)
     public boolean isTheNewDesignAvailable() {
         if (Jenkins.getVersion().isNewerThan(new VersionNumber("2.88"))) {
             return true;
