@@ -29,6 +29,7 @@ import hudson.model.Computer;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
+import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 
 /**
@@ -45,7 +46,7 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
         for (Computer computer : Jenkins.getActiveInstance().getComputers()) {
             if (computer instanceof SlaveComputer) {
                 ComputerLauncher launcher = ((SlaveComputer) computer).getLauncher();
-                
+
                 if (launcher instanceof SSHLauncher && null == ((SSHLauncher) launcher).getSshHostKeyVerificationStrategy()) {
                     return true;
                 }
@@ -55,4 +56,15 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
         return false;
     }
 
+    /**
+     * This method can be removed when the baseline is updated to 2.88
+     *
+     * @return If this version of the plugin is running on a Jenkins version where JENKINS-43786 is included.
+     */
+    public boolean isTheNewDesignAvailable() {
+        if (Jenkins.getVersion().isNewerThan(new VersionNumber("2.88"))) {
+            return true;
+        }
+        return false;
+    }
 }
