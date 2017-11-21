@@ -237,7 +237,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * SSH connection to the slave.
      */
-    private transient Connection connection;
+    private transient volatile Connection connection;
 
     /**
      * The session inside {@link #connection} that controls the slave process.
@@ -268,6 +268,12 @@ public class SSHLauncher extends ComputerLauncher {
      * Field retryWaitTime.
      */
     public final Integer retryWaitTime;
+
+    /**
+     * Keeps executor service for the async launch operation.
+     */
+    @javax.annotation.CheckForNull
+    private transient volatile ExecutorService launcherExecutorService;
 
     /**
      * The verifier to use for checking the SSH key presented by the host
@@ -787,7 +793,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         connection = new Connection(host, port);
-        ExecutorService executorService = Executors.newSingleThreadExecutor(
+        launcherExecutorService = Executors.newSingleThreadExecutor(
                 new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
         Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
         callables.add(new Callable<Boolean>() {
@@ -841,10 +847,11 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             long time = System.currentTimeMillis();
             List<Future<Boolean>> results;
+            assert launcherExecutorService != null : "It should be always non-null here, because the task allocates and closes service on its own";
             if (this.getLaunchTimeoutMillis() > 0) {
-                results = executorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+                results = launcherExecutorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
             } else {
-                results = executorService.invokeAll(callables);
+                results = launcherExecutorService.invokeAll(callables);
             }
             long duration = System.currentTimeMillis() - time;
             Boolean res;
@@ -862,12 +869,16 @@ public class SSHLauncher extends ComputerLauncher {
                 System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
                         nodeName, host, duration));
             }
-            executorService.shutdown();
         } catch (InterruptedException e) {
             System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
                     nodeName, host));
+        } finally {
+            ExecutorService srv = launcherExecutorService;
+            if (srv != null) {
+                srv.shutdown();
+                launcherExecutorService = null;
+            }
         }
-
     }
 
     /**
@@ -1338,78 +1349,91 @@ public class SSHLauncher extends ComputerLauncher {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void afterDisconnect(SlaveComputer slaveComputer, final TaskListener listener) {
-        if (connection != null) {
-            boolean connectionLost = reportTransportLoss(connection, listener);
-            if (session!=null) {
-                // give the process 3 seconds to write out its dying message before we cut the loss
-                // and give up on this process. if the slave process had JVM crash, OOME, or any other
-                // critical problem, this will allow us to capture that.
-                // exit code is also an useful info to figure out why the process has died.
-                try {
-                    listener.getLogger().println(getSessionOutcomeMessage(session,connectionLost));
-                    session.getStdout().close();
-                    session.close();
-                } catch (Throwable t) {
-                    t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
+    public void afterDisconnect(SlaveComputer slaveComputer, final TaskListener listener) {
+        if (connection == null) {
+            // Nothing to do here, the connection is not established
+            return;
+        }
+
+        ExecutorService srv = launcherExecutorService;
+        if (srv != null) {
+            // If the service is still running, shut it down and interrupt the operations if any
+            srv.shutdown();
+        }
+
+        synchronized (this) {
+            if (connection != null) {
+                boolean connectionLost = reportTransportLoss(connection, listener);
+                if (session != null) {
+                    // give the process 3 seconds to write out its dying message before we cut the loss
+                    // and give up on this process. if the slave process had JVM crash, OOME, or any other
+                    // critical problem, this will allow us to capture that.
+                    // exit code is also an useful info to figure out why the process has died.
+                    try {
+                        listener.getLogger().println(getSessionOutcomeMessage(session, connectionLost));
+                        session.getStdout().close();
+                        session.close();
+                    } catch (Throwable t) {
+                        t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
+                    }
+                    session = null;
                 }
-                session = null;
-            }
 
-            Slave n = slaveComputer.getNode();
-            if (n != null && !connectionLost) {
-                String workingDirectory = getWorkingDirectory(n);
-                final String fileName = workingDirectory + "/slave.jar";
-                Future<?> tidyUp = Computer.threadPoolForRemoting.submit(new Runnable() {
-                    public void run() {
-                        // this would fail if the connection is already lost, so we want to check that.
-                        // TODO: Connection class should expose whether it is still connected or not.
+                Slave n = slaveComputer.getNode();
+                if (n != null && !connectionLost) {
+                    String workingDirectory = getWorkingDirectory(n);
+                    final String fileName = workingDirectory + "/slave.jar";
+                    Future<?> tidyUp = Computer.threadPoolForRemoting.submit(new Runnable() {
+                        public void run() {
+                            // this would fail if the connection is already lost, so we want to check that.
+                            // TODO: Connection class should expose whether it is still connected or not.
 
-                        SFTPv3Client sftpClient = null;
-                        try {
-                            sftpClient = new SFTPv3Client(connection);
-                            sftpClient.rm(fileName);
-                        } catch (Exception e) {
-                            if (sftpClient == null) {// system without SFTP
-                                try {
-                                    connection.exec("rm " + fileName, listener.getLogger());
-                                } catch (Error error) {
-                                    throw error;
-                                } catch (Throwable x) {
-                                    x.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                                    // We ignore other Exception types
+                            SFTPv3Client sftpClient = null;
+                            try {
+                                sftpClient = new SFTPv3Client(connection);
+                                sftpClient.rm(fileName);
+                            } catch (Exception e) {
+                                if (sftpClient == null) {// system without SFTP
+                                    try {
+                                        connection.exec("rm " + fileName, listener.getLogger());
+                                    } catch (Error error) {
+                                        throw error;
+                                    } catch (Throwable x) {
+                                        x.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                                        // We ignore other Exception types
+                                    }
+                                } else {
+                                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
                                 }
-                            } else {
-                                e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                            }
-                        } finally {
-                            if (sftpClient != null) {
-                                sftpClient.close();
+                            } finally {
+                                if (sftpClient != null) {
+                                    sftpClient.close();
+                                }
                             }
                         }
-                    }
-                });
-                try {
-                    // the delete is best effort only and if it takes longer than 60 seconds - or the launch 
-                    // timeout (if specified) - then we should just give up and leave the file there.
-                    tidyUp.get(launchTimeoutSeconds == null ? 60 : launchTimeoutSeconds, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                    // we should either re-apply our interrupt flag or propagate... we don't want to propagate, so...
-                    Thread.currentThread().interrupt();
-                } catch (ExecutionException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                } catch (TimeoutException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                } finally {
-                    if (!tidyUp.isDone()) {
-                        tidyUp.cancel(true);
+                    });
+                    try {
+                        // the delete is best effort only and if it takes longer than 60 seconds - or the launch
+                        // timeout (if specified) - then we should just give up and leave the file there.
+                        tidyUp.get(launchTimeoutSeconds == null ? 60 : launchTimeoutSeconds, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                        // we should either re-apply our interrupt flag or propagate... we don't want to propagate, so...
+                        Thread.currentThread().interrupt();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                    } catch (TimeoutException e) {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
+                    } finally {
+                        if (!tidyUp.isDone()) {
+                            tidyUp.cancel(true);
+                        }
                     }
                 }
-            }
 
-            PluginImpl.unregister(connection);
-            cleanupConnection(listener);
+                PluginImpl.unregister(connection);
+                cleanupConnection(listener);
+            }
         }
     }
 
