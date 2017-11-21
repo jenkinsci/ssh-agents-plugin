@@ -269,10 +269,12 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public final Integer retryWaitTime;
 
+    // TODO: It is a bad idea to create a new Executor service for each launcher.
+    // Maybe a Remoting thread pool should be used, but it requires the logic rework to Futures
     /**
      * Keeps executor service for the async launch operation.
      */
-    @javax.annotation.CheckForNull
+    @CheckForNull
     private transient volatile ExecutorService launcherExecutorService;
 
     /**
@@ -847,7 +849,9 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             long time = System.currentTimeMillis();
             List<Future<Boolean>> results;
-            assert launcherExecutorService != null : "It should be always non-null here, because the task allocates and closes service on its own";
+            if (launcherExecutorService == null) {
+                throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
+            }
             if (this.getLaunchTimeoutMillis() > 0) {
                 results = launcherExecutorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
             } else {
