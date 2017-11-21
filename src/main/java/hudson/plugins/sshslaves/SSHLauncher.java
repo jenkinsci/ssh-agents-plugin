@@ -849,13 +849,14 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             long time = System.currentTimeMillis();
             List<Future<Boolean>> results;
-            if (launcherExecutorService == null) {
+            final ExecutorService srv = launcherExecutorService;
+            if (srv == null) {
                 throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
             }
             if (this.getLaunchTimeoutMillis() > 0) {
-                results = launcherExecutorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+                results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
             } else {
-                results = launcherExecutorService.invokeAll(callables);
+                results = srv.invokeAll(callables);
             }
             long duration = System.currentTimeMillis() - time;
             Boolean res;
