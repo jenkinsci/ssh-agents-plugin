@@ -52,6 +52,9 @@ import hudson.model.Slave;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
 import java.util.concurrent.ExecutionException;
+
+import hudson.util.VersionNumber;
+import jenkins.model.Jenkins;
 import org.jenkinsci.test.acceptance.docker.DockerRule;
 import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
 import org.junit.Assert;
@@ -74,6 +77,8 @@ import org.jvnet.hudson.test.Issue;
 
 public class SSHLauncherTest {
 
+    private static final VersionNumber JAVA_8_MINIMAL_SINCE = new VersionNumber("2.54");
+
     @ClassRule
     public static BuildWatcher buildWatcher = new BuildWatcher();
 
@@ -85,7 +90,13 @@ public class SSHLauncherTest {
 
     @Test
     public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
-        assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
+        final VersionNumber jenkinsVersion = Jenkins.getVersion();
+
+        if(jenkinsVersion.isOlderThan(JAVA_8_MINIMAL_SINCE)) {
+            assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
+        } else {
+            assertNotSupported("openjdk-7-netbsd.version");
+        }
     }
 
     @Test
@@ -105,7 +116,13 @@ public class SSHLauncherTest {
 
     @Test
     public void testCheckJavaVersionOracle7Mac() throws Exception {
-        Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
+        final VersionNumber jenkinsVersion = Jenkins.getVersion();
+
+        if(jenkinsVersion.isOlderThan(JAVA_8_MINIMAL_SINCE)) {
+            Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
+        } else {
+            assertNotSupported("oracle-java-1.7-mac.version");
+        }
     }
 
     @Test
