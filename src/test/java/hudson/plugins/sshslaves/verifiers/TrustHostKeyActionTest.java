@@ -34,15 +34,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.sshd.SshServer;
+import org.apache.sshd.server.SshServer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.CommandFactory;
-import org.apache.sshd.server.PasswordAuthenticator;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPassword;
-import org.apache.sshd.server.command.UnknownCommand;
-import org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider;
+import org.apache.sshd.server.auth.password.PasswordAuthenticator;
+import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
+import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+import org.apache.sshd.server.scp.UnknownCommand;
 import org.apache.sshd.server.session.ServerSession;
 import org.junit.Rule;
 import org.junit.Test;
@@ -95,8 +95,8 @@ public class TrustHostKeyActionTest {
 
         SshServer server = SshServer.setUpDefaultServer();
         server.setPort(port);
-        server.setKeyPairProvider(new PEMGeneratorHostKeyProvider());
-        server.setUserAuthFactories(Arrays.asList((NamedFactory<UserAuth>)new UserAuthPassword.Factory()));
+        server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
+        server.setUserAuthFactories(Arrays.asList((NamedFactory<UserAuth>)new UserAuthPasswordFactory()));
         server.setCommandFactory(new CommandFactory() {
 
             @Override
