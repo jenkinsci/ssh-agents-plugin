@@ -90,20 +90,8 @@
     <dependency>
       <groupId>org.jenkins-ci.test</groupId>
       <artifactId>docker-fixtures</artifactId>
-      <version>1.0</version>
+      <version>1.4</version>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <!-- provided by jenkins-core -->
-          <groupId>com.google.inject</groupId>
-          <artifactId>guice</artifactId>
-        </exclusion>
-        <exclusion>
-          <!-- provided by jenkins-core -->
-          <groupId>org.jenkins-ci</groupId>
-          <artifactId>annotation-indexer</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 
