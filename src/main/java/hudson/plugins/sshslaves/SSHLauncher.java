@@ -1371,7 +1371,7 @@ public class SSHLauncher extends ComputerLauncher {
         tearDownConnection(slaveComputer, listener);
     }
 
-    private synchronized void tearDownConnection(@Nonnull SlaveComputer slaveComputer, @Nonnull TaskListener listener) {
+    private synchronized void tearDownConnection(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
         if (connection != null) {
             boolean connectionLost = reportTransportLoss(connection, listener);
             if (session != null) {
