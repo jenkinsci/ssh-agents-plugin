@@ -880,7 +880,7 @@ public class SSHLauncher extends ComputerLauncher {
         } finally {
             ExecutorService srv = launcherExecutorService;
             if (srv != null) {
-                srv.shutdown();
+                srv.shutdownNow();
                 launcherExecutorService = null;
             }
         }
