@@ -108,8 +108,7 @@ public class TrustHostKeyActionTest {
 
             invoke(server, "start", null, null);
         } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException | IllegalArgumentException e) {
-            e.printStackTrace();
-            throw new AssertionError("Check sshd-core version");
+            throw new AssertionError("Check sshd-core version", e);
         }
 
         SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManuallyTrustedKeyVerificationStrategy(true));
