@@ -135,6 +135,8 @@ import static hudson.Util.*;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
 import hudson.util.VersionNumber;
+
+import javax.annotation.Nonnull;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import static java.util.logging.Level.*;
@@ -237,7 +239,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * SSH connection to the slave.
      */
-    private transient Connection connection;
+    private transient volatile Connection connection;
 
     /**
      * The session inside {@link #connection} that controls the slave process.
@@ -268,6 +270,14 @@ public class SSHLauncher extends ComputerLauncher {
      * Field retryWaitTime.
      */
     public final Integer retryWaitTime;
+
+    // TODO: It is a bad idea to create a new Executor service for each launcher.
+    // Maybe a Remoting thread pool should be used, but it requires the logic rework to Futures
+    /**
+     * Keeps executor service for the async launch operation.
+     */
+    @CheckForNull
+    private transient volatile ExecutorService launcherExecutorService;
 
     /**
      * The verifier to use for checking the SSH key presented by the host
@@ -787,7 +797,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         connection = new Connection(host, port);
-        ExecutorService executorService = Executors.newSingleThreadExecutor(
+        launcherExecutorService = Executors.newSingleThreadExecutor(
                 new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
         Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
         callables.add(new Callable<Boolean>() {
@@ -841,10 +851,14 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             long time = System.currentTimeMillis();
             List<Future<Boolean>> results;
+            final ExecutorService srv = launcherExecutorService;
+            if (srv == null) {
+                throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
+            }
             if (this.getLaunchTimeoutMillis() > 0) {
-                results = executorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+                results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
             } else {
-                results = executorService.invokeAll(callables);
+                results = srv.invokeAll(callables);
             }
             long duration = System.currentTimeMillis() - time;
             Boolean res;
@@ -862,12 +876,16 @@ public class SSHLauncher extends ComputerLauncher {
                 System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
                         nodeName, host, duration));
             }
-            executorService.shutdown();
         } catch (InterruptedException e) {
             System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
                     nodeName, host));
+        } finally {
+            ExecutorService srv = launcherExecutorService;
+            if (srv != null) {
+                srv.shutdownNow();
+                launcherExecutorService = null;
+            }
         }
-
     }
 
     /**
@@ -1338,7 +1356,22 @@ public class SSHLauncher extends ComputerLauncher {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void afterDisconnect(SlaveComputer slaveComputer, final TaskListener listener) {
+    public void afterDisconnect(SlaveComputer slaveComputer, final TaskListener listener) {
+        if (connection == null) {
+            // Nothing to do here, the connection is not established
+            return;
+        }
+
+        ExecutorService srv = launcherExecutorService;
+        if (srv != null) {
+            // If the service is still running, shut it down and interrupt the operations if any
+            srv.shutdown();
+        }
+
+        tearDownConnection(slaveComputer, listener);
+    }
+
+    private synchronized void tearDownConnection(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
         if (connection != null) {
             boolean connectionLost = reportTransportLoss(connection, listener);
             if (session!=null) {
