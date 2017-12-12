@@ -1374,13 +1374,13 @@ public class SSHLauncher extends ComputerLauncher {
     private synchronized void tearDownConnection(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
         if (connection != null) {
             boolean connectionLost = reportTransportLoss(connection, listener);
-            if (session != null) {
+            if (session!=null) {
                 // give the process 3 seconds to write out its dying message before we cut the loss
                 // and give up on this process. if the slave process had JVM crash, OOME, or any other
                 // critical problem, this will allow us to capture that.
                 // exit code is also an useful info to figure out why the process has died.
                 try {
-                    listener.getLogger().println(getSessionOutcomeMessage(session, connectionLost));
+                    listener.getLogger().println(getSessionOutcomeMessage(session,connectionLost));
                     session.getStdout().close();
                     session.close();
                 } catch (Throwable t) {
@@ -1423,7 +1423,7 @@ public class SSHLauncher extends ComputerLauncher {
                     }
                 });
                 try {
-                    // the delete is best effort only and if it takes longer than 60 seconds - or the launch
+                    // the delete is best effort only and if it takes longer than 60 seconds - or the launch 
                     // timeout (if specified) - then we should just give up and leave the file there.
                     tidyUp.get(launchTimeoutSeconds == null ? 60 : launchTimeoutSeconds, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
