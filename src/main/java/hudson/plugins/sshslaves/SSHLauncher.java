@@ -1293,7 +1293,7 @@ public class SSHLauncher extends ComputerLauncher {
                 });
                 break;
             } catch (IOException ioexception) {
-                String message = "";
+                @CheckForNull String message = "";
                 Throwable cause = ioexception.getCause();
                 if (cause != null) {
                     message = cause.getMessage();
@@ -1327,7 +1327,11 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private boolean isRecoverable(String message) {
+    private boolean isRecoverable(@CheckForNull String message) {
+        if (message == null) {
+            return false;
+        }
+
         for (String s : RECOVERABLE_FAILURES) {
             if (message.startsWith(s)) return true;
         }
