@@ -125,6 +125,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -240,6 +241,12 @@ public class SSHLauncher extends ComputerLauncher {
      * SSH connection to the slave.
      */
     private transient volatile Connection connection;
+
+    /**
+     * Indicates that the {@link #tearDownConnection(SlaveComputer, TaskListener)} is in progress.
+     * It is used in {@link #afterDisconnect(SlaveComputer, TaskListener)} to avoid multiple parallel calls.
+     */
+    private transient volatile boolean tearingDownConnection;
 
     /**
      * The session inside {@link #connection} that controls the slave process.
@@ -1372,11 +1379,24 @@ public class SSHLauncher extends ComputerLauncher {
             srv.shutdown();
         }
 
+        if (tearingDownConnection) {
+            // tear down operation is in progress, do not even try to synchronize the call.
+            //TODO: what if reconnect attempts collide? It should not be possible due to locks, but maybe it worth investigation
+            LOGGER.log(Level.FINE, "There is already a tear down operation in progress for connection {0}. Skipping the call", connection);
+            return;
+        }
         tearDownConnection(slaveComputer, listener);
     }
 
     private synchronized void tearDownConnection(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
         if (connection != null) {
+            tearDownConnectionImpl(slaveComputer, listener);
+        }
+    }
+
+    private void tearDownConnectionImpl(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
+        try {
+            tearingDownConnection = true;
             boolean connectionLost = reportTransportLoss(connection, listener);
             if (session!=null) {
                 // give the process 3 seconds to write out its dying message before we cut the loss
@@ -1447,6 +1467,8 @@ public class SSHLauncher extends ComputerLauncher {
 
             PluginImpl.unregister(connection);
             cleanupConnection(listener);
+        } finally {
+            tearingDownConnection = false;
         }
     }
 
