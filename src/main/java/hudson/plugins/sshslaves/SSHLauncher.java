@@ -1617,7 +1617,7 @@ public class SSHLauncher extends ComputerLauncher {
         public String getHelpFile(String fieldName) {
             String n = super.getHelpFile(fieldName);
             if (n==null)
-                n = Jenkins.getActiveInstance().getDescriptor(SSHConnector.class).getHelpFile(fieldName);
+                n = Jenkins.getActiveInstance().getDescriptorOrDie(SSHConnector.class).getHelpFile(fieldName);
             return n;
         }
 
