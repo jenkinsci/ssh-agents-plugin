@@ -45,6 +45,10 @@
       <id>mc1arke</id>
       <name>Michael Clarke</name>
     </developer>
+    <developer>
+      <id>oleg_nenashev</id>
+      <name>Oleg Nenashev</name>
+    </developer>
   </developers>
 
   <scm>
