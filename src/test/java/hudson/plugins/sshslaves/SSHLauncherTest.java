@@ -52,6 +52,8 @@ import hudson.model.Slave;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
 import java.util.concurrent.ExecutionException;
+
+import hudson.util.VersionNumber;
 import org.jenkinsci.test.acceptance.docker.DockerRule;
 import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
 import org.junit.Assert;
@@ -85,7 +87,12 @@ public class SSHLauncherTest {
 
     @Test
     public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
-        assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
+        VersionNumber java7 = new VersionNumber("7");
+        if(JavaProvider.getMinJavaLevel().equals(java7)) {
+            assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
+        } else {
+            assertNotSupported("openjdk-7-netbsd.version");
+        }
     }
 
     @Test
@@ -105,7 +112,12 @@ public class SSHLauncherTest {
 
     @Test
     public void testCheckJavaVersionOracle7Mac() throws Exception {
-        Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
+        VersionNumber java7 = new VersionNumber("7");
+        if(JavaProvider.getMinJavaLevel().equals(java7)) {
+            Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
+        } else {
+            assertNotSupported("oracle-java-1.7-mac.version");
+        }
     }
 
     @Test
