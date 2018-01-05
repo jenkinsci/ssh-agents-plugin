@@ -1306,6 +1306,10 @@ public class SSHLauncher extends ComputerLauncher {
         int maxNumRetries = this.maxNumRetries == null || this.maxNumRetries < 0 ? 0 : this.maxNumRetries;
         for (int i = 0; i <= maxNumRetries; i++) {
             try {
+                // We pass launch timeout so that the connection will be able to abort once it reaches the timeout
+                // It is a poor man's logic, but it should cause termination if the connection goes strongly beyond the timeout
+                //TODO: JENKINS-48617 and JENKINS-48618 need to be implemented to make it fully robust
+                int launchTimeoutMillis = (int)getLaunchTimeoutMillis();
                 connection.connect(new ServerHostKeyVerifier() {
 
                     @Override
@@ -1315,7 +1319,7 @@ public class SSHLauncher extends ComputerLauncher {
 
                         return getSshHostKeyVerificationStrategyDefaulted().verify(computer, key, listener);
                     }
-                });
+                }, launchTimeoutMillis, 0 /*read timeout - JENKINS-48618*/, launchTimeoutMillis);
                 break;
             } catch (IOException ioexception) {
                 @CheckForNull String message = "";
