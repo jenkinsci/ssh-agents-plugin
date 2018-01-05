@@ -1085,7 +1085,7 @@ public class SSHLauncher extends ComputerLauncher {
                             String workingDirectory) throws IOException {
         session = connection.openSession();
         expandChannelBufferSize(session,listener);
-        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar";
+        String cmd = "cd \"" + workingDirectory + "\" && exec " + java + " " + getJvmOptions() + " -jar slave.jar";
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
         cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
