@@ -59,13 +59,13 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
     }
 
     /**
-     * This method can be removed when the baseline is updated to 2.88
+     * This method can be removed when the baseline is updated to 2.103
      *
-     * @return If this version of the plugin is running on a Jenkins version where JENKINS-43786 is included.
+     * @return true if this version of the plugin is running on a Jenkins version where JENKINS-43786 is included.
      */
     @Restricted(DoNotUse.class)
     public boolean isTheNewDesignAvailable() {
-        if (Jenkins.getVersion().isNewerThan(new VersionNumber("2.88"))) {
+        if (Jenkins.getVersion().isNewerThan(new VersionNumber("2.103"))) {
             return true;
         }
         return false;
