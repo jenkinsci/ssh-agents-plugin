@@ -65,7 +65,8 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
      */
     @Restricted(DoNotUse.class)
     public boolean isTheNewDesignAvailable() {
-        if (Jenkins.getVersion().isNewerThan(new VersionNumber("2.103"))) {
+        final VersionNumber version = Jenkins.getVersion();
+        if (version != null && version.isNewerThan(new VersionNumber("2.103"))) {
             return true;
         }
         return false;
