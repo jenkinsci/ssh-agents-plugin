@@ -125,6 +125,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -135,6 +136,8 @@ import static hudson.Util.*;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
 import hudson.util.VersionNumber;
+
+import javax.annotation.Nonnull;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import static java.util.logging.Level.*;
@@ -150,7 +153,7 @@ public class SSHLauncher extends ComputerLauncher {
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
 
 
-    public static final String JDKVERSION = "jdk-8u121";
+    public static final String JDKVERSION = "jdk-8u144";
     public static final String DEFAULT_JDK = JDKVERSION + "-oth-JPR";
 
     // Some of the messages observed in the wild:
@@ -237,7 +240,13 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * SSH connection to the slave.
      */
-    private transient Connection connection;
+    private transient volatile Connection connection;
+
+    /**
+     * Indicates that the {@link #tearDownConnection(SlaveComputer, TaskListener)} is in progress.
+     * It is used in {@link #afterDisconnect(SlaveComputer, TaskListener)} to avoid multiple parallel calls.
+     */
+    private transient volatile boolean tearingDownConnection;
 
     /**
      * The session inside {@link #connection} that controls the slave process.
@@ -268,6 +277,14 @@ public class SSHLauncher extends ComputerLauncher {
      * Field retryWaitTime.
      */
     public final Integer retryWaitTime;
+
+    // TODO: It is a bad idea to create a new Executor service for each launcher.
+    // Maybe a Remoting thread pool should be used, but it requires the logic rework to Futures
+    /**
+     * Keeps executor service for the async launch operation.
+     */
+    @CheckForNull
+    private transient volatile ExecutorService launcherExecutorService;
 
     /**
      * The verifier to use for checking the SSH key presented by the host
@@ -787,7 +804,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         connection = new Connection(host, port);
-        ExecutorService executorService = Executors.newSingleThreadExecutor(
+        launcherExecutorService = Executors.newSingleThreadExecutor(
                 new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
         Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
         callables.add(new Callable<Boolean>() {
@@ -841,10 +858,14 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             long time = System.currentTimeMillis();
             List<Future<Boolean>> results;
+            final ExecutorService srv = launcherExecutorService;
+            if (srv == null) {
+                throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
+            }
             if (this.getLaunchTimeoutMillis() > 0) {
-                results = executorService.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+                results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
             } else {
-                results = executorService.invokeAll(callables);
+                results = srv.invokeAll(callables);
             }
             long duration = System.currentTimeMillis() - time;
             Boolean res;
@@ -862,12 +883,16 @@ public class SSHLauncher extends ComputerLauncher {
                 System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
                         nodeName, host, duration));
             }
-            executorService.shutdown();
         } catch (InterruptedException e) {
             System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
                     nodeName, host));
+        } finally {
+            ExecutorService srv = launcherExecutorService;
+            if (srv != null) {
+                srv.shutdownNow();
+                launcherExecutorService = null;
+            }
         }
-
     }
 
     /**
@@ -1281,6 +1306,10 @@ public class SSHLauncher extends ComputerLauncher {
         int maxNumRetries = this.maxNumRetries == null || this.maxNumRetries < 0 ? 0 : this.maxNumRetries;
         for (int i = 0; i <= maxNumRetries; i++) {
             try {
+                // We pass launch timeout so that the connection will be able to abort once it reaches the timeout
+                // It is a poor man's logic, but it should cause termination if the connection goes strongly beyond the timeout
+                //TODO: JENKINS-48617 and JENKINS-48618 need to be implemented to make it fully robust
+                int launchTimeoutMillis = (int)getLaunchTimeoutMillis();
                 connection.connect(new ServerHostKeyVerifier() {
 
                     @Override
@@ -1290,10 +1319,10 @@ public class SSHLauncher extends ComputerLauncher {
 
                         return getSshHostKeyVerificationStrategyDefaulted().verify(computer, key, listener);
                     }
-                });
+                }, launchTimeoutMillis, 0 /*read timeout - JENKINS-48618*/, launchTimeoutMillis);
                 break;
             } catch (IOException ioexception) {
-                String message = "";
+                @CheckForNull String message = "";
                 Throwable cause = ioexception.getCause();
                 if (cause != null) {
                     message = cause.getMessage();
@@ -1327,7 +1356,11 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    private boolean isRecoverable(String message) {
+    private boolean isRecoverable(@CheckForNull String message) {
+        if (message == null) {
+            return false;
+        }
+
         for (String s : RECOVERABLE_FAILURES) {
             if (message.startsWith(s)) return true;
         }
@@ -1338,8 +1371,36 @@ public class SSHLauncher extends ComputerLauncher {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void afterDisconnect(SlaveComputer slaveComputer, final TaskListener listener) {
+    public void afterDisconnect(SlaveComputer slaveComputer, final TaskListener listener) {
+        if (connection == null) {
+            // Nothing to do here, the connection is not established
+            return;
+        }
+
+        ExecutorService srv = launcherExecutorService;
+        if (srv != null) {
+            // If the service is still running, shut it down and interrupt the operations if any
+            srv.shutdown();
+        }
+
+        if (tearingDownConnection) {
+            // tear down operation is in progress, do not even try to synchronize the call.
+            //TODO: what if reconnect attempts collide? It should not be possible due to locks, but maybe it worth investigation
+            LOGGER.log(Level.FINE, "There is already a tear down operation in progress for connection {0}. Skipping the call", connection);
+            return;
+        }
+        tearDownConnection(slaveComputer, listener);
+    }
+
+    private synchronized void tearDownConnection(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
         if (connection != null) {
+            tearDownConnectionImpl(slaveComputer, listener);
+        }
+    }
+
+    private void tearDownConnectionImpl(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
+        try {
+            tearingDownConnection = true;
             boolean connectionLost = reportTransportLoss(connection, listener);
             if (session!=null) {
                 // give the process 3 seconds to write out its dying message before we cut the loss
@@ -1410,6 +1471,8 @@ public class SSHLauncher extends ComputerLauncher {
 
             PluginImpl.unregister(connection);
             cleanupConnection(listener);
+        } finally {
+            tearingDownConnection = false;
         }
     }
 
@@ -1562,7 +1625,7 @@ public class SSHLauncher extends ComputerLauncher {
         public String getHelpFile(String fieldName) {
             String n = super.getHelpFile(fieldName);
             if (n==null)
-                n = Jenkins.getActiveInstance().getDescriptor(SSHConnector.class).getHelpFile(fieldName);
+                n = Jenkins.getActiveInstance().getDescriptorOrDie(SSHConnector.class).getHelpFile(fieldName);
             return n;
         }
 
