@@ -311,7 +311,7 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
              Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
-        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
+        this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd,
              suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
     }
 
@@ -333,7 +333,7 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
              Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
-        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
+        this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd,
              suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, null);
     }
 
@@ -342,8 +342,8 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, String credentialsId,
                        String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
                        Integer launchTimeoutSeconds) {
-        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd,
-             suffixStartSlaveCmd, launchTimeoutSeconds, null, null);
+        this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd,
+             suffixStartSlaveCmd, launchTimeoutSeconds, null, null, null);
     }
 
     /**
@@ -352,7 +352,7 @@ public class SSHLauncher extends ComputerLauncher {
     @Deprecated
     public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, lookupSystemCredentials(credentialsId), jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
+        this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null, null);
     }
 
     public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
@@ -390,7 +390,7 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
                        String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
                        Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
-        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime);
+        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, null);
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String, Integer, Integer, Integer)} instead. */
@@ -398,21 +398,21 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
              Integer launchTimeoutSeconds) {
-        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, null, null);
+        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, null, null, null);
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String, Integer, Integer, Integer)} instead. */
     @Deprecated
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
+        this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null, null);
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String)} instead. */
     @Deprecated
     public SSHLauncher(String host, int port, SSHUser credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
+        this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null, null);
     }
 
     /**
@@ -519,11 +519,25 @@ public class SSHLauncher extends ComputerLauncher {
 
 
     /**
+     * @deprecated
+     */
+    @Deprecated
+    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
+                       String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
+                       String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+        this(host, port,
+            credentials != null ? credentials.getId() : null,
+            jvmOptions, javaPath, null, prefixStartSlaveCmd,
+            suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+        this.credentials = credentials;
+    }
+
+    /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
      * @param host       The host to connect to.
      * @param port       The port to connect on.
-     * @param credentials The credentials to connect as.
+     * @param credentialsId The credentials to connect as.
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected or installed by the JDKInstaller.
      * @param jdkInstaller The jdk installer that will be used if no java vm is found on the specified host. If <code>null</code> the {@link DefaultJDKInstaller} will be used.
@@ -533,18 +547,14 @@ public class SSHLauncher extends ComputerLauncher {
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
      */
-    public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
+    public SSHLauncher(String host, int port, String credentialsId, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
                                     String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
 
         this.host = host;
         this.jvmOptions = fixEmpty(jvmOptions);
         this.port = port == 0 ? 22 : port;
-        this.username = null;
-        this.password = null;
-        this.privatekey = null;
-        this.credentials = credentials;
-        this.credentialsId = credentials == null ? null : credentials.getId();
+        this.credentialsId = credentialsId;
         this.javaPath = fixEmpty(javaPath);
         if (jdkInstaller != null) {
             this.jdk = jdkInstaller;
@@ -853,7 +863,7 @@ public class SSHLauncher extends ComputerLauncher {
         final Node node = computer.getNode();
         final String nodeName = node != null ? node.getNodeName() : "unknown";
         if(node != null) {
-            CredentialsProvider.track(node, credentials);
+            CredentialsProvider.track(node, getCredentials());
         }
         try {
             long time = System.currentTimeMillis();
