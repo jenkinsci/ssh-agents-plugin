@@ -950,7 +950,8 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             return attemptToInstallJDK(listener, workingDirectory);
         } catch (IOException e) {
-            throw new IOException("Could not find any known supported java version in "+tried+", and we also failed to install JDK as a fallback",e);
+            VersionNumber minJavaLevel = JavaProvider.getMinJavaLevel();
+            throw new IOException("Could not find any known supported java version (a minimum level of "+minJavaLevel+" is required) in "+tried+", and we also failed to install JDK as a fallback",e);
         }
     }
 
