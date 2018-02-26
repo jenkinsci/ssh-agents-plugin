@@ -22,8 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 -->
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-    <div class="warning">
-        <p>SSH Host Key Verifiers are not configured for all SSH slaves on this Jenkins instance. This could leave these slaves open to man-in-the-middle attacks. <a href="${rootURL}/computer/">Update your slave configuration</a> to resolve this.</p>
-    </div>
+<j:jelly xmlns:j="jelly:core">
+
+<j:if test="${!it.isTheNewDesignAvailable}">
+<div class="warning">
+  <p>SSH Host Key Verifiers are not configured for all SSH slaves on this Jenkins instance. This could leave these slaves open to man-in-the-middle attacks. <a href="${rootURL}/computer/">Update your slave configuration</a> to resolve this.</p>
+</div>
+</j:if>
+
+<j:if test="${it.isTheNewDesignAvailable}">
+<div class="alert alert-warning">
+    SSH Host Key Verifiers are not configured for all SSH slaves on this Jenkins instance. This could leave these slaves open to man-in-the-middle attacks. <a href="${rootURL}/computer/">Update your slave configuration</a> to resolve this.
+</div>
+</j:if>
+
 </j:jelly>
