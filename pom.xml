@@ -49,6 +49,10 @@
       <id>oleg_nenashev</id>
       <name>Oleg Nenashev</name>
     </developer>
+    <developer>
+      <id>ifernandezcalvo</id>
+      <name>Ivan Fernandez Calvo</name>
+    </developer>
   </developers>
 
   <scm>
