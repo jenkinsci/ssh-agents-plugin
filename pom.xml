@@ -32,26 +32,44 @@
     <developer>
       <id>stephenconnolly</id>
       <name>Stephen Connolly</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
     </developer>
     <developer>
       <id>kohsuke</id>
       <name>Kohsuke Kawaguchi</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
     </developer>
     <developer>
       <id>olamy</id>
       <name>Olivier Lamy</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
     </developer>
     <developer>
       <id>mc1arke</id>
       <name>Michael Clarke</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
     </developer>
     <developer>
       <id>oleg_nenashev</id>
       <name>Oleg Nenashev</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
     </developer>
     <developer>
       <id>ifernandezcalvo</id>
       <name>Ivan Fernandez Calvo</name>
+      <roles>
+        <role>Maintainer</role>
+      </roles>
     </developer>
   </developers>
 
