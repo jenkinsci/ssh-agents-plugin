@@ -947,6 +947,7 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
         }
+        throw new IOException("Java not found " + computer);
     }
 
     private String expandExpression(SlaveComputer computer, String expression) {
