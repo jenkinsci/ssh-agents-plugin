@@ -234,7 +234,9 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * to install JDK, keep this field null. This avoids baking the default value into the persisted form.
      * @see #getJDKInstaller()
+     *
      */
+    @Deprecated
     private JDKInstaller jdk = null;
 
     /**
@@ -945,14 +947,6 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
         }
-
-        // attempt auto JDK installation
-        try {
-            return attemptToInstallJDK(listener, workingDirectory);
-        } catch (IOException e) {
-            VersionNumber minJavaLevel = JavaProvider.getMinJavaLevel();
-            throw new IOException("Could not find any known supported java version (a minimum level of "+minJavaLevel+" is required) in "+tried+", and we also failed to install JDK as a fallback",e);
-        }
     }
 
     private String expandExpression(SlaveComputer computer, String expression) {
@@ -1017,69 +1011,6 @@ public class SSHLauncher extends ComputerLauncher {
             listener.getLogger().println(s);
             throw new AbortException();
         }
-    }
-
-    private JDKInstaller getJDKInstaller() {
-        return jdk!=null ? jdk : new JDKInstaller(SSHLauncher.DEFAULT_JDK, true);
-    }
-
-    /**
-     * Attempts to install JDK, and return the path to Java.
-     */
-    private String attemptToInstallJDK(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
-        ByteArrayOutputStream unameOutput = new ByteArrayOutputStream();
-        if (connection.exec("uname -a",new TeeOutputStream(unameOutput,listener.getLogger()))!=0)
-            throw new IOException("Failed to run 'uname' to obtain the environment");
-
-        // guess the platform from uname output. I don't use the specific options because I'm not sure
-        // if various platforms have the consistent options
-        //
-        // === some of the output collected ====
-        // Linux bear 2.6.28-15-generic #49-Ubuntu SMP Tue Aug 18 19:25:34 UTC 2009 x86_64 GNU/Linux
-        // Linux wssqe20 2.6.24-24-386 #1 Tue Aug 18 16:24:26 UTC 2009 i686 GNU/Linux
-        // SunOS hudson 5.11 snv_79a i86pc i386 i86pc
-        // SunOS legolas 5.9 Generic_112233-12 sun4u sparc SUNW,Sun-Fire-280R
-        // CYGWIN_NT-5.1 franz 1.7.0(0.185/5/3) 2008-07-22 19:09 i686 Cygwin
-        // Windows_NT WINXPIE7 5 01 586
-        //        (this one is from MKS)
-        
-        //TODO: Seems we need to retrieve the encoding from the connection destination
-        final String uname;
-        try {
-            uname = unameOutput.toString(Charset.defaultCharset().name());
-        } catch (UnsupportedEncodingException ex) { // Should not happen
-            throw new IOException("Default encoding is unsupported", ex);
-        }
-        Platform p = null;
-        CPU cpu = null;
-        if (uname.contains("GNU/Linux"))        p = Platform.LINUX;
-        if (uname.contains("SunOS"))            p = Platform.SOLARIS;
-        if (uname.contains("CYGWIN"))           p = Platform.WINDOWS;
-        if (uname.contains("Windows_NT"))       p = Platform.WINDOWS;
-
-        if (uname.contains("sparc"))            cpu = CPU.Sparc;
-        if (uname.contains("x86_64"))           cpu = CPU.amd64;
-        if (Pattern.compile("\\bi?[3-6]86\\b").matcher(uname).find())           cpu = CPU.i386;  // look for ix86 as a word
-
-        if (p==null || cpu==null)
-            throw new IOException(Messages.SSHLauncher_FailedToDetectEnvironment(uname));
-
-        String javaDir = workingDirectory + "/jdk"; // this is where we install Java to
-        String bundleFile = workingDirectory + "/" + p.bundleFileName; // this is where we download the bundle to
-
-        SFTPClient sftp = new SFTPClient(connection);
-        // wipe out and recreate the Java directory
-        connection.exec("rm -rf "+javaDir,listener.getLogger());
-        sftp.mkdirs(javaDir, 0755);
-
-        URL bundle = getJDKInstaller().locate(listener, p, cpu);
-
-        listener.getLogger().println("Installing " + JDKVERSION);
-        Util.copyStreamAndClose(bundle.openStream(),new BufferedOutputStream(sftp.writeToFile(bundleFile),32*1024));
-        sftp.chmod(bundleFile,0755);
-
-        getJDKInstaller().install(new RemoteLauncher(listener,connection),p,new SFTPFileSystem(sftp),listener, javaDir,bundleFile);
-        return javaDir+"/bin/java";
     }
 
     /**
