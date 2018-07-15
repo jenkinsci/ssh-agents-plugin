@@ -1640,12 +1640,11 @@ public class SSHLauncher extends ComputerLauncher {
             return n;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context,
                                                      @QueryParameter String host,
                                                      @QueryParameter String port,
                                                      @QueryParameter String credentialsId) {
-            AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
+            if (context == null || !context.hasPermission(Computer.CONFIGURE)) {
                 return new StandardUsernameListBoxModel()
                         .includeCurrentValue(credentialsId);
             }
@@ -1668,11 +1667,10 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
+                                                   @AncestorInPath AccessControlled _context,
                                                    @QueryParameter String host,
                                                    @QueryParameter String port,
                                                    @QueryParameter String value) {
-            AccessControlled _context =
-                    (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
             if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
                 return FormValidation.ok(); // no need to alarm a user that cannot configure
             }
