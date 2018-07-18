@@ -79,11 +79,10 @@ public class TrustHostKeyActionTest {
 
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
                 Collections.<Credentials>singletonList(
-                        new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId",
-                                                            null, "user", "pass")
+                        new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
                 )
         );
-
+        
         final int port = findPort();
 
         try {
@@ -116,15 +115,14 @@ public class TrustHostKeyActionTest {
         DumbSlave slave = new DumbSlave("test-slave", "SSH Test slave",
                 temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
-
+        
         jenkins.getInstance().addNode(slave);
         SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-slave");
 
         try {
             computer.connect(false).get();
         } catch (ExecutionException ex){
-            if (!ex.getMessage().startsWith("java.io.IOException: Slave failed")
-                && !ex.getMessage().startsWith("java.io.IOException: Agent failed")) {
+            if (!ex.getMessage().startsWith("java.io.IOException: Slave failed") && !ex.getMessage().startsWith("java.io.IOException: Agent failed")) {
                 throw ex;
             }
         }
@@ -138,8 +136,8 @@ public class TrustHostKeyActionTest {
         
         assertTrue(actions.get(0).isComplete());
         assertEquals(actions.get(0).getExistingHostKey(), actions.get(0).getHostKey());
-
-
+        
+        
     }
 
     private Object newSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -175,7 +173,7 @@ public class TrustHostKeyActionTest {
         }
 
         return providerClass.getConstructor().newInstance();
-            }
+    }
 
     private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         Object factory = null;
@@ -214,8 +212,8 @@ public class TrustHostKeyActionTest {
                         }
 
                         return null;
-            }
-        });
+                    }
+                });
     }
 
     private Class newCommandAuthenticatorClass() throws ClassNotFoundException {
@@ -243,8 +241,8 @@ public class TrustHostKeyActionTest {
                         }
 
                         return null;
-            }
-        });
+                    }
+                });
     }
 
     private Object invoke(Object target, String methodName, Class[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
