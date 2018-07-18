@@ -947,7 +947,8 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
         }
-        throw new IOException("Java not found " + computer);
+        throw new IOException("Java not found " + computer + ", install a Java version on the Agent, or use Global "
+                              + "Tool Configuration");
     }
 
     private String expandExpression(SlaveComputer computer, String expression) {
