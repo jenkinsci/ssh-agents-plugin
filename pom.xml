@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.8</version>
+    <version>3.15</version>
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
@@ -13,7 +13,7 @@
 
   <name>Jenkins SSH Slaves plugin</name>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
-  <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol.</description>
+  <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
 
   <licenses>
     <license>
@@ -24,7 +24,7 @@
   </licenses>
 
   <properties>
-    <jenkins.version>2.60.3</jenkins.version>
+    <jenkins.version>2.73.1</jenkins.version>
     <java.level>8</java.level>
   </properties>
 
@@ -94,6 +94,14 @@
   </pluginRepositories>
 
   <dependencies>
+    <!-- regular dependencies -->
+    <dependency>
+      <groupId>org.jenkins-ci</groupId>
+      <artifactId>trilead-ssh2</artifactId>
+      <version>build-217-jenkins-11</version>
+      <scope>provided</scope>
+      <!-- we only need the newer version for testing, we use the bundled version during execution -->
+    </dependency>
     <!-- plugin dependencies -->
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
