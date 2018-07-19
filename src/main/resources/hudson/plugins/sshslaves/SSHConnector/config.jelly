@@ -40,5 +40,9 @@
           <f:textbox name="retryWaitTime" />
       </f:entry>
 
+      <f:entry title="${%Disable TCP_NODELAY flag on the SSH connection}" field="disableTcpNoDelay">
+          <f:checkbox name="disableTcpNoDelay" />
+      </f:entry>
+
   </f:advanced>
 </j:jelly>
