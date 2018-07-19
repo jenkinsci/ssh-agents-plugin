@@ -52,6 +52,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
@@ -947,8 +948,14 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
         }
-        throw new IOException("Java not found " + computer + ", install a Java version on the Agent, or use Global "
-                              + "Tool Configuration");
+        JDK javaJDK = Jenkins.getInstance().getJDK("java");
+        ExtensionList.lookup(JDK.DescriptorImpl.class).get(0)
+                     .getDefaultInstallers().get(0)
+                     .performInstallation(javaJDK, computer.getNode(), listener);
+
+        new JDKInstaller(SSHLauncher.DEFAULT_JDK, true);
+        throw new IOException("Java not found " + computer + ", install a Java 8+ version on the Agent, if you need "
+                              + "others JDK use the Global Tool Configuration to install them.");
     }
 
     private String expandExpression(SlaveComputer computer, String expression) {
