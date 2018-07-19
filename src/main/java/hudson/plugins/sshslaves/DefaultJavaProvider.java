@@ -19,6 +19,9 @@ import hudson.tools.ToolLocationNodeProperty.ToolLocation;
 import hudson.util.DescribableList;
 import jenkins.model.Jenkins;
 
+/**
+ * Class to try to guess where is java.
+ */
 @Extension
 public class DefaultJavaProvider extends JavaProvider {
 

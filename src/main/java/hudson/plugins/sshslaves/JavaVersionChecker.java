@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 import com.trilead.ssh2.Connection;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.kohsuke.accmod.AccessRestriction;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import hudson.model.TaskListener;
@@ -25,6 +24,9 @@ import hudson.slaves.SlaveComputer;
 import hudson.util.VersionNumber;
 import static java.util.logging.Level.FINE;
 
+/**
+ * class to check if the version of java installed on the agent is a supported one.
+ */
 public class JavaVersionChecker {
     private static final Logger LOGGER = Logger.getLogger(JavaVersionChecker.class.getName());
 
