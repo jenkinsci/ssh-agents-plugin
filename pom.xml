@@ -25,11 +25,7 @@
 
   <properties>
     <jenkins.version>2.73.3</jenkins.version>
-<<<<<<< HEAD
-    <java.level>7</java.level>
-=======
     <java.level>8</java.level>
->>>>>>> dd5ec0f9940a70cc5f2f48025ed44624c7ec94b3
   </properties>
 
   <developers>
