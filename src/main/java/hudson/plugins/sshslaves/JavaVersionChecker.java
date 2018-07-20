@@ -47,12 +47,10 @@ public class JavaVersionChecker {
      * Finds local Java, and if none exist, install one.
      */
     protected String resolveJava() throws InterruptedException, IOException {
-        List<String> tried = new ArrayList<String>();
         for (JavaProvider provider : JavaProvider.all()) {
             for (String javaCommand : provider.getJavas(computer, listener, connection)) {
-                LOGGER.fine("Trying Java at "+javaCommand);
+                LOGGER.fine("Trying Java at " + javaCommand);
                 try {
-                    tried.add(javaCommand);
                     return checkJavaVersion(listener, javaCommand);
                 } catch (IOException e) {
                     LOGGER.log(FINE, "Failed to check the Java version",e);
