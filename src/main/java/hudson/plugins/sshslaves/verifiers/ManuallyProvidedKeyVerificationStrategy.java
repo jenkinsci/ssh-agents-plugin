@@ -24,13 +24,14 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import com.trilead.ssh2.signature.DSASHA1Verify;
-import com.trilead.ssh2.signature.RSASHA1Verify;
 
 import hudson.Extension;
 import hudson.model.TaskListener;
@@ -39,6 +40,7 @@ import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.remoting.Base64;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
+import java.util.Collections;
 
 /**
  * Checks a key provided by a remote hosts matches a key specified as being required by the
@@ -54,7 +56,11 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     @DataBoundConstructor
     public ManuallyProvidedKeyVerificationStrategy(String key) {
         super();
-        this.key = parseKey(key);
+        try {
+            this.key = parseKey(key);
+        } catch (KeyParseException e) {
+            throw new IllegalArgumentException("Invalid key: " + e.getMessage(), e);
+        }
     }
     
     public String getKey() {
@@ -75,8 +81,19 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             return false;
         }
     }
+
+    @Override
+    public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
+        String[] unsortedAlgorithms = super.getPreferredKeyAlgorithms(computer);
+        List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.<String>emptyList());
+
+        sortedAlgorithms.remove(key.getAlgorithm());
+        sortedAlgorithms.add(0, key.getAlgorithm());
+
+        return sortedAlgorithms.toArray(new String[sortedAlgorithms.size()]);
+    }
     
-    private static HostKey parseKey(String key) {
+    private static HostKey parseKey(String key) throws KeyParseException {
         if (!key.contains(" ")) {
             throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_TwoPartKey());
         }
@@ -84,25 +101,10 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
         String algorithm = tokenizer.nextToken();
         byte[] keyValue = Base64.decode(tokenizer.nextToken());
         if (null == keyValue) {
-            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
+            throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
         }
         
-        try {
-            if ("ssh-rsa".equals(algorithm)) {
-                RSASHA1Verify.decodeSSHRSAPublicKey(keyValue);
-            } else if ("ssh-dss".equals(algorithm)) {
-                DSASHA1Verify.decodeSSHDSAPublicKey(keyValue);
-            } else {
-                throw new IllegalArgumentException("Key algorithm should be one of ssh-rsa or ssh-dss");
-            }
-        } catch (IOException ex) {
-            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
-        }  catch (StringIndexOutOfBoundsException ex) {
-            // can happen in DSASHA1Verifier with certain values (from quick testing)
-            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
-        }
-        
-        return new HostKey(algorithm, keyValue);
+        return TrileadVersionSupportManager.getTrileadSupport().parseKey(algorithm, keyValue);
     }
     
     @Extension
@@ -117,7 +119,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             try {
                 ManuallyProvidedKeyVerificationStrategy.parseKey(key);
                 return FormValidation.ok();
-            } catch (IllegalArgumentException ex) {
+            } catch (KeyParseException ex) {
                 return FormValidation.error(ex.getMessage());
             }
         }

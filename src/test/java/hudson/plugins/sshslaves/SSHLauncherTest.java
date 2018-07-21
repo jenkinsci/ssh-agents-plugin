@@ -25,6 +25,7 @@ package hudson.plugins.sshslaves;
 
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import hudson.model.Fingerprint;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
 import hudson.slaves.NodeProperty;
 import hudson.tools.JDKInstaller;
@@ -40,64 +41,95 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
-import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
-import hudson.model.Descriptor;
+import hudson.model.Computer;
+import hudson.model.FreeStyleProject;
+import hudson.model.Node;
 import hudson.model.Node.Mode;
 import hudson.model.Slave;
-import hudson.plugins.sshslaves.SSHLauncher.DefaultJDKInstaller;
-import hudson.security.ACL;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
+import java.util.concurrent.ExecutionException;
 
-import hudson.util.ListBoxModel;
+import hudson.util.VersionNumber;
+import org.jenkinsci.test.acceptance.docker.DockerRule;
+import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
+import org.junit.Assert;
+
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.ClassRule;
+import org.jvnet.hudson.test.BuildWatcher;
+import org.jvnet.hudson.test.Issue;
 
 public class SSHLauncherTest {
+
+    @ClassRule
+    public static BuildWatcher buildWatcher = new BuildWatcher();
 
     @Rule
     public JenkinsRule j = new JenkinsRule();
 
+    @Rule
+    public DockerRule<JavaContainer> javaContainer = new DockerRule<>(JavaContainer.class);
+
     @Test
     public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
-        assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
+        VersionNumber java7 = new VersionNumber("7");
+        if(JavaProvider.getMinJavaLevel().equals(java7)) {
+            assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
+        } else {
+            assertNotSupported("openjdk-7-netbsd.version");
+        }
     }
 
     @Test
     public void checkJavaVersionOpenJDK6Linux() throws Exception {
-        assertTrue("OpenJDK6 on Linux should be supported", checkSupported("openjdk-6-linux.version"));
+        assertNotSupported("openjdk-6-linux.version");   
     }
 
     @Test
     public void checkJavaVersionSun6Linux() throws Exception {
-        assertTrue("Sun 6 on Linux should be supported", checkSupported("sun-java-1.6-linux.version"));
+        assertNotSupported("sun-java-1.6-linux.version");
     }
 
     @Test
     public void checkJavaVersionSun6Mac() throws Exception {
-        assertTrue("Sun 6 on Mac should be supported", checkSupported("sun-java-1.6-mac.version"));
+        assertNotSupported("sun-java-1.6-mac.version");
     }
 
     @Test
-    public void checkJavaVersionSun4Linux() {
-        try {
-            checkSupported("sun-java-1.4-linux.version");
-            fail();
-        } catch (IOException e) {
-            //
+    public void testCheckJavaVersionOracle7Mac() throws Exception {
+        VersionNumber java7 = new VersionNumber("7");
+        if(JavaProvider.getMinJavaLevel().equals(java7)) {
+            Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
+        } else {
+            assertNotSupported("oracle-java-1.7-mac.version");
         }
     }
 
+    @Test
+    public void testCheckJavaVersionOracle8Mac() throws Exception {
+        Assert.assertTrue("Oracle 8 on Mac should be supported", checkSupported("oracle-java-1.8-mac.version"));
+    }
+
+    @Test
+    public void checkJavaVersionSun4Linux() throws IOException {
+        assertNotSupported("sun-java-1.4-linux.version");
+    }
+    
     /**
      * Returns true if the version is supported.
      *
@@ -118,7 +150,16 @@ public class SSHLauncherTest {
         return null != result;
     }
 
-    private void checkRoundTrip(String host) throws Exception {
+    private static void assertNotSupported(final String testVersionOutput) throws AssertionError, IOException {
+        try {
+            checkSupported(testVersionOutput);
+            fail("Expected version " + testVersionOutput + " to be not supported, but it is supported");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+
+  private void checkRoundTrip(String host) throws Exception {
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
                 Collections.<Credentials>singletonList(
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
@@ -169,5 +210,72 @@ public class SSHLauncherTest {
         checkRoundTrip("   localhost");
         checkRoundTrip("localhost    ");
         checkRoundTrip("   localhost    ");
+    }
+
+    @Issue("JENKINS-38832")
+    @Test
+    public void trackCredentialsWithUsernameAndPassword() throws Exception {
+        UsernamePasswordCredentialsImpl credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass");
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
+          Collections.<Credentials>singletonList(
+            credentials
+          )
+        );
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
+        DumbSlave slave = new DumbSlave("slave", "dummy",
+          j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
+          launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+
+        Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+        assertThat("No fingerprint created until use", fingerprint, nullValue());
+
+        j.jenkins.addNode(slave);
+
+        fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+        assertThat(fingerprint, notNullValue());
+    }
+
+    @Issue("JENKINS-38832")
+    @Test
+    public void trackCredentialsWithUsernameAndPrivateKey() throws Exception {
+        BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
+          Collections.<Credentials>singletonList(
+            credentials
+          )
+        );
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
+        DumbSlave slave = new DumbSlave("slave", "dummy",
+          j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
+          launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+
+        Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+        assertThat("No fingerprint created until use", fingerprint, nullValue());
+
+        j.jenkins.addNode(slave);
+
+        fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+        assertThat(fingerprint, notNullValue());
+    }
+
+    @Issue("JENKINS-44830")
+    @Test
+    public void upgrade() throws Exception {
+        JavaContainer c = javaContainer.get();
+        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(),
+                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                // Old constructor passes null sshHostKeyVerificationStrategy:
+                new SSHLauncher(c.ipBound(22), c.port(22), "test", "test", "", ""),
+                RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
+        j.jenkins.addNode(slave);
+        Computer computer = slave.toComputer();
+        try {
+            computer.connect(false).get();
+        } catch (ExecutionException x) {
+            throw new AssertionError("failed to connect: " + computer.getLog(), x);
+        }
+        FreeStyleProject p = j.createFreeStyleProject();
+        p.setAssignedNode(slave);
+        j.buildAndAssertSuccess(p);
     }
 }

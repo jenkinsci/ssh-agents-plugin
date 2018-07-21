@@ -4,39 +4,72 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>2.11</version>
+    <version>3.15</version>
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
-  <version>1.18-SNAPSHOT</version>
+  <version>1.27-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Jenkins SSH Slaves plugin</name>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
   <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
 
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
   <properties>
-    <jenkins.version>1.609.1</jenkins.version>
-    <java.level>6</java.level>
-    <jenkins-test-harness.version>2.18</jenkins-test-harness.version>
+    <jenkins.version>2.73.3</jenkins.version>
+    <java.level>8</java.level>
   </properties>
 
   <developers>
     <developer>
       <id>stephenconnolly</id>
       <name>Stephen Connolly</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
     </developer>
     <developer>
       <id>kohsuke</id>
       <name>Kohsuke Kawaguchi</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
     </developer>
     <developer>
       <id>olamy</id>
       <name>Olivier Lamy</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
     </developer>
     <developer>
       <id>mc1arke</id>
       <name>Michael Clarke</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>oleg_nenashev</id>
+      <name>Oleg Nenashev</name>
+      <roles>
+        <role>Maintainer (retired)</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>ifernandezcalvo</id>
+      <name>Ivan Fernandez Calvo</name>
+      <roles>
+        <role>Maintainer</role>
+      </roles>
     </developer>
   </developers>
 
@@ -62,16 +95,29 @@
 
   <dependencies>
     <!-- regular dependencies -->
+    <dependency>
+      <groupId>org.jenkins-ci</groupId>
+      <artifactId>trilead-ssh2</artifactId>
+      <version>build-217-jenkins-11</version>
+      <scope>provided</scope>
+      <!-- we only need the newer version for testing, we use the bundled version during execution -->
+    </dependency>
     <!-- plugin dependencies -->
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>2.1.2</version>
+      <version>2.1.16</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>ssh-credentials</artifactId>
-      <version>1.6.1</version>
+      <version>1.13</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.test</groupId>
+      <artifactId>docker-fixtures</artifactId>
+      <version>1.8</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
