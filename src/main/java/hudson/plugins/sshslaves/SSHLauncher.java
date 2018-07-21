@@ -295,9 +295,9 @@ public class SSHLauncher extends ComputerLauncher {
     private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     /**
-     * Allow to disable the TCP_NODELAY flag on the SSH connection.
+     * Allow to anable/disable the TCP_NODELAY flag on the SSH connection.
      */
-    private boolean disableTcpNoDelay;
+    private Boolean tcpNoDelay;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -582,6 +582,13 @@ public class SSHLauncher extends ComputerLauncher {
 
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
         this(host,port,username,password,privatekey,jvmOptions,null, null, null);
+    }
+
+    public Object readResolve(){
+        if(tcpNoDelay == null){
+            tcpNoDelay = true;
+        }
+        return this;
     }
 
     public String getCredentialsId() {
@@ -1318,7 +1325,7 @@ public class SSHLauncher extends ComputerLauncher {
     protected void openConnection(final TaskListener listener, final SlaveComputer computer) throws IOException, InterruptedException {
         PrintStream logger = listener.getLogger();
         logger.println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
-        connection.setTCPNoDelay(!disableTcpNoDelay);
+        connection.setTCPNoDelay(getTcpNoDelay());
 
         int maxNumRetries = this.maxNumRetries == null || this.maxNumRetries < 0 ? 0 : this.maxNumRetries;
         for (int i = 0; i <= maxNumRetries; i++) {
@@ -1619,13 +1626,13 @@ public class SSHLauncher extends ComputerLauncher {
         return retryWaitTime;
     }
 
-    public boolean getDisableTcpNoDelay() {
-        return disableTcpNoDelay;
+    public boolean getTcpNoDelay() {
+        return tcpNoDelay != null ? tcpNoDelay : true;
     }
 
     @DataBoundSetter
-    public void setDisableTcpNoDelay(boolean disableTcpNoDelay) {
-        this.disableTcpNoDelay = disableTcpNoDelay;
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
     }
 
     @Extension

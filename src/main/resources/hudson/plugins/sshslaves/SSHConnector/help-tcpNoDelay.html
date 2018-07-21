@@ -1,0 +1,7 @@
+<div>
+    Enable/Disables the TCP_NODELAY flag on the SSH connection.
+    If set, disable the Nagle algorithm. This means that segments are always sent as soon as possible,
+    even if there is only a small amount of data. When not set,
+    data is buffered until there is a sufficient amount to send out,
+    thereby avoiding the frequent sending of small packets, which results in poor utilization of the network.
+</div>
