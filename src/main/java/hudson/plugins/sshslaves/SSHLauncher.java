@@ -47,7 +47,6 @@ import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import com.trilead.ssh2.Session;
-import com.trilead.ssh2.transport.TransportManager;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
@@ -106,7 +105,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.InterruptedException;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
@@ -335,6 +333,7 @@ public class SSHLauncher extends ComputerLauncher {
              Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
         this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd,
              suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, String, String, String, String, String, Integer, Integer, Integer)} instead. */
@@ -344,6 +343,7 @@ public class SSHLauncher extends ComputerLauncher {
                        Integer launchTimeoutSeconds) {
         this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd,
              suffixStartSlaveCmd, launchTimeoutSeconds, null, null, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     /**
@@ -353,6 +353,7 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(host, port, credentialsId, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
@@ -386,11 +387,15 @@ public class SSHLauncher extends ComputerLauncher {
      * @param launchTimeoutSeconds Launch timeout in seconds
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
+     *
+     * @deprecated Use
+     * {@link #SSHLauncher(String, int, String, String, String, JDKInstaller, String, String, Integer, Integer, Integer, SshHostKeyVerificationStrategy)} instead.
      */
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
                        String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
                        Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
         this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String, Integer, Integer, Integer)} instead. */
@@ -399,6 +404,7 @@ public class SSHLauncher extends ComputerLauncher {
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
              Integer launchTimeoutSeconds) {
         this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, null, null, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String, Integer, Integer, Integer)} instead. */
@@ -406,6 +412,7 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(host, port, credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     /** @deprecated Use {@link #SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String)} instead. */
@@ -413,6 +420,7 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, SSHUser credentials,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     /**
@@ -434,6 +442,7 @@ public class SSHLauncher extends ComputerLauncher {
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(host, port, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd,
                                                                                      suffixStartSlaveCmd);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     /**
@@ -472,6 +481,7 @@ public class SSHLauncher extends ComputerLauncher {
         this.maxNumRetries = null;
         this.retryWaitTime = null;
         this.sshHostKeyVerificationStrategy = null;
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     /**
@@ -491,6 +501,7 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(host, port, credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     @Deprecated
@@ -515,11 +526,14 @@ public class SSHLauncher extends ComputerLauncher {
 
 
         this(host, port, credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
 
     /**
      * @deprecated
+     *
+     * deprecated but used by not deprecated constructor
      */
     @Deprecated
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
@@ -572,10 +586,17 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, SSHUser credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
         this(host, port, (StandardUsernameCredentials) credentials, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd, suffixStartSlaveCmd);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
+    /**
+     * @deprecated Use
+     * {@link #SSHLauncher(String, int, String, String, String, JDKInstaller, String, String, Integer, Integer, Integer, SshHostKeyVerificationStrategy)} instead.
+     */
+    @Deprecated
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
         this(host,port,username,password,privatekey,jvmOptions,null, null, null);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     public String getCredentialsId() {
