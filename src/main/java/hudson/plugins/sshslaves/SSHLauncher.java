@@ -92,6 +92,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import java.io.BufferedOutputStream;
@@ -290,6 +291,11 @@ public class SSHLauncher extends ComputerLauncher {
      */
     @CheckForNull
     private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
+
+    /**
+     * Allow to anable/disable the TCP_NODELAY flag on the SSH connection.
+     */
+    private Boolean tcpNoDelay;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -597,6 +603,13 @@ public class SSHLauncher extends ComputerLauncher {
     public SSHLauncher(String host, int port, String username, String password, String privatekey, String jvmOptions) {
         this(host,port,username,password,privatekey,jvmOptions,null, null, null);
         LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
+    }
+
+    public Object readResolve(){
+        if(tcpNoDelay == null){
+            tcpNoDelay = true;
+        }
+        return this;
     }
 
     public String getCredentialsId() {
@@ -1333,7 +1346,7 @@ public class SSHLauncher extends ComputerLauncher {
     protected void openConnection(final TaskListener listener, final SlaveComputer computer) throws IOException, InterruptedException {
         PrintStream logger = listener.getLogger();
         logger.println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
-        connection.setTCPNoDelay(true);
+        connection.setTCPNoDelay(getTcpNoDelay());
 
         int maxNumRetries = this.maxNumRetries == null || this.maxNumRetries < 0 ? 0 : this.maxNumRetries;
         for (int i = 0; i <= maxNumRetries; i++) {
@@ -1632,6 +1645,15 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public Integer getRetryWaitTime() {
         return retryWaitTime;
+    }
+
+    public boolean getTcpNoDelay() {
+        return tcpNoDelay != null ? tcpNoDelay : true;
+    }
+
+    @DataBoundSetter
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
     }
 
     @Extension
