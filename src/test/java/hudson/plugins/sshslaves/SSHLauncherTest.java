@@ -158,15 +158,15 @@ public class SSHLauncherTest {
             // expected
         }
     }
-    
-    @Test
-    public void configurationRoundtrip() throws Exception {
+
+  private void checkRoundTrip(String host) throws Exception {
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
                 Collections.<Credentials>singletonList(
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
                 )
         );
-        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1, new KnownHostsFileKeyVerificationStrategy());
+        SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1, new KnownHostsFileKeyVerificationStrategy());
+        assertEquals(host.trim(), launcher.getHost());
         DumbSlave slave = new DumbSlave("slave", "dummy",
                 j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
@@ -179,6 +179,11 @@ public class SSHLauncherTest {
         assertNotSame(n,slave);
         assertNotSame(n.getLauncher(),launcher);
         j.assertEqualDataBoundBeans(n.getLauncher(),launcher);
+    }
+
+    @Test
+    public void configurationRoundTrip() throws Exception {
+        checkRoundTrip("localhost");
     }
 
 
@@ -198,6 +203,13 @@ public class SSHLauncherTest {
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "dummyCredentialId").size());
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two", "does-not-exist").size());
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "", "does-not-exist").size());
+    }
+
+    @Test
+    public void trimWhiteSpace() throws Exception {
+        checkRoundTrip("   localhost");
+        checkRoundTrip("localhost    ");
+        checkRoundTrip("   localhost    ");
     }
 
     @Issue("JENKINS-38832")
@@ -266,5 +278,4 @@ public class SSHLauncherTest {
         p.setAssignedNode(slave);
         j.buildAndAssertSuccess(p);
     }
-
 }
