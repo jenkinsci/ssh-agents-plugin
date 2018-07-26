@@ -65,7 +65,7 @@ public class JavaVersionChecker {
 
     /**
      * return javaPath if specified in the configuration.
-     * Finds local Java, and if none exist, install one.
+     * Finds local Java.
      */
     protected String resolveJava() throws InterruptedException, IOException {
         for (JavaProvider provider : JavaProvider.all()) {
@@ -79,8 +79,7 @@ public class JavaVersionChecker {
                 }
             }
         }
-        throw new IOException("Java not found " + computer + ", install a Java 8+ version on the Agent, if you need "
-                              + "others JDK use the Global Tool Configuration to install them.");
+        throw new IOException("Java not found on " + computer + ". Install a Java 8 version on the Agent.");
     }
 
     @NonNull
@@ -104,10 +103,9 @@ public class JavaVersionChecker {
         }
     }
 
-    // XXX switch to standard method in 1.479+
     /**
      * Given the output of "java -version" in <code>r</code>, determine if this
-     * version of Java is supported. This method has default visiblity for testing.
+     * version of Java is supported.
      *
      * @param logger
      *            where to log the output

@@ -65,7 +65,7 @@ public class DefaultJavaProvider extends JavaProvider {
 
     @Override
     public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
-        List<String> javas = new ArrayList<>(); // this is where we attempt to auto-install
+        List<String> javas = new ArrayList<>();
 
         String workingDirectory = SSHLauncher.getWorkingDirectory(computer);
         if (workingDirectory != null) {
