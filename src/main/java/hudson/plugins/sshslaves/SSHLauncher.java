@@ -141,9 +141,9 @@ public class SSHLauncher extends ComputerLauncher {
     private static final List<String> RECOVERABLE_FAILURES = Arrays.asList(
             "Connection refused", "Connection reset", "Connection timed out", "No route to host", "Premature connection close"
     );
-    public static final int DEFAULT_MAX_NUM_RETRIES = 10;
-    public static final int DEFAULT_RETRY_WAIT_TIME = 15;
-    public static final int DEFAULT_LAUNCH_TIMEOUT_SECONDS = 60;
+    public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
+    public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
+    public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = DEFAULT_MAX_NUM_RETRIES * DEFAULT_RETRY_WAIT_TIME + 60;
 
     /**
      * Field host
@@ -881,8 +881,11 @@ public class SSHLauncher extends ComputerLauncher {
             Boolean res;
             try {
                 res = results.get(0).get();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 res = Boolean.FALSE;
+                System.out.println(e.getMessage());
+                listener.getLogger().println("ECHO");
+                e.printStackTrace(listener.getLogger());
             }
             if (!res) {
                 System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
@@ -1441,7 +1444,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @return retryWaitTime
      */
     public Integer getRetryWaitTime() {
-        return retryWaitTime  == null || retryWaitTime== 0 ? DEFAULT_RETRY_WAIT_TIME : retryWaitTime;
+        return retryWaitTime == null || retryWaitTime == 0 ? DEFAULT_RETRY_WAIT_TIME : retryWaitTime;
     }
 
     public boolean getTcpNoDelay() {
