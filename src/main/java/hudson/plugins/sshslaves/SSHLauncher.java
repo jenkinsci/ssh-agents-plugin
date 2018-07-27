@@ -1513,7 +1513,7 @@ public class SSHLauncher extends ComputerLauncher {
                 try {
                     // the delete is best effort only and if it takes longer than 60 seconds - or the launch 
                     // timeout (if specified) - then we should just give up and leave the file there.
-                    tidyUp.get(launchTimeoutSeconds, TimeUnit.SECONDS);
+                    tidyUp.get(getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
                     // we should either re-apply our interrupt flag or propagate... we don't want to propagate, so...
