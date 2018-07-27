@@ -144,8 +144,7 @@ public class SSHLauncherTest {
         final BufferedReader r = new BufferedReader(new InputStreamReader(
                 versionStream));
         final StringWriter output = new StringWriter();
-        final String result = new SSHLauncher(null,0,null,null,null,
-                new JDKInstaller(SSHLauncher.DEFAULT_JDK, true), null, null, 1, 1, 1)
+        final String result = new JavaVersionChecker(null,null,null,null)
                 .checkJavaVersion(System.out,javaCommand, r, output);
         return null != result;
     }
