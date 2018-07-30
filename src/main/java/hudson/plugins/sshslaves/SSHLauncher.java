@@ -102,6 +102,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -881,11 +882,9 @@ public class SSHLauncher extends ComputerLauncher {
             Boolean res;
             try {
                 res = results.get(0).get();
-            } catch (Throwable e) {
+            } catch (CancellationException | ExecutionException e) {
                 res = Boolean.FALSE;
-                System.out.println(e.getMessage());
-                listener.getLogger().println("ECHO");
-                e.printStackTrace(listener.getLogger());
+                e.printStackTrace(listener.error(e.getMessage()));
             }
             if (!res) {
                 System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
