@@ -120,5 +120,20 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <!--
+            * [JENKINS-51876] Updated core, Java version, and dependencies
+            * [JENKINS-4758] Remove old JDK installer from the plugin
+          -->
+          <compatibleSinceVersion>1.27</compatibleSinceVersion>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
