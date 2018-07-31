@@ -102,6 +102,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -141,6 +142,9 @@ public class SSHLauncher extends ComputerLauncher {
     private static final List<String> RECOVERABLE_FAILURES = Arrays.asList(
             "Connection refused", "Connection reset", "Connection timed out", "No route to host", "Premature connection close"
     );
+    public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
+    public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
+    public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = DEFAULT_MAX_NUM_RETRIES * DEFAULT_RETRY_WAIT_TIME + 60;
 
     /**
      * Field host
@@ -222,17 +226,17 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      *  Field launchTimeoutSeconds.
      */
-    public final Integer launchTimeoutSeconds;
+    public Integer launchTimeoutSeconds;
 
     /**
      * Field maxNumRetries.
      */
-    public final Integer maxNumRetries;
+    public Integer maxNumRetries;
 
     /**
-     * Field retryWaitTime.
+     * Field retryWaitTime (seconds).
      */
-    public final Integer retryWaitTime;
+    public Integer retryWaitTime;
 
     // TODO: It is a bad idea to create a new Executor service for each launcher.
     // Maybe a Remoting thread pool should be used, but it requires the logic rework to Futures
@@ -444,9 +448,9 @@ public class SSHLauncher extends ComputerLauncher {
         this.javaPath = fixEmpty(javaPath);
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
-        this.launchTimeoutSeconds = null;
-        this.maxNumRetries = null;
-        this.retryWaitTime = null;
+        this.launchTimeoutSeconds = DEFAULT_LAUNCH_TIMEOUT_SECONDS;
+        this.maxNumRetries = DEFAULT_MAX_NUM_RETRIES;
+        this.retryWaitTime = DEFAULT_RETRY_WAIT_TIME;
         this.sshHostKeyVerificationStrategy = null;
         LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
@@ -538,9 +542,9 @@ public class SSHLauncher extends ComputerLauncher {
         this.javaPath = fixEmpty(javaPath);
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
-        this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
-        this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : 0;
-        this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : 0;
+        this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? DEFAULT_LAUNCH_TIMEOUT_SECONDS : launchTimeoutSeconds;
+        this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : DEFAULT_MAX_NUM_RETRIES;
+        this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : DEFAULT_RETRY_WAIT_TIME;
         this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
     }
 
@@ -567,8 +571,20 @@ public class SSHLauncher extends ComputerLauncher {
             tcpNoDelay = true;
         }
 
-        if(trackCredentials == null){
+        if(trackCredentials == null) {
             trackCredentials = true;
+        }
+
+        if(this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0){
+            this.launchTimeoutSeconds = DEFAULT_LAUNCH_TIMEOUT_SECONDS;
+        }
+
+        if(this.maxNumRetries == null){
+            this.maxNumRetries = DEFAULT_MAX_NUM_RETRIES;
+        }
+
+        if(this.retryWaitTime == null){
+            this.retryWaitTime = DEFAULT_RETRY_WAIT_TIME;
         }
         return this;
     }
@@ -879,8 +895,9 @@ public class SSHLauncher extends ComputerLauncher {
             Boolean res;
             try {
                 res = results.get(0).get();
-            } catch (ExecutionException e) {
+            } catch (CancellationException | ExecutionException e) {
                 res = Boolean.FALSE;
+                e.printStackTrace(listener.error(e.getMessage()));
             }
             if (!res) {
                 System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
@@ -1141,7 +1158,7 @@ public class SSHLauncher extends ComputerLauncher {
         logger.println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(getTcpNoDelay());
 
-        int maxNumRetries = this.maxNumRetries == null || this.maxNumRetries < 0 ? 0 : this.maxNumRetries;
+        int maxNumRetries = getMaxNumRetries();
         for (int i = 0; i <= maxNumRetries; i++) {
             try {
                 // We pass launch timeout so that the connection will be able to abort once it reaches the timeout
@@ -1171,14 +1188,15 @@ public class SSHLauncher extends ComputerLauncher {
                 }
                 if (maxNumRetries - i > 0) {
                     logger.println("SSH Connection failed with IOException: \"" + message
-                                                         + "\", retrying in " + retryWaitTime + " seconds.  There are "
+                                                         + "\", retrying in " + getRetryWaitTime() + " seconds.  There "
+                                   + "are "
                                                          + (maxNumRetries - i) + " more retries left.");
                 } else {
                     logger.println("SSH Connection failed with IOException: \"" + message + "\".");
                     throw ioexception;
                 }
             }
-            Thread.sleep(TimeUnit.SECONDS.toMillis(retryWaitTime));
+            Thread.sleep(TimeUnit.SECONDS.toMillis(getRetryWaitTime()));
         }
 
         StandardUsernameCredentials credentials = getCredentials();
@@ -1291,7 +1309,7 @@ public class SSHLauncher extends ComputerLauncher {
                 try {
                     // the delete is best effort only and if it takes longer than 60 seconds - or the launch 
                     // timeout (if specified) - then we should just give up and leave the file there.
-                    tidyUp.get(launchTimeoutSeconds == null ? 60 : launchTimeoutSeconds, TimeUnit.SECONDS);
+                    tidyUp.get(getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
                     // we should either re-apply our interrupt flag or propagate... we don't want to propagate, so...
@@ -1414,12 +1432,14 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return launchTimeoutSeconds
      */
+    @NonNull
     public Integer getLaunchTimeoutSeconds() {
         return launchTimeoutSeconds;
     }
 
     private long getLaunchTimeoutMillis() {
-        return launchTimeoutSeconds == null ? 0L : TimeUnit.SECONDS.toMillis(launchTimeoutSeconds);
+        return launchTimeoutSeconds == null || launchTimeoutSeconds < 0 ? DEFAULT_LAUNCH_TIMEOUT_SECONDS : TimeUnit.SECONDS.toMillis
+                (launchTimeoutSeconds);
     }
 
     /**
@@ -1427,8 +1447,9 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return maxNumRetries
      */
+    @NonNull
     public Integer getMaxNumRetries() {
-        return maxNumRetries == null || maxNumRetries < 0 ? Integer.valueOf(0) : maxNumRetries;
+        return maxNumRetries == null || maxNumRetries < 0 ? DEFAULT_MAX_NUM_RETRIES : maxNumRetries;
     }
 
     /**
@@ -1436,8 +1457,9 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return retryWaitTime
      */
+    @NonNull
     public Integer getRetryWaitTime() {
-        return retryWaitTime;
+        return retryWaitTime == null || retryWaitTime == 0 ? DEFAULT_RETRY_WAIT_TIME : retryWaitTime;
     }
 
     public boolean getTcpNoDelay() {
