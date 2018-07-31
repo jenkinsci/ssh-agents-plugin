@@ -250,9 +250,16 @@ public class SSHLauncher extends ComputerLauncher {
     private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     /**
-     * Allow to anable/disable the TCP_NODELAY flag on the SSH connection.
+     * Allow to enable/disable the TCP_NODELAY flag on the SSH connection.
      */
     private Boolean tcpNoDelay;
+
+    /**
+     * JENKINS-38832
+     * JENKINS-49235
+     * Allow to enable/disable credentials tracking.
+     */
+    private Boolean trackCredentials;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -559,6 +566,10 @@ public class SSHLauncher extends ComputerLauncher {
         if(tcpNoDelay == null){
             tcpNoDelay = true;
         }
+
+        if(trackCredentials == null){
+            trackCredentials = true;
+        }
         return this;
     }
 
@@ -805,6 +816,8 @@ public class SSHLauncher extends ComputerLauncher {
                         listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
                     }
 
+                    listener.getLogger().println(logConfiguration());
+
                     openConnection(listener, computer);
 
                     verifyNoHeaderJunk(listener);
@@ -847,7 +860,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         final Node node = computer.getNode();
         final String nodeName = node != null ? node.getNodeName() : "unknown";
-        if(node != null) {
+        if(node != null && getTrackCredentials()) {
             CredentialsProvider.track(node, getCredentials());
         }
         try {
@@ -1389,11 +1402,11 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     public String getPrefixStartSlaveCmd() {
-        return prefixStartSlaveCmd == null ? "" : prefixStartSlaveCmd;
+        return Util.fixNull(prefixStartSlaveCmd);
     }
 
     public String getSuffixStartSlaveCmd() {
-        return suffixStartSlaveCmd == null ? "" : suffixStartSlaveCmd;
+        return Util.fixNull(suffixStartSlaveCmd);
     }
 
     /**
@@ -1435,6 +1448,16 @@ public class SSHLauncher extends ComputerLauncher {
     public void setTcpNoDelay(boolean tcpNoDelay) {
         this.tcpNoDelay = tcpNoDelay;
     }
+
+    public boolean getTrackCredentials() {
+        return trackCredentials != null ? trackCredentials : true;
+    }
+
+    @DataBoundSetter
+    public void setTrackCredentials(boolean trackCredentials) {
+        this.trackCredentials = trackCredentials;
+    }
+
 
     @Extension
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
@@ -1581,4 +1604,24 @@ public class SSHLauncher extends ComputerLauncher {
 //            }
 //        };
 //    }
+
+    public String logConfiguration() {
+        final StringBuilder sb = new StringBuilder("SSHLauncher{");
+        sb.append("host='").append(getHost()).append('\'');
+        sb.append(", port=").append(getPort());
+        sb.append(", credentialsId='").append(Util.fixNull(credentialsId)).append('\'');
+        sb.append(", jvmOptions='").append(getJvmOptions()).append('\'');
+        sb.append(", javaPath='").append(Util.fixNull(javaPath)).append('\'');
+        sb.append(", prefixStartSlaveCmd='").append(getPrefixStartSlaveCmd()).append('\'');
+        sb.append(", suffixStartSlaveCmd='").append(getSuffixStartSlaveCmd()).append('\'');
+        sb.append(", launchTimeoutSeconds=").append(getLaunchTimeoutSeconds());
+        sb.append(", maxNumRetries=").append(getMaxNumRetries());
+        sb.append(", retryWaitTime=").append(getRetryWaitTime());
+        sb.append(", sshHostKeyVerificationStrategy=").append(sshHostKeyVerificationStrategy != null ?
+                                                              sshHostKeyVerificationStrategy.getClass().getName() : "None");
+        sb.append(", tcpNoDelay=").append(getTcpNoDelay());
+        sb.append(", trackCredentials=").append(getTrackCredentials());
+        sb.append('}');
+        return sb.toString();
+    }
 }

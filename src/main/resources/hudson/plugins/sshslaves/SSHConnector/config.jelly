@@ -44,5 +44,9 @@
           <f:checkbox name="tcpNoDelay" default="true" />
       </f:entry>
 
+      <f:entry title="${%Credentials tracking}" field="trackCredentials">
+          <f:checkbox name="trackCredentials" default="true" />
+      </f:entry>
+
   </f:advanced>
 </j:jelly>
