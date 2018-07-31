@@ -1419,6 +1419,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return launchTimeoutSeconds
      */
+    @NonNull
     public Integer getLaunchTimeoutSeconds() {
         return launchTimeoutSeconds;
     }
@@ -1433,6 +1434,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return maxNumRetries
      */
+    @NonNull
     public Integer getMaxNumRetries() {
         return maxNumRetries == null || maxNumRetries < 0 ? DEFAULT_MAX_NUM_RETRIES : maxNumRetries;
     }
@@ -1442,6 +1444,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return retryWaitTime
      */
+    @NonNull
     public Integer getRetryWaitTime() {
         return retryWaitTime == null || retryWaitTime == 0 ? DEFAULT_RETRY_WAIT_TIME : retryWaitTime;
     }
