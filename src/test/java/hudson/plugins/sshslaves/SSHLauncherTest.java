@@ -28,7 +28,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.Fingerprint;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
-import hudson.slaves.NodeProperty;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +36,6 @@ import java.io.StringWriter;
 import java.util.Collections;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
@@ -72,7 +70,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.ClassRule;
 import org.jvnet.hudson.test.BuildWatcher;
-import sun.management.resources.agent;
 
 public class SSHLauncherTest {
 
