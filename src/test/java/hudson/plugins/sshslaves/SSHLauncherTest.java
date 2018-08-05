@@ -98,18 +98,8 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void checkJavaVersionOpenJDK7Linux() throws Exception {
-        assertNotSupported("openjdk-7-linux.version");
-    }
-
-    @Test
     public void checkJavaVersionSun6Linux() throws Exception {
         assertNotSupported("sun-java-1.6-linux.version");
-    }
-
-    @Test
-    public void checkJavaVersionSun7Linux() throws Exception {
-        assertNotSupported("sun-java-1.7-linux.version");
     }
 
     @Test

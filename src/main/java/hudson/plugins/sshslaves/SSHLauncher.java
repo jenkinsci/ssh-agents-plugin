@@ -51,7 +51,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.FilePath;
 import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
@@ -120,7 +119,6 @@ import static hudson.Util.*;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
 
-import javax.annotation.Nonnull;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
@@ -1244,13 +1242,13 @@ public class SSHLauncher extends ComputerLauncher {
         tearDownConnection(slaveComputer, listener);
     }
 
-    private synchronized void tearDownConnection(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
+    private synchronized void tearDownConnection(@NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
         if (connection != null) {
             tearDownConnectionImpl(slaveComputer, listener);
         }
     }
 
-    private void tearDownConnectionImpl(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
+    private void tearDownConnectionImpl(@NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
         try {
             tearingDownConnection = true;
             boolean connectionLost = reportTransportLoss(connection, listener);
@@ -1480,14 +1478,14 @@ public class SSHLauncher extends ComputerLauncher {
 
     /**
      * @param workingDirectory The Working directory set on the configuration of the node.
-     * @return <p>the remoting parameter to set the workDir,
+     * @return the remoting parameter to set the workDir,
      * by default it is the same as the working directory configured on the node so "-workDir " + workingDirectory,
      * if workDir is set, he method will return "-workDir " + getWorkDir()
-     * if the parameter is set in suffixStartSlaveCmd, the method will return an empty String.</p>
+     * if the parameter is set in suffixStartSlaveCmd, the method will return an empty String.
      */
     @NonNull
     @Restricted(NoExternalUse.class)
-    public String getWorkDirParam(@Nonnull String workingDirectory){
+    public String getWorkDirParam(@NonNull String workingDirectory){
         String ret;
         if(getSuffixStartSlaveCmd().contains(WORK_DIR_PARAM)){
             //the parameter is already set on suffixStartSlaveCmd
