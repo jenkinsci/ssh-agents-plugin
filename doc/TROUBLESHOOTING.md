@@ -23,8 +23,7 @@ Make sure to reconnect the slave after changing the slaves commands.
     * On Mac https://www.gnugk.org/keepalive.html
 * You should check for hs_err_pid error files in the root fs of the agent http://www.oracle.com/technetwork/java/javase/felog-138657.html#gbwcy
 * Check the logs in the root fs of the agent
-* It is recommended to set the initial heap of the Agent to at least 512M (-Xmx512m -Xms512m), you could start with 512m and lower the value until you find a proper value to your Agents.
-* Disable energy save options that suspend, or hibernate the host
+ * Disable energy save options that suspend, or hibernate the host
 
 ### Threads stuck at CredentialsProvider.trackAll
 
