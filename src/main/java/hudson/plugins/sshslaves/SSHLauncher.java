@@ -259,13 +259,6 @@ public class SSHLauncher extends ComputerLauncher {
     private Boolean tcpNoDelay;
 
     /**
-     * JENKINS-38832
-     * JENKINS-49235
-     * Allow to enable/disable credentials tracking.
-     */
-    private Boolean trackCredentials;
-
-    /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
      * @param host       The host to connect to.
@@ -569,10 +562,6 @@ public class SSHLauncher extends ComputerLauncher {
     public Object readResolve(){
         if(tcpNoDelay == null){
             tcpNoDelay = true;
-        }
-
-        if(trackCredentials == null) {
-            trackCredentials = true;
         }
 
         if(this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0){
@@ -1471,15 +1460,16 @@ public class SSHLauncher extends ComputerLauncher {
         this.tcpNoDelay = tcpNoDelay;
     }
 
+    /**
+     * Enable/Disable the credential tracking, this tracking store information about where it is used a credential,
+     * in this case in a node. If the tracking is enabled and you launch a big number of Agents per day, activate
+     * credentials tacking could cause a performance issue see
+     * @see  <a href="https://issues.jenkins-ci.org/browse/JENKINS-49235">JENKINS-49235</a>
+     */
     public boolean getTrackCredentials() {
-        return trackCredentials != null ? trackCredentials : true;
+        String trackCredentials = System.getProperty(SSHLauncher.class.getName() + ".trackCredentials");
+        return !"false".equalsIgnoreCase(trackCredentials);
     }
-
-    @DataBoundSetter
-    public void setTrackCredentials(boolean trackCredentials) {
-        this.trackCredentials = trackCredentials;
-    }
-
 
     @Extension
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
