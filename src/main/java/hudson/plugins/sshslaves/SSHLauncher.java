@@ -973,7 +973,7 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        connection.exec("true",baos);
+        connection.exec("exit 0",baos);
         final String s;
         //TODO: Seems we need to retrieve the encoding from the connection destination
         try {
