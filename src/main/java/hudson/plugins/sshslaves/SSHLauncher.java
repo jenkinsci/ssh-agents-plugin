@@ -119,7 +119,6 @@ import static hudson.Util.*;
 import hudson.model.Computer;
 import hudson.security.AccessControlled;
 
-import javax.annotation.Nonnull;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
@@ -145,6 +144,7 @@ public class SSHLauncher extends ComputerLauncher {
     public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
     public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
     public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = DEFAULT_MAX_NUM_RETRIES * DEFAULT_RETRY_WAIT_TIME + 60;
+    public static final String WORK_DIR_PARAM = " -workDir ";
 
     /**
      * Field host
@@ -257,6 +257,12 @@ public class SSHLauncher extends ComputerLauncher {
      * Allow to enable/disable the TCP_NODELAY flag on the SSH connection.
      */
     private Boolean tcpNoDelay;
+
+    /**
+     * Set the value to add to the remoting parameter -workDir
+     * @see <a href="https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory">Remoting Work directory</a>
+     */
+    private String workDir;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -969,7 +975,7 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        connection.exec("true",baos);
+        connection.exec("exit 0",baos);
         final String s;
         //TODO: Seems we need to retrieve the encoding from the connection destination
         try {
@@ -999,7 +1005,8 @@ public class SSHLauncher extends ComputerLauncher {
                             String workingDirectory) throws IOException {
         session = connection.openSession();
         expandChannelBufferSize(session,listener);
-        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar";
+        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar" +
+                     getWorkDirParam(workingDirectory);
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
         cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
@@ -1237,13 +1244,13 @@ public class SSHLauncher extends ComputerLauncher {
         tearDownConnection(slaveComputer, listener);
     }
 
-    private synchronized void tearDownConnection(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
+    private synchronized void tearDownConnection(@NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
         if (connection != null) {
             tearDownConnectionImpl(slaveComputer, listener);
         }
     }
 
-    private void tearDownConnectionImpl(@Nonnull SlaveComputer slaveComputer, final @Nonnull TaskListener listener) {
+    private void tearDownConnectionImpl(@NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
         try {
             tearingDownConnection = true;
             boolean connectionLost = reportTransportLoss(connection, listener);
@@ -1408,10 +1415,12 @@ public class SSHLauncher extends ComputerLauncher {
         return connection;
     }
 
+    @NonNull
     public String getPrefixStartSlaveCmd() {
         return Util.fixNull(prefixStartSlaveCmd);
     }
 
+    @NonNull
     public String getSuffixStartSlaveCmd() {
         return Util.fixNull(suffixStartSlaveCmd);
     }
@@ -1469,6 +1478,37 @@ public class SSHLauncher extends ComputerLauncher {
     public boolean getTrackCredentials() {
         String trackCredentials = System.getProperty(SSHLauncher.class.getName() + ".trackCredentials");
         return !"false".equalsIgnoreCase(trackCredentials);
+    }
+
+    public String getWorkDir() {
+        return workDir;
+    }
+
+    @DataBoundSetter
+    public void setWorkDir(String workDir) {
+        this.workDir = Util.fixEmptyAndTrim(workDir);
+    }
+
+    /**
+     * @param workingDirectory The Working directory set on the configuration of the node.
+     * @return the remoting parameter to set the workDir,
+     * by default it is the same as the working directory configured on the node so "-workDir " + workingDirectory,
+     * if workDir is set, he method will return "-workDir " + getWorkDir()
+     * if the parameter is set in suffixStartSlaveCmd, the method will return an empty String.
+     */
+    @NonNull
+    @Restricted(NoExternalUse.class)
+    public String getWorkDirParam(@NonNull String workingDirectory){
+        String ret;
+        if(getSuffixStartSlaveCmd().contains(WORK_DIR_PARAM)){
+            //the parameter is already set on suffixStartSlaveCmd
+            ret = "";
+        } else if (StringUtils.isNotBlank(getWorkDir())){
+            ret = WORK_DIR_PARAM + getWorkDir();
+        } else {
+            ret = WORK_DIR_PARAM + workingDirectory;
+        }
+        return ret;
     }
 
     @Extension
