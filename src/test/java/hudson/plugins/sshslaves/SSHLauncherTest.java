@@ -27,8 +27,7 @@ import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.Fingerprint;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
-import hudson.slaves.NodeProperty;
-import hudson.tools.JDKInstaller;
+import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,12 +36,10 @@ import java.io.StringWriter;
 import java.util.Collections;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
 import hudson.model.Computer;
 import hudson.model.FreeStyleProject;
@@ -63,6 +60,7 @@ import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import static hudson.plugins.sshslaves.SSHLauncher.WORK_DIR_PARAM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -72,7 +70,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.ClassRule;
 import org.jvnet.hudson.test.BuildWatcher;
-import org.jvnet.hudson.test.Issue;
 
 public class SSHLauncherTest {
 
@@ -160,7 +157,7 @@ public class SSHLauncherTest {
 
   private void checkRoundTrip(String host) throws Exception {
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-                Collections.<Credentials>singletonList(
+                Collections.singletonList(
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
                 )
         );
@@ -168,7 +165,7 @@ public class SSHLauncherTest {
         assertEquals(host.trim(), launcher.getHost());
         DumbSlave slave = new DumbSlave("slave", "dummy",
                 j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-                launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+                launcher, RetentionStrategy.NOOP, Collections.emptyList());
         j.jenkins.addNode(slave);
 
         HtmlPage p = j.createWebClient().getPage(slave, "configure");
@@ -189,10 +186,10 @@ public class SSHLauncherTest {
     @Test
     public void fillCredentials() {
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(
-                new Domain("test", null, Collections.<DomainSpecification>singletonList(
+                new Domain("test", null, Collections.singletonList(
                         new HostnamePortSpecification(null, null)
                 )),
-                Collections.<Credentials>singletonList(
+                Collections.singletonList(
                         new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "john", null, null, null)
                 )
         );
@@ -216,14 +213,14 @@ public class SSHLauncherTest {
     public void trackCredentialsWithUsernameAndPassword() throws Exception {
         UsernamePasswordCredentialsImpl credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass");
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-          Collections.<Credentials>singletonList(
+          Collections.singletonList(
             credentials
           )
         );
         SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
         DumbSlave slave = new DumbSlave("slave", "dummy",
           j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-          launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+          launcher, RetentionStrategy.NOOP, Collections.emptyList());
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -239,14 +236,14 @@ public class SSHLauncherTest {
     public void trackCredentialsWithUsernameAndPrivateKey() throws Exception {
         BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-          Collections.<Credentials>singletonList(
+          Collections.singletonList(
             credentials
           )
         );
         SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
         DumbSlave slave = new DumbSlave("slave", "dummy",
           j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-          launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+          launcher, RetentionStrategy.NOOP, Collections.emptyList());
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -265,7 +262,7 @@ public class SSHLauncherTest {
                 "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
                 // Old constructor passes null sshHostKeyVerificationStrategy:
                 new SSHLauncher(c.ipBound(22), c.port(22), "test", "test", "", ""),
-                RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
+                RetentionStrategy.INSTANCE, Collections.emptyList());
         j.jenkins.addNode(slave);
         Computer computer = slave.toComputer();
         try {
@@ -276,5 +273,34 @@ public class SSHLauncherTest {
         FreeStyleProject p = j.createFreeStyleProject();
         p.setAssignedNode(slave);
         j.buildAndAssertSuccess(p);
+    }
+
+    @Issue("JENKINS-44111")
+    @Test
+    public void workDirTest() throws Exception {
+        String rootFS = "/home/user";
+        String anotherWorkDir = "/another/workdir";
+
+        SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
+                                               "javaPath", "prefix" ,"suffix",
+                                               60,10, 15, new NonVerifyingKeyVerificationStrategy());
+        //use rootFS
+        Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + rootFS);
+
+        launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
+                                   "javaPath", "prefix" , "suffix" + WORK_DIR_PARAM + anotherWorkDir,
+                                   60, 10, 15, new NonVerifyingKeyVerificationStrategy());
+        //if worDir is in suffix return ""
+        Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
+        //if worDir is in suffix return "", even do you set workDir in configuration
+        launcher.setWorkDir(anotherWorkDir);
+        Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
+
+        launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
+                                   "javaPath", "prefix" , "suffix",
+                                   60,10, 15, new NonVerifyingKeyVerificationStrategy());
+        //user the workDir set in configuration
+        launcher.setWorkDir(anotherWorkDir);
+        Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir);
     }
 }

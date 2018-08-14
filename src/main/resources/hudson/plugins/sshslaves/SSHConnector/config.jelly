@@ -44,5 +44,9 @@
           <f:checkbox name="tcpNoDelay" default="true" />
       </f:entry>
 
+      <f:entry title="${%Remoting Work directory}" field="workDir">
+          <f:textbox name="workDir" />
+      </f:entry>
+
   </f:advanced>
 </j:jelly>
