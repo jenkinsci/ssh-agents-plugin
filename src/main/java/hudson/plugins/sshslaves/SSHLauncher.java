@@ -256,7 +256,7 @@ public class SSHLauncher extends ComputerLauncher {
     private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     /**
-     * Allow to anable/disable the TCP_NODELAY flag on the SSH connection.
+     * Allow to enable/disable the TCP_NODELAY flag on the SSH connection.
      */
     private Boolean tcpNoDelay;
 
@@ -829,6 +829,8 @@ public class SSHLauncher extends ComputerLauncher {
                         listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
                     }
 
+                    listener.getLogger().println(logConfiguration());
+
                     openConnection(listener, computer);
 
                     verifyNoHeaderJunk(listener);
@@ -871,7 +873,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         final Node node = computer.getNode();
         final String nodeName = node != null ? node.getNodeName() : "unknown";
-        if(node != null) {
+        if(node != null && getTrackCredentials()) {
             CredentialsProvider.track(node, getCredentials());
         }
         try {
@@ -1417,12 +1419,12 @@ public class SSHLauncher extends ComputerLauncher {
 
     @NonNull
     public String getPrefixStartSlaveCmd() {
-        return prefixStartSlaveCmd == null ? "" : prefixStartSlaveCmd;
+        return Util.fixNull(prefixStartSlaveCmd);
     }
 
     @NonNull
     public String getSuffixStartSlaveCmd() {
-        return suffixStartSlaveCmd == null ? "" : suffixStartSlaveCmd;
+        return Util.fixNull(suffixStartSlaveCmd);
     }
 
     /**
@@ -1467,6 +1469,17 @@ public class SSHLauncher extends ComputerLauncher {
     @DataBoundSetter
     public void setTcpNoDelay(boolean tcpNoDelay) {
         this.tcpNoDelay = tcpNoDelay;
+    }
+
+    /**
+     * Enable/Disable the credential tracking, this tracking store information about where it is used a credential,
+     * in this case in a node. If the tracking is enabled and you launch a big number of Agents per day, activate
+     * credentials tacking could cause a performance issue see
+     * @see  <a href="https://issues.jenkins-ci.org/browse/JENKINS-49235">JENKINS-49235</a>
+     */
+    public boolean getTrackCredentials() {
+        String trackCredentials = System.getProperty(SSHLauncher.class.getName() + ".trackCredentials");
+        return !"false".equalsIgnoreCase(trackCredentials);
     }
 
     public String getWorkDir() {
@@ -1645,4 +1658,24 @@ public class SSHLauncher extends ComputerLauncher {
 //            }
 //        };
 //    }
+
+    public String logConfiguration() {
+        final StringBuilder sb = new StringBuilder("SSHLauncher{");
+        sb.append("host='").append(getHost()).append('\'');
+        sb.append(", port=").append(getPort());
+        sb.append(", credentialsId='").append(Util.fixNull(credentialsId)).append('\'');
+        sb.append(", jvmOptions='").append(getJvmOptions()).append('\'');
+        sb.append(", javaPath='").append(Util.fixNull(javaPath)).append('\'');
+        sb.append(", prefixStartSlaveCmd='").append(getPrefixStartSlaveCmd()).append('\'');
+        sb.append(", suffixStartSlaveCmd='").append(getSuffixStartSlaveCmd()).append('\'');
+        sb.append(", launchTimeoutSeconds=").append(getLaunchTimeoutSeconds());
+        sb.append(", maxNumRetries=").append(getMaxNumRetries());
+        sb.append(", retryWaitTime=").append(getRetryWaitTime());
+        sb.append(", sshHostKeyVerificationStrategy=").append(sshHostKeyVerificationStrategy != null ?
+                                                              sshHostKeyVerificationStrategy.getClass().getName() : "None");
+        sb.append(", tcpNoDelay=").append(getTcpNoDelay());
+        sb.append(", trackCredentials=").append(getTrackCredentials());
+        sb.append('}');
+        return sb.toString();
+    }
 }
