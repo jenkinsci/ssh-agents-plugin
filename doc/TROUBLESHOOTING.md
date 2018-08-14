@@ -42,7 +42,7 @@ locked hudson.plugins.sshslaves.SSHLauncher@57dc4a8a
 ...
 ```
 
-You may want to disable the credentials tracking by setting the property `-Dhudson.plugins.sshslaves.SSHLauncher.trackCredentials=true`
+You may want to disable the credentials tracking by setting the property `-Dhudson.plugins.sshslaves.SSHLauncher.trackCredentials=false`
 in the Jenkins properties. it can be set in runtime by executing the following code in the Jenkins script console but the change is not permanent.
 
 ```
