@@ -123,7 +123,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 /**
- * A computer launcher that tries to start a linux slave by opening an SSH connection and trying to find java.
+ * A computer launcher that tries to start a linux agent by opening an SSH connection and trying to find java.
  */
 public class SSHLauncher extends ComputerLauncher {
 
@@ -144,6 +144,8 @@ public class SSHLauncher extends ComputerLauncher {
     public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
     public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
     public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = DEFAULT_MAX_NUM_RETRIES * DEFAULT_RETRY_WAIT_TIME + 60;
+    public static final String AGENT_JAR = "remoting.jar";
+    public static final String SLASH_AGENT_JAR = "/" + AGENT_JAR;
     public static final String WORK_DIR_PARAM = " -workDir ";
 
     /**
@@ -198,7 +200,7 @@ public class SSHLauncher extends ComputerLauncher {
     public final String javaPath;
 
     /**
-     * SSH connection to the slave.
+     * SSH connection to the agent.
      */
     private transient volatile Connection connection;
 
@@ -209,7 +211,7 @@ public class SSHLauncher extends ComputerLauncher {
     private transient volatile boolean tearingDownConnection;
 
     /**
-     * The session inside {@link #connection} that controls the slave process.
+     * The session inside {@link #connection} that controls the agent process.
      */
     private transient Session session;
 
@@ -272,8 +274,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @param credentialsId The credentials id to connect as.
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected.
-     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param prefixStartSlaveCmd This will prefix the start agent command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start agent command.
      * @param launchTimeoutSeconds Launch timeout in seconds
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
@@ -294,8 +296,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @param credentialsId The credentials id to connect as.
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected.
-     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param prefixStartSlaveCmd This will prefix the start agent command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start agent command.
      * @param launchTimeoutSeconds Launch timeout in seconds
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
@@ -355,8 +357,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @param credentials The credentials to connect as.
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected.
-     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param prefixStartSlaveCmd This will prefix the start agent command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start agent command.
      * @param launchTimeoutSeconds Launch timeout in seconds
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
@@ -406,8 +408,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @param privatekey The ssh privatekey to connect with.
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected.
-     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param prefixStartSlaveCmd This will prefix the start agent command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start agent command.
      * @deprecated use the {@link StandardUsernameCredentials} based version
      */
     @Deprecated
@@ -429,8 +431,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected.
      * @param jdkInstaller not used.
-     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param prefixStartSlaveCmd This will prefix the start agent command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start agent command.
      * @deprecated use the {@link StandardUsernameCredentials} based version
      */
     @Deprecated
@@ -463,8 +465,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected.
      * @param jdkInstaller not used.
-     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param prefixStartSlaveCmd This will prefix the start agent command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start agent command.
      *                            @deprecated
      */
     @Deprecated
@@ -484,8 +486,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected .
      * @param jdkInstaller not used.
-     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param prefixStartSlaveCmd This will prefix the start agent command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start agent command.
      * @param launchTimeoutSeconds Launch timeout in seconds
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
@@ -525,8 +527,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @param jvmOptions Options passed to the java vm.
      * @param javaPath   Path to the host jdk installation. If <code>null</code> the jdk will be auto detected.
      * @param jdkInstaller not used.
-     * @param prefixStartSlaveCmd This will prefix the start slave command. For instance if you want to execute the command with a different shell.
-     * @param suffixStartSlaveCmd This will suffix the start slave command.
+     * @param prefixStartSlaveCmd This will prefix the start agent command. For instance if you want to execute the command with a different shell.
+     * @param suffixStartSlaveCmd This will suffix the start agent command.
      * @param launchTimeoutSeconds Launch timeout in seconds
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
@@ -765,7 +767,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Gets the JVM Options used to launch the slave JVM.
+     * Gets the JVM Options used to launch the agent JVM.
      * @return
      */
     public String getJvmOptions() {
@@ -796,11 +798,11 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     @CheckForNull
-    private static String getWorkingDirectory(@CheckForNull Slave slave) {
-        if (slave == null) {
+    private static String getWorkingDirectory(@CheckForNull Slave agent) {
+        if (agent == null) {
             return null;
         }
-        String workingDirectory = slave.getRemoteFS();
+        String workingDirectory = agent.getRemoteFS();
         while (workingDirectory.endsWith("/")) {
             workingDirectory = workingDirectory.substring(0, workingDirectory.length() - 1);
         }
@@ -847,9 +849,9 @@ public class SSHLauncher extends ComputerLauncher {
                         java = javaVersionChecker.resolveJava();
                     }
 
-                    copySlaveJar(listener, workingDirectory);
+                    copyAgentJar(listener, workingDirectory);
 
-                    startSlave(computer, listener, java, workingDirectory);
+                    startAgent(computer, listener, java, workingDirectory);
 
                     PluginImpl.register(connection);
                     rval = Boolean.TRUE;
@@ -990,7 +992,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Starts the slave process.
+     * Starts the agent process.
      *
      * @param computer         The computer.
      * @param listener         The listener.
@@ -999,17 +1001,17 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @throws IOException If something goes wrong.
      */
-    private void startSlave(SlaveComputer computer, final TaskListener listener, String java,
+    private void startAgent(SlaveComputer computer, final TaskListener listener, String java,
                             String workingDirectory) throws IOException {
         session = connection.openSession();
         expandChannelBufferSize(session,listener);
-        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar slave.jar" +
+        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
                      getWorkDirParam(workingDirectory);
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
         cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
 
-        listener.getLogger().println(Messages.SSHLauncher_StartingSlaveProcess(getTimestamp(), cmd));
+        listener.getLogger().println(Messages.SSHLauncher_StartingAgentProcess(getTimestamp(), cmd));
         session.execCommand(cmd);
 
         session.pipeStderr(new DelegateNoCloseOutputStream(listener.getLogger()));
@@ -1032,7 +1034,7 @@ public class SSHLauncher extends ComputerLauncher {
 
     private void expandChannelBufferSize(Session session, TaskListener listener) {
             // see hudson.remoting.Channel.PIPE_WINDOW_SIZE for the discussion of why 1MB is in the right ball park
-            // but this particular session is where all the master/slave communication will happen, so
+            // but this particular session is where all the master/agent communication will happen, so
             // it's worth using a bigger buffer to really better utilize bandwidth even when the latency is even larger
             // (and since we are draining this pipe very rapidly, it's unlikely that we'll actually accumulate this much data)
             int sz = 4;
@@ -1041,15 +1043,15 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Method copies the slave jar to the remote system.
+     * Method copies the agent jar to the remote system.
      *
      * @param listener         The listener.
-     * @param workingDirectory The directory into whihc the slave jar will be copied.
+     * @param workingDirectory The directory into whihc the agent jar will be copied.
      *
      * @throws IOException If something goes wrong.
      */
-    private void copySlaveJar(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
-        String fileName = workingDirectory + "/slave.jar";
+    private void copyAgentJar(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
+        String fileName = workingDirectory + SLASH_AGENT_JAR;
 
         listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
         SFTPClient sftpClient = null;
@@ -1067,38 +1069,38 @@ public class SSHLauncher extends ComputerLauncher {
                 }
 
                 try {
-                    // try to delete the file in case the slave we are copying is shorter than the slave
+                    // try to delete the file in case the agent we are copying is shorter than the agent
                     // that is already there
                     sftpClient.rm(fileName);
                 } catch (IOException e) {
                     // the file did not exist... so no need to delete it!
                 }
 
-                listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
+                listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
 
                 try {
-                    byte[] slaveJar = new Slave.JnlpJar("slave.jar").readFully();
+                    byte[] agentJar = new Slave.JnlpJar(AGENT_JAR).readFully();
                     OutputStream os = sftpClient.writeToFile(fileName);
                     try {
-                        os.write(slaveJar);
+                        os.write(agentJar);
                     } finally {
                         os.close();
                     }
-                    listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), slaveJar.length));
+                    listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
                 } catch (Error error) {
                     throw error;  
                 } catch (Throwable e) {
-                    throw new IOException(Messages.SSHLauncher_ErrorCopyingSlaveJarTo(fileName), e);
+                    throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarTo(fileName), e);
                 }
             } catch (Error error) {
                 throw error;
             } catch (Throwable e) {
-                throw new IOException(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
+                throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarInto(workingDirectory), e);
             }
         } catch (IOException e) {
             if (sftpClient == null) {
                 e.printStackTrace(listener.error(Messages.SSHLauncher_StartingSCPClient(getTimestamp())));
-                // lets try to recover if the slave doesn't have an SFTP service
+                // lets try to recover if the agent doesn't have an SFTP service
                 copySlaveJarUsingSCP(listener, workingDirectory);
             } else {
                 throw e;
@@ -1110,10 +1112,10 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
     /**
-     * Method copies the slave jar to the remote system using scp.
+     * Method copies the agent jar to the remote system using scp.
      *
      * @param listener         The listener.
-     * @param workingDirectory The directory into which the slave jar will be copied.
+     * @param workingDirectory The directory into which the agent jar will be copied.
      *
      * @throws IOException If something goes wrong.
      * @throws InterruptedException If something goes wrong.
@@ -1131,14 +1133,14 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             }
 
-            // delete the slave jar as we do with SFTP
-            connection.exec("rm " + workingDirectory + "/slave.jar", new NullStream());
+            // delete the agent jar as we do with SFTP
+            connection.exec("rm " + workingDirectory + SLASH_AGENT_JAR, new NullStream());
 
-            // SCP it to the slave. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
-            listener.getLogger().println(Messages.SSHLauncher_CopyingSlaveJar(getTimestamp()));
-            scp.put(new Slave.JnlpJar("slave.jar").readFully(), "slave.jar", workingDirectory, "0644");
+            // SCP it to the agent. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
+            listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
+            scp.put(new Slave.JnlpJar(AGENT_JAR).readFully(), AGENT_JAR, workingDirectory, "0644");
         } catch (IOException e) {
-            throw new IOException(Messages.SSHLauncher_ErrorCopyingSlaveJarInto(workingDirectory), e);
+            throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarInto(workingDirectory), e);
         }
     }
 
@@ -1254,7 +1256,7 @@ public class SSHLauncher extends ComputerLauncher {
             boolean connectionLost = reportTransportLoss(connection, listener);
             if (session!=null) {
                 // give the process 3 seconds to write out its dying message before we cut the loss
-                // and give up on this process. if the slave process had JVM crash, OOME, or any other
+                // and give up on this process. if the agent process had JVM crash, OOME, or any other
                 // critical problem, this will allow us to capture that.
                 // exit code is also an useful info to figure out why the process has died.
                 try {
@@ -1270,7 +1272,7 @@ public class SSHLauncher extends ComputerLauncher {
             Slave n = slaveComputer.getNode();
             if (n != null && !connectionLost) {
                 String workingDirectory = getWorkingDirectory(n);
-                final String fileName = workingDirectory + "/slave.jar";
+                final String fileName = workingDirectory + SLASH_AGENT_JAR;
                 Future<?> tidyUp = Computer.threadPoolForRemoting.submit(new Runnable() {
                     public void run() {
                         // this would fail if the connection is already lost, so we want to check that.
