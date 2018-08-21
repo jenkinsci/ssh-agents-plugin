@@ -11,6 +11,7 @@
 * [JENKINS-47586](https://issues.jenkins-ci.org/browse/JENKINS-47586) Removes JDK installer
 * [JENKINS-37152](https://issues.jenkins-ci.org/browse/JENKINS-37152) Support Win32-OpenSSH
 * [JENKINS-49235](https://issues.jenkins-ci.org/browse/JENKINS-49235) Allow disable credentials tracking
+* [JENKINS-53174](https://issues.jenkins-ci.org/browse/JENKINS-53174) Improve documentation
 
 #### Breaking changes
 
