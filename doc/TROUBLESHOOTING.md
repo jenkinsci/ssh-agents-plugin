@@ -25,6 +25,7 @@ Make sure to reconnect the agent after changing the agents commands.
  * Disable energy save options that suspend, or hibernate the host
 * If you experience Out of Memory issues on the remoting process, try to fix the memory of the remoting porcess to at least 128MB (JVM options -Xms<MEM_SYZE> and -Xmx<MEM_SYZE>).
 * Avoid to use slow network filesystems (<100MB/s) for the agent work directory, this impacts on the preformance.
+* If you connect several jenkins nodes to the same host, you should use different user and work directory for each one, to avoid concurrence issues.
 
 ### Force disconnection
 
