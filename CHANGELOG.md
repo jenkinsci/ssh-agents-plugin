@@ -15,73 +15,73 @@
 
 #### Breaking changes
 
-* Requires Jekins 2.73.3
-* Requires JDK/JRE 8 installed on agents
-* The slave.jar file copied on the agent work folder change name to remoting.jar
+* Requires [Jekins 2.73.3](https://jenkins.io/changelog-stable/#v2.73.3)
+* Requires **JDK/JRE 8 installed** on agents
+* The *slave.jar* file copied on the agent work folder change name to *remoting.jar*
 
 ### 1.26 (Feb 26, 2018)
-* JENKINS-49607 - Report the required Java version when the plugin cannot find Java on the agent
-* JENKINS-43786 - Adapt the adminisitrative monitor to new design in Jenkins 2.103+
-* PR #82 - Do not lookup for credentials in SSHLauncher constructor so that the launcher can be initialized before the Credentials store is fully loaded (for Configuration-as-Code plugin)
+* [JENKINS-49607](https://issues.jenkins-ci.org/browse/JENKINS-49607) - Report the required Java version when the plugin cannot find Java on the agent
+* [JENKINS-43786](https://issues.jenkins-ci.org/browse/JENKINS-43786) - Adapt the adminisitrative monitor to new design in Jenkins 2.103+
+* [PR #82](https://github.com/jenkinsci/ssh-slaves-plugin/pull/82) - Do not lookup for credentials in SSHLauncher constructor so that the launcher can be initialized before the Credentials store is fully loaded (for Configuration-as-Code plugin)
 
 ### 1.25.1 (Jan 26, 2018)
-* JENKINS-49032 - Revert usage of "exec" command so that SSH Slaves can connect to Windows agents (regression in 1.25)
+* [JENKINS-49032](https://issues.jenkins-ci.org/browse/JENKINS-49032) - Revert usage of "exec" command so that SSH Slaves can connect to Windows agents (regression in 1.25)
 
 ### 1.25 (Jan 05, 2018)
-* JENKINS-48616 - Pass connection timeouts to socket connection logic if launch timeout is defined in agent settings
+* [JENKINS-48616](https://issues.jenkins-ci.org/browse/JENKINS-48616) - Pass connection timeouts to socket connection logic if launch timeout is defined in agent settings
 * Replace sh with java rather than launching a new process (reverted in 1.25.1)
 
 ### 1.24 (Dec 18, 2017)
-* JENKINS-48613 - Extend the original fix of JENKINS-19465 to prevent the afterDisconnect() handler thread explosion when the SSH connection is locked by the read operation
-* JENKINS-48538 - Prevent NPE in SSHLauncher#isRecoverable() when the exception has empty message
-* JENKINS-48260 - Upgrade the Parent POM to 3.0 and fix Java compatibility tests
+* [JENKINS-48613](https://issues.jenkins-ci.org/browse/JENKINS-48613) - Extend the original fix of JENKINS-19465 to prevent the afterDisconnect() handler thread explosion when the SSH connection is locked by the read operation
+* [JENKINS-48538](https://issues.jenkins-ci.org/browse/JENKINS-48538) - Prevent NPE in SSHLauncher#isRecoverable() when the exception has empty message
+* [JENKINS-48260](https://issues.jenkins-ci.org/browse/JENKINS-48260) - Upgrade the Parent POM to 3.0 and fix Java compatibility tests
 
 ### 1.23 (Dec 12, 2017)
-* JENKINS-44893 - Prevent the "java.lang.ClassNotFoundException: hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport" error in logs
-* JENKINS-19465 - Prevent agent hanging and piling up of afterDisconnect() handler threads when the agent gets disconnected before the launch completion
-* PR #73 - Add explicit MIT license definition to the pom.xml file
+* [JENKINS-44893](https://issues.jenkins-ci.org/browse/JENKINS-44893) - Prevent the "java.lang.ClassNotFoundException: hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport" error in logs
+* [JENKINS-19465](https://issues.jenkins-ci.org/browse/JENKINS-19465) - Prevent agent hanging and piling up of afterDisconnect() handler threads when the agent gets disconnected before the launch completion
+* [PR #73](https://github.com/jenkinsci/ssh-slaves-plugin/pull/73) - Add explicit MIT license definition to the pom.xml file
 
 ### 1.22 (Oct 16, 2017)
-* JENKINS-47448 - Workaround the issue with default JDKInstaller in the plugin by installing Java jdk-8u144
-* PR #71 - Add Chinese translation
+* [JENKINS-47448](https://issues.jenkins-ci.org/browse/JENKINS-47448) - Workaround the issue with default JDKInstaller in the plugin by installing Java jdk-8u144
+* [PR #71](https://github.com/jenkinsci/ssh-slaves-plugin/pull/71) - Add Chinese translation
 
 ### 1.21 (Aug 18, 2017)
-* JENKINS-29412 - Minimal required Java Level is determined dynamically. Java 8 is required on agents when Jenkins version is 2.54+
-* JENKINS-38832 - Add support for credential usage tracking
-* PR #58 - Remove obsolete reflection code in SSHLauncher
-* PR #53, PR #56, PR #57 - Cleanup typos in the documentation and logs
-* PR #64 - The plugin codebase is now explicitly licensed with MIT License 
+* [JENKINS-29412](https://issues.jenkins-ci.org/browse/JENKINS-29412) - Minimal required Java Level is determined dynamically. Java 8 is required on agents when Jenkins version is 2.54+
+* [JENKINS-38832](https://issues.jenkins-ci.org/browse/JENKINS-38832) - Add support for credential usage tracking
+* [PR #58](https://github.com/jenkinsci/ssh-slaves-plugin/pull/58) - Remove obsolete reflection code in SSHLauncher
+* [PR #53](https://github.com/jenkinsci/ssh-slaves-plugin/pull/53), [PR #56](https://github.com/jenkinsci/ssh-slaves-plugin/pull/56), [PR #57](https://github.com/jenkinsci/ssh-slaves-plugin/pull/57) - Cleanup typos in the documentation and logs
+* [PR #64](https://github.com/jenkinsci/ssh-slaves-plugin/pull/64) - The plugin codebase is now explicitly licensed with MIT License 
 
 ### 1.20 (Jun 13, 2017)
-* JENKINS-44832 IllegalArgumentException under some conditions after update to 1.18 (or 1.19).
+* [JENKINS-44832](https://issues.jenkins-ci.org/browse/JENKINS-44832) IllegalArgumentException under some conditions after update to 1.18 (or 1.19).
 
 ### 1.19 (Jun 12, 2017)
-* JENKINS-44830 NullPointerException after upgrading to 1.18 with slaves configured in 1.14- without a host key verification strategy set since then.
+* [JENKINS-44830](https://issues.jenkins-ci.org/browse/JENKINS-44830) NullPointerException after upgrading to 1.18 with slaves configured in 1.14- without a host key verification strategy set since then.
 
 ### 1.18 (Jun 12, 2017)
-* JENKINS-42959 Specify preferred host keys during connect.
+* [JENKINS-42959](https://issues.jenkins-ci.org/browse/JENKINS-42959) Specify preferred host keys during connect.
 
 ### 1.17 (Apr 12, 2017)
 * issue@43481 Updated JRE version which gets automatically installed to 8u121, allowing this mode to work with Jenkins 2.54+ which no longer runs on Java 7.
 
 ### 1.16 (Mar 23, 2017)
-* JENKINS-42969 New Manually trusted key Verification Strategy option introduced in 1.15 did not work in Jenkins 2.30+.
+* [JENKINS-42969](https://issues.jenkins-ci.org/browse/JENKINS-42969) New Manually trusted key Verification Strategy option introduced in 1.15 did not work in Jenkins 2.30+.
 
 ### 1.15 (Mar 20, 2017)
-* SECURITY-161 (advisory) Host key verification was not performed.
-* JENKINS-42022 Remove 'unix machines' from description.
+* [SECURITY-161](https://issues.jenkins-ci.org/browse/SECURITY-161) (advisory) Host key verification was not performed.
+* [JENKINS-42022](https://issues.jenkins-ci.org/browse/JENKINS-42022) Remove 'unix machines' from description.
 
 ### 1.14 (Mar 16, 2017)
-* PR #44 Get rid of IOException2.
-* JENKINS-42022 Remove 'unix machines' from description.
+* [PR #44](https://github.com/jenkinsci/ssh-slaves-plugin/pull/44) Get rid of IOException2.
+* [JENKINS-42022](https://issues.jenkins-ci.org/browse/JENKINS-42022) Remove 'unix machines' from description.
 
 ### 1.13 (Jan 28, 2017)
-* PR #41 Do not swallow IOException in case it is not recoverable.
-* JENKINS-40001 Added plugin's description.
+* [PR #41](https://github.com/jenkinsci/ssh-slaves-plugin/pull/41) Do not swallow IOException in case it is not recoverable.
+* [JENKINS-40001](https://issues.jenkins-ci.org/browse/JENKINS-40001) Added plugin's description.
 
 ### 1.12 (Dec 01, 2016)
-* JENKINS-40092 slave.jar copy via SCP (fallback when SFTP is unavailable or broken) failed starting with Jenkins 2.33.
-* JENKINS-35522 Improved credentials selection.
+* [JENKINS-40092](https://issues.jenkins-ci.org/browse/JENKINS-40092) slave.jar copy via SCP (fallback when SFTP is unavailable or broken) failed starting with Jenkins 2.33.
+* [JENKINS-35522](https://issues.jenkins-ci.org/browse/JENKINS-35522) Improved credentials selection.
 
 ### 1.11 (Apr 27, 2016)
 * Upgrade to new parent pom
@@ -90,25 +90,25 @@
 
 ### 1.10 (Aug 06, 2015)
 * Update JDK version for auto installer
-* Timeout the afterDisconnect cleanup thread to prevent deadlock JENKINS-23560
+* Timeout the afterDisconnect cleanup thread to prevent deadlock [JENKINS-23560](https://issues.jenkins-ci.org/browse/JENKINS-23560)
 
 ### 1.9 (Nov 04, 2014)
 * Diagnosability improvements in case of a connection loss. See Remoting issue.
 
 ### 1.8 (Oct 07, 2014)
-* SECURITY-158 fix.
+* [SECURITY-158](https://issues.jenkins-ci.org/browse/SECURITY-158) fix.
 * German localization updated.
 
 ### 1.7.1 (Sep 29, 2014)
 * Fix NPE when trying to launch non-reconfigured slaves after upgrade to 1.7 version of plugin.
 
 ### 1.7 (Sep 26, 2014)
-* Protect against some cases where there is no private key resulting in an NPE (possible fix for JENKINS-20332)
+* Protect against some cases where there is no private key resulting in an NPE (possible fix for [JENKINS-20332](https://issues.jenkins-ci.org/browse/JENKINS-20332))
 * Updated help text
 * Localization cleanup
 * Improved error diagnostics
 * Allow connection retries (Pull Request #19)
-* Enforce timeout for connection cleanup (possible fix for JENKINS-14332)
+* Enforce timeout for connection cleanup (possible fix for [JENKINS-14332](https://issues.jenkins-ci.org/browse/JENKINS-14332))
 
 ### 1.6 (Feb 5, 2014)
 * Add initial connection timeout to prevent stalled connections from preventing slave connection.
@@ -117,10 +117,10 @@
 
 ### 1.5 (Oct 16, 2013)
 * Fix to how credentials are sourced for the drop-down list
-* Use credentials plugin's <c:select/> so that when credentials plugin adds the ability for in-place credential addition this can be picked up without modifying ssh-slaves
+* Use credentials plugin's *c:select/* so that when credentials plugin adds the ability for in-place credential addition this can be picked up without modifying ssh-slaves
 
 ### 1.4 (Oct 8, 2013)
-* Fixed issue with Slave log on Jenkins 1.521+ (JENKINS-19758)
+* Fixed issue with Slave log on Jenkins 1.521+ ([JENKINS-19758](https://issues.jenkins-ci.org/browse/JENKINS-19758))
 
 ### 1.3 (Oct 4, 2013)
 * Reworked the upgrading of credentials logic. Should be much improved and result in a true minimal initial set
@@ -150,21 +150,21 @@
 
 ### 0.23 (Mar 21, 2013)
 * Rely on SSH Credentials Plugin for unified credential handling across different places that use SSH
-* Performance improvement on bulk data transfer when used in a large latency/high bandwidth network (JENKINS-7813)
+* Performance improvement on bulk data transfer when used in a large latency/high bandwidth network ([JENKINS-7813](https://issues.jenkins-ci.org/browse/JENKINS-7813))
 
 ### 0.22 (Dec 07, 2012)
 * Find slave.jar even when running from hudson-dev:run.
 * Allow environment variables to be declared in the java path, that are then expanded according to environment variables declared on the node or globally.
 
 ### 0.21 (Oct 26, 2011)
-* Slave is slow copying maven artifacts to master (JENKINS-3922).
+* Slave is slow copying maven artifacts to master ([JENKINS-3922](https://issues.jenkins-ci.org/browse/JENKINS-3922)).
 
 ### 0.20 (Sep 28, 2011)
-* JDK installation on SSH slaves with newer Jenkins was broken (JENKINS-10641)
+* JDK installation on SSH slaves with newer Jenkins was broken ([JENKINS-10641](https://issues.jenkins-ci.org/browse/JENKINS-10641))
 
 ### 0.19 (Aug 25, 2011)
 * Fixed possible NPE during error recovery
-* Improved the error message when the server doesn't support the configured authentication mode (JENKINS-6714)
+* Improved the error message when the server doesn't support the configured authentication mode ([JENKINS-6714](https://issues.jenkins-ci.org/browse/JENKINS-6714))
 
 ### 0.18 (Jul 06, 2011)
 * Ability to programmatically control the JDK to be installed
@@ -179,22 +179,22 @@
 * New field to be able to configure the java command to use to start the slave
 
 ### 0.14 (Nov 2, 2010)
-* Delete file via ssh if SFTP is not available (JENKINS-7006)
+* Delete file via ssh if SFTP is not available ([JENKINS-7006](https://issues.jenkins-ci.org/browse/JENKINS-7006))
 
 ### 0.13 (Aug 13, 2010)
 * Added Japanese localization.
 * Fixed deprecated api.
 
 ### 0.12 (June 1, 2010)
-* Avoid "password argument is null" error (JENKINS-6620)
-* Version check of JDKs was broken in locales that don't use '.' as the floating point separator (JENKINS-6441)
-* If SFTP is not available on the slave, use SCP (JENKINS-6239)
-* Hudson fails to detect JVM versions when loading older data (JENKINS-4856)
+* Avoid "password argument is null" error ([JENKINS-6620](https://issues.jenkins-ci.org/browse/JENKINS-6620))
+* Version check of JDKs was broken in locales that don't use '.' as the floating point separator ([JENKINS-6441](https://issues.jenkins-ci.org/browse/JENKINS-6441))
+* If SFTP is not available on the slave, use SCP ([JENKINS-6239](https://issues.jenkins-ci.org/browse/JENKINS-6239))
+* Hudson fails to detect JVM versions when loading older data ([JENKINS-4856](https://issues.jenkins-ci.org/browse/JENKINS-4856))
 
 ### 0.10 (May 2, 2010)
-* Launcher was storing password in plaintext (JENKINS-5363)
-* Check node properties for JAVA_HOME and JDK tool path when locating java (JENKINS-5412)
-* Support for openjdk 7 (JENKINS-6005)
+* Launcher was storing password in plaintext ([JENKINS-5363](https://issues.jenkins-ci.org/browse/JENKINS-5363))
+* Check node properties for JAVA_HOME and JDK tool path when locating java ([JENKINS-5412](https://issues.jenkins-ci.org/browse/JENKINS-5412))
+* Support for openjdk 7 ([JENKINS-6005](https://issues.jenkins-ci.org/browse/JENKINS-6005))
 
 ### 0.9 (December 9, 2009)
 * JDK auto installation works on Windows+MKS environment (report)
