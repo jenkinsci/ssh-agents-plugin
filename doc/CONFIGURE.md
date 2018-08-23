@@ -1,37 +1,37 @@
 # SSH Slaves plugin
-This plugin allows you to manage agent running on \*nix machines over SSH. It adds a new type of agent launch method.
+This plugin allows you to manage an agent running on \*nix machines over SSH. It adds a new type of agent launch method.
 This launch method will
 
 * Open an SSH connection to the specified host as the specified username.
-* Checks the default version of java for that user.
-* Once it has a suitable version of java, copies the latest remoting.jar via SFTP (falling back to scp if SFTP is not available)
-* Starts the remoting process.
+* Check the default version of java for that user.
+* Copy the latest remoting.jar via SFTP (falling back to scp if SFTP is not available)
+* Start the remoting process.
 
 # Prerequisites
 Before you start to use the **SSH Slaves Plugin** with your agents, you need to prepare your agents to run the remoting process.
-this means that **you have to install a JDK/JRE 8 on your agent** in order to run the *remoting.jar* process.
+This means that **you have to install a JDK/JRE 8 on your agent** in order to run the *remoting.jar* process.
 
 The agent should have **enough memory** to run the remoting process and the builds. 
 
 **The agent needs to be reachable from the master**,
-You have to be ensure that your Jenkins instance can connect through SSH port to your agent; you can check it from command line.
+You have to be ensure that your Jenkins instance can connect through SSH port to your agent; you can check it from the command line.
 You will have to supply an account that can log in on the target machine. No root privileges are required.
 
 Finally the agent should have **permissions to read and write on the work directory**, and **enough disk space** to store *remoting.jar* (~1MB),
-logs (~10MB should be enough), and your build workspaces (it depends of your builds, probably a few GB).
+logs (~10MB should be enough), and your build workspaces (it depends on your builds, probably a few GB).
 
 # Configure a Node to use SSH Slaves plugin
 
 ## Create a Node
-First of all, we have to create a node, you have to go to `Manage Jenkins/Manage Nodes`, 
+First of all, we have to create a node. Go to `Manage Jenkins/Manage Nodes`. 
 
 ![](images/new-node-button.png)
 
-then click on the `New Node` button and configure the name and Node type.
+Then click on the `New Node` button and configure the name and Node type.
 
 ![](images/new-node-config.png)
 
-After creating the new node, you have to configure the node settings
+After creating the new node, you have to configure the node settings.
 
 * **Name:** Name that uniquely identifies an agent within this Jenkins installation.
 * **Description:** Optional human-readable description for this agent. 
@@ -45,7 +45,7 @@ You will use them to select it as agent for a build. Multiple labels must be sep
     * **Use this node as much as possible:** This is the default setting. In this mode, Jenkins uses this node freely.
     Whenever there is a build that can be done by using this node, Jenkins will use it.
     * **Only build jobs with label expressions matching this node:**
-    In this mode, Jenkins will only build a project on this node when that project is restricted to certain nodes using a label expression,
+    In this mode, Jenkins will only build a project on this node when that project is restricted to certain nodes using a label expression
     and that expression matches this node's name and/or labels.
     This allows a node to be reserved for certain kinds of jobs. For example, if you have jobs that run performance tests,
     you may want them to only run on a specially configured machine, while preventing all other jobs from using that machine.
@@ -62,7 +62,7 @@ Once you selected the **Launch method** to **Launch agent agents via SSH**, you 
 
 ### Required settings
 
-* **Host:** Hostname or IP of the agent, it should be resolved and reachable from the Jenkins instance. 
+* **Host:** Hostname or IP of the agent, it should be resolvable and reachable from the Jenkins instance. 
 * **Credentials:** Select the credentials to be used for logging in to the remote host. See [Integration with SSH Credentials Plugin](#integration-with-ssh-credentials-plugin)
 * **Host Key Verification Strategy:** Controls how Jenkins verifies the SSH key presented by the remote host whilst connecting. See [Host Key Verification Strategy](#host-key-verification-strategy)
 
@@ -71,7 +71,7 @@ Once you selected the **Launch method** to **Launch agent agents via SSH**, you 
 ### Advanced settings
 
 * **Port:** The TCP port on which the slave's SSH daemon is listening, usually 22.
-* **JavaPath** This java path will be used to start the JVM. (/mycustomjdkpath/bin/java) If empty Jenkins will search java command in the agent.
+* **JavaPath** This Java path will be used to start the JVM. (/mycustomjdkpath/bin/java) If empty Jenkins will search Java command in the agent.
 * **JVM Options** Additional arguments for the JVM such as min and max heap size, garbage collector options, and other tuning settings.
 * **Prefix Start Agent Command** What you enter here will be prepended to the launch command.
 * **Suffix Start Agent Command** What you enter here will be appended to the launch command.
