@@ -1,20 +1,20 @@
 # SSH Slaves plugin
-This plugin allows you to manage agent running on *nix machines over SSH. It adds a new type of agent launch method.
+This plugin allows you to manage agent running on \*nix machines over SSH. It adds a new type of agent launch method.
 This launch method will
 
-* Open a SSH connection to the specified host as the specified username.
+* Open an SSH connection to the specified host as the specified username.
 * Checks the default version of java for that user.
 * Once it has a suitable version of java, copies the latest remoting.jar via SFTP (falling back to scp if SFTP is not available)
 * Starts the remoting process.
 
 # Prerequisites
-Before you start to use the **SSH Slaves Plugin** with your agents, you need to prepare your agents to run the remoting process,
+Before you start to use the **SSH Slaves Plugin** with your agents, you need to prepare your agents to run the remoting process.
 this means that **you have to install a JDK/JRE 8 on your agent** in order to run the *remoting.jar* process.
 
 The agent should have **enough memory** to run the remoting process and the builds. 
 
 **The agent needs to be reachable from the master**,
-You have to be ensure that your Jenkins instance can connect through SSH port to your agent, you can check it from command line.
+You have to be ensure that your Jenkins instance can connect through SSH port to your agent; you can check it from command line.
 You will have to supply an account that can log in on the target machine. No root privileges are required.
 
 Finally the agent should have **permissions to read and write on the work directory**, and **enough disk space** to store *remoting.jar* (~1MB),
@@ -31,7 +31,7 @@ then click on the `New Node` button and configure the name and Node type.
 
 ![](images/new-node-config.png)
 
-After create the new node, you have to configure the node settings
+After creating the new node, you have to configure the node settings
 
 * **Name:** Name that uniquely identifies an agent within this Jenkins installation.
 * **Description:** Optional human-readable description for this agent. 
@@ -71,21 +71,21 @@ Once you selected the **Launch method** to **Launch agent agents via SSH**, you 
 ### Advanced settings
 
 * **Port:** The TCP port on which the slave's SSH daemon is listening, usually 22.
-* **JavaPath** This java Path will be used to start the jvm. (/mycustomjdkpath/bin/java ) If empty Jenkins will search java command in the agent.
-* **JVM Options** Additional arguments for the JVM, such as -Xmx or GC options.
+* **JavaPath** This java path will be used to start the JVM. (/mycustomjdkpath/bin/java) If empty Jenkins will search java command in the agent.
+* **JVM Options** Additional arguments for the JVM such as min and max heap size, garbage collector options, and other tuning settings.
 * **Prefix Start Agent Command** What you enter here will be prepended to the launch command.
 * **Suffix Start Agent Command** What you enter here will be appended to the launch command.
 * **Connection Timeout in Seconds** Set the timeout value for ssh agent launch in seconds.
-If empty, it will be reset to default value. This will only set the timeout for agent launching; once launched,
+If empty, it will be reset to default value (210 seconds). This will only set the timeout for agent launching; once launched,
 the timeout will not apply.
 * **Maximum Number of Retries** Set the number of times the SSH connection will be retried if the initial connection results in an error.
-If empty, it will be reset to default value.
-* **Seconds To Wait Between Retries** Set the number of seconds to wait between retry attempts of the initial SSH connection.
+If empty, it will be reset to default value (10).
+* **Seconds To Wait Between Retries** Set the number of seconds to wait between retry attempts of the initial SSH connection. The default value is 15 seconds.
 * **Use TCP_NODELAY flag on the SSH connection** Enable/Disables the TCP_NODELAY flag on the SSH connection.
 If set, disable the Nagle algorithm. This means that segments are always sent as soon as possible,
 even if there is only a small amount of data. When not set, data is buffered until there is a sufficient amount to send out,
 thereby avoiding the frequent sending of small packets, which results in poor utilization of the network.
-* **Remoting Work directory** The Remoting work directory is an internal data storage, which may be used by Remoting to store caches,
+* **Remoting work directory** The remoting work directory is an internal data storage, which may be used by Remoting to store caches,
 logs and other metadata. For more details see [Remoting Work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory)
 If remoting parameter "-workDir PATH" is set in Suffix Start Agent Command this field will be ignored.
 If empty, the **Remote root directory** is used as **Remoting Work directory**
@@ -100,7 +100,7 @@ Controls how Jenkins verifies the SSH key presented by the remote host whilst co
 
 ![](images/hkvs-known-hosts.png)
 
-Checks the known_hosts file (~/.ssh/known_hosts) for the user Jenkins is executing under, 
+Checks the known_hosts file (~/.ssh/known_hosts) for the user Jenkins is executing under 
 to see if an entry exists that matches the current connection.
 
 This method does not make any updates to the Known Hosts file, instead using the file as a read-only source and expecting
@@ -158,17 +158,17 @@ Jenkins will wait for any any builds that may be in progress to complete.
 
 ### Take this agent online when in demand, and offline when idle
 In this mode, Jenkins will bring this agent online if there is demand, i.e. there are queued builds which meet the following criteria:
-* They have been in the queue for at least the specified In demand delay time period
+* They have been in the queue for at least the specified *In demand delay time period*
 * They can be executed by this agent (e.g. have a matching label expression)
 
 This agent will be taken offline if:
 * There are no active builds running on this agent
-* This agent has been idle for at least the specified Idle delay time period
+* This agent has been idle for at least the specified *Idle delay time period*
 
 ![](images/availability-on-demand.png)
 
 ## Integration with SSH Credentials Plugin
-this plugin is now integrated with the [SSH Credentials Plugin](https://plugins.jenkins.io/ssh-credentials). 
+This plugin is now integrated with the [SSH Credentials Plugin](https://plugins.jenkins.io/ssh-credentials). 
 This changes how slaves are configured.
 The Node configuration is simplified, e.g. you now just have a Credentials drop down listing all the "Global" and 
 "System" scoped credentials.
@@ -200,6 +200,6 @@ will be restricted to those outside of any credential domain and those from matc
 This can help differentiate between multiple keys/password associated with the same username.
 
 ## Using Cygwin
-See []SSH slaves and Cygwin](https://wiki.jenkins.io/display/JENKINS/SSH+slaves+and+Cygwin) for the discussion of how to use this plugin to talk to Cygwin SSHD server.
+See [SSH slaves and Cygwin](https://wiki.jenkins.io/display/JENKINS/SSH+slaves+and+Cygwin) for the discussion of how to use this plugin to talk to Cygwin SSHD server.
 
 [Remoting documentation](https://github.com/jenkinsci/remoting/tree/master/docs)
