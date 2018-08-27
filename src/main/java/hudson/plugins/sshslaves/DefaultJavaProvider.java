@@ -62,6 +62,7 @@ public class DefaultJavaProvider extends JavaProvider {
 
     public static final String JAVA_HOME = "JAVA_HOME";
     public static final String BIN_JAVA = "/bin/java";
+    public static final String JDK_BIN_JAVA = "/jdk/bin/java";
 
     @Override
     public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
@@ -69,7 +70,7 @@ public class DefaultJavaProvider extends JavaProvider {
 
         String workingDirectory = SSHLauncher.getWorkingDirectory(computer);
         if (workingDirectory != null) {
-            javas.add(workingDirectory + "/jdk/bin/java");
+            javas.add(workingDirectory + JDK_BIN_JAVA);
         }
 
         final Node node = computer.getNode();
@@ -85,7 +86,7 @@ public class DefaultJavaProvider extends JavaProvider {
     }
 
     private List<String> lookForJavaHome(Node node) {
-        List<String> ret = Collections.emptyList();
+        List<String> ret = new ArrayList<>();
         if(node != null && node.getNodeProperties() != null){
             for (NodeProperty property : node.getNodeProperties()){
                 if(property instanceof EnvironmentVariablesNodeProperty){
@@ -100,7 +101,7 @@ public class DefaultJavaProvider extends JavaProvider {
     }
 
     private List<String> lookForTools(Node node) {
-        List<String> ret = Collections.emptyList();
+        List<String> ret = new ArrayList<>();
         Descriptor jdk = Jenkins.getActiveInstance().getDescriptorByType(JDK.DescriptorImpl.class);
         if(node != null && node.getNodeProperties() != null){
             for (NodeProperty property : node.getNodeProperties()){
