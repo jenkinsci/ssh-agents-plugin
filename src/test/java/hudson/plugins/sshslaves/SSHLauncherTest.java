@@ -26,6 +26,7 @@ package hudson.plugins.sshslaves;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.Fingerprint;
+import hudson.model.JDK;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import java.io.BufferedReader;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
@@ -47,9 +49,14 @@ import hudson.model.Node;
 import hudson.model.Node.Mode;
 import hudson.model.Slave;
 import hudson.slaves.DumbSlave;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.NodeProperty;
 import hudson.slaves.RetentionStrategy;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import hudson.slaves.SlaveComputer;
+import hudson.tools.ToolLocationNodeProperty;
 import hudson.util.VersionNumber;
 import org.jenkinsci.test.acceptance.docker.DockerRule;
 import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
@@ -70,6 +77,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.ClassRule;
 import org.jvnet.hudson.test.BuildWatcher;
+import jenkins.model.Jenkins;
 
 public class SSHLauncherTest {
 
@@ -302,5 +310,43 @@ public class SSHLauncherTest {
         //user the workDir set in configuration
         launcher.setWorkDir(anotherWorkDir);
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir);
+    }
+
+    @Issue("JENKINS-53245")
+    @Test
+    public void setJavaHome() throws Exception {
+        String javaHome = "/java_home";
+        String javaHomeTool = "/java_home_tool";
+
+        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(),
+                                        "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                                        // Old constructor passes null sshHostKeyVerificationStrategy:
+                                        new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
+                                                        "javaPath", "prefix" , "suffix",
+                                                        60, 10, 15, new NonVerifyingKeyVerificationStrategy()),
+                                        RetentionStrategy.INSTANCE, Collections.emptyList());
+        j.jenkins.addNode(slave);
+        SlaveComputer computer = slave.getComputer();
+
+        List<EnvironmentVariablesNodeProperty.Entry> env = new ArrayList<>();
+        EnvironmentVariablesNodeProperty.Entry entry = new EnvironmentVariablesNodeProperty.Entry(DefaultJavaProvider.JAVA_HOME, javaHome);
+        env.add(entry);
+        NodeProperty<?> javaHomeProperty = new EnvironmentVariablesNodeProperty(env);
+
+        List<ToolLocationNodeProperty.ToolLocation> locations = new ArrayList<>();
+        JDK.DescriptorImpl jdkType = Jenkins.getActiveInstance().getDescriptorByType(JDK.DescriptorImpl.class);
+        ToolLocationNodeProperty tool = new ToolLocationNodeProperty(new ToolLocationNodeProperty.ToolLocation(
+                jdkType, "toolJdk", javaHomeTool));
+
+        List<NodeProperty<?>> porperties = new ArrayList<>();
+        porperties.add(javaHomeProperty);
+        porperties.add(tool);
+        computer.getNode().setNodeProperties(porperties);
+
+        JavaProvider provider = new DefaultJavaProvider();
+        List<String> javas = provider.getJavas(computer, null, null);
+        assertTrue(javas.contains(javaHome + DefaultJavaProvider.BIN_JAVA));
+        assertTrue(javas.contains(javaHomeTool + DefaultJavaProvider.BIN_JAVA));
+        assertTrue(javas.contains(SSHLauncher.getWorkingDirectory(computer) + DefaultJavaProvider.JDK_BIN_JAVA));
     }
 }
