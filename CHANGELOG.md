@@ -1,6 +1,15 @@
 
 #Changelog
 
+
+### 1.28 (Aug 27, 2018)
+
+* [JENKINS-53245](https://issues.jenkins-ci.org/browse/JENKINS-53245) UnsupportedOperationException when setting JAVA_HOME
+
+#### Breaking changes
+
+* see 1.27
+
 ### 1.27 (Aug 26, 2018)
 
 * [JENKINS-51876](https://issues.jenkins-ci.org/browse/JENKINS-51876) Update Core and Java version, remove deprecated code
