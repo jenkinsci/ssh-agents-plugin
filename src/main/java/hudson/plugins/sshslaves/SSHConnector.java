@@ -23,36 +23,27 @@
  */
 package hudson.plugins.sshslaves;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.trilead.ssh2.Connection;
 import hudson.Extension;
 import hudson.model.ItemGroup;
 import hudson.model.TaskListener;
+import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
-import hudson.security.ACL;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
 import hudson.tools.JDKInstaller;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import hudson.util.Secret;
-import java.util.Collections;
+import java.util.logging.Logger;
 
-import jenkins.model.Jenkins;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import java.io.IOException;
-
-import static hudson.Util.fixEmpty;
-import hudson.model.Computer;
-import hudson.security.AccessControlled;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * {@link ComputerConnector} for {@link SSHLauncher}.
@@ -62,13 +53,19 @@ import org.kohsuke.stapler.QueryParameter;
  * Newer plugins like this should define a separate Describable connection parameter class and have
  * connector and launcher share them.
  *
+ * NOTE: if need, default launcher values will be applied when we create the SSHLauncher
+ * on {@link #launch(String, TaskListener)} method. It means it is not need to initialized default values on
+ * SSHConnector constructors and setters.
+ *
  * @author Kohsuke Kawaguchi
  */
 public class SSHConnector extends ComputerConnector {
+    private static final Logger LOGGER = Logger.getLogger(ComputerConnector.class.getName());
+
     /**
      * Field port
      */
-    public final int port;
+    public int port;
 
     /**
      * The id of the credentials to use.
@@ -76,232 +73,236 @@ public class SSHConnector extends ComputerConnector {
     private String credentialsId;
 
     /**
-     * Transient stash of the credentials to use, mostly just for providing floating user object.
-     */
-    private transient StandardUsernameCredentials credentials;
-
-    /**
-     * Field username
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public transient String username;
-
-    /**
-     * Field password
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public transient Secret password;
-
-    /**
-     * File path of the private key.
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public transient String privatekey;
-
-    /**
      * Field jvmOptions.
      */
-    public final String jvmOptions;
+    public String jvmOptions;
 
     /**
      * Field javaPath.
      */
-    public final String javaPath;
-
-
-    /**
-     * Field jdk
-     */
-    public final JDKInstaller jdkInstaller;
+    public String javaPath;
 
     /**
      * Field prefixStartSlaveCmd.
      */
-    public final String prefixStartSlaveCmd;
+    public String prefixStartSlaveCmd;
 
     /**
      * Field suffixStartSlaveCmd.
      */
-    public final String suffixStartSlaveCmd;
+    public String suffixStartSlaveCmd;
 
     /**
      *  Field launchTimeoutSeconds.
      */
-    public final Integer launchTimeoutSeconds;
+    public Integer launchTimeoutSeconds;
 
     /**
      *  Field maxNumRetries.
      */
-    public final Integer maxNumRetries;
+    public Integer maxNumRetries;
 
     /**
      *  Field retryWaitTime.
      */
-    public final Integer retryWaitTime;
-    
-    private final SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
+    public Integer retryWaitTime;
 
-    public StandardUsernameCredentials getCredentials() {
-        String credentialsId = this.credentialsId == null
-                ? (this.credentials == null ? null : this.credentials.getId())
-                : this.credentialsId;
-        try {
-            // only ever want from the system
-            // lookup every time so that we always have the latest
-            StandardUsernameCredentials credentials = 
-                    credentialsId == null ? null :
-                    SSHLauncher.lookupSystemCredentials(credentialsId);
-            if (credentials != null) {
-                this.credentials = credentials;
-                return credentials;
-            }
-        } catch (Throwable t) {
-            // ignore
-        }
-        if (credentials == null) {
-            if (credentialsId == null) {
-                credentials = SSHLauncher.upgrade(username, password, privatekey, null);
-                this.credentialsId = credentials.getId();
-            }
-        }
+    /**
+     * The verifier to use for checking the SSH key presented by the host
+     * responding to the connection
+     */
+    private SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
-        return credentials;
+    /**
+     * Allow to enable/disable the TCP_NODELAY flag on the SSH connection.
+     */
+    private Boolean tcpNoDelay;
+
+    /**
+     * Set the value to add to the remoting parameter -workDir
+     * @see <a href="https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory">Remoting Work directory</a>
+     */
+    private String workDir;
+
+    /**
+     * @see SSHLauncher#SSHLauncher
+     */
+    @DataBoundConstructor
+    public SSHConnector(@NonNull String credentialsId,
+                        @NonNull SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy){
+        this.credentialsId = credentialsId;
+        this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
+    }
+
+    /**
+     * @see SSHLauncher#SSHLauncher
+     * @deprecated use {@link #SSHConnector(String credentialsId, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) } and setter methods instead.
+     */
+    public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
+                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
+                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+        this(credentialsId, sshHostKeyVerificationStrategy);
+
+        setPort(port);
+        setJvmOptions(jvmOptions);
+        setJavaPath(javaPath);
+        setPrefixStartSlaveCmd(prefixStartSlaveCmd);
+        setSuffixStartSlaveCmd(suffixStartSlaveCmd);
+        setLaunchTimeoutSeconds(launchTimeoutSeconds);
+        setMaxNumRetries(maxNumRetries);
+        setRetryWaitTime(retryWaitTime);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
+    }
+
+    /**
+     * @see SSHLauncher#SSHLauncher
+     * @deprecated use {@link #SSHConnector(String credentialsId, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) } and setter methods instead.
+     */
+    public SSHConnector(int port, StandardUsernameCredentials credentials, String username, String password,
+                        String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
+                        String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
+        this(credentials.getId(), new NonVerifyingKeyVerificationStrategy());
+        setPort(port);
+        setJvmOptions(jvmOptions);
+        setJavaPath(javaPath);
+        setPrefixStartSlaveCmd(prefixStartSlaveCmd);
+        setSuffixStartSlaveCmd(suffixStartSlaveCmd);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
+    }
+
+    /**
+     * @see SSHLauncher#SSHLauncher
+     * @deprecated use {@link #SSHConnector(String credentialsId, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) } and setter methods instead.
+     */
+    public SSHConnector(int port,@NonNull StandardUsernameCredentials credentials, String username, String password,
+                        String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
+                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
+                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+        this(credentials.getId(), sshHostKeyVerificationStrategy);
+
+        setPort(port);
+        setJvmOptions(jvmOptions);
+        setJavaPath(javaPath);
+        setPrefixStartSlaveCmd(prefixStartSlaveCmd);
+        setSuffixStartSlaveCmd(suffixStartSlaveCmd);
+        setLaunchTimeoutSeconds(launchTimeoutSeconds);
+        setMaxNumRetries(maxNumRetries);
+        setRetryWaitTime(retryWaitTime);
+        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
     public String getCredentialsId() {
         return credentialsId;
     }
 
-    /**
-     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, Integer, Integer, Integer)
-     */
-    @Deprecated
-    public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime) {
-        this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
-             prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, null);
-    }
-    
-    @DataBoundConstructor
-    public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
-        this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
-             prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+    public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
+        return sshHostKeyVerificationStrategy;
     }
 
-    /**
-     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, Integer)
-     */
-    @Deprecated
-    public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds) {
-        this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
-                prefixStartSlaveCmd, suffixStartSlaveCmd, launchTimeoutSeconds, null, null);
+    public int getPort() {
+        return port;
     }
 
-    /**
-     * @deprecated Use {@link SSHConnector#SSHConnector(int,String,String,String,String,String,Integer)}
-     */
-    @Deprecated
-    public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, SSHLauncher.lookupSystemCredentials(credentialsId), null, null, null, jvmOptions, javaPath, null,
-                prefixStartSlaveCmd, suffixStartSlaveCmd, null, null, null);
+    @DataBoundSetter
+    public void setPort(int port) {
+        this.port = port;
     }
 
-    /**
-     * @see SSHLauncher#SSHLauncher(String, int, StandardUsernameCredentials, String, String, String, String)
-     */
-    public SSHConnector(int port, StandardUsernameCredentials credentials, String jvmOptions, String javaPath,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, credentials, null, null, null, jvmOptions, javaPath, null, prefixStartSlaveCmd, suffixStartSlaveCmd
-        );
+    public String getJvmOptions() {
+        return jvmOptions;
     }
 
-    /**
-     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, String, String)
-     */
-    public SSHConnector(int port, String username, String password, String privatekey, String jvmOptions,
-                        String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, null, username, password, privatekey, jvmOptions, javaPath, null, prefixStartSlaveCmd,
-                suffixStartSlaveCmd
-        );
-    }
-
-    /**
-     * @see SSHLauncher#SSHLauncher(String, int, String, String, String, String, String, JDKInstaller, String, String)
-     */
-    public SSHConnector(int port, String username, String password, String privatekey,
-                        String jvmOptions, String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
-                        String suffixStartSlaveCmd) {
-        this(port, null, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd);
-    }
-
-    /**
-     * @see SSHLauncher#SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String,
-     * String)
-     */
-    public SSHConnector(int port, StandardUsernameCredentials credentials, String username, String password,
-                        String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(port, credentials, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, null, null, null);
-    }
-    /**
-     * @see SSHLauncher#SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String,
-     * String)
-     */
-    @Deprecated
-    public SSHConnector(int port, StandardUsernameCredentials credentials, String username, String password,
-                        String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime) {
-        this(port, credentials, username, password, privatekey, jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, null, null, null, null);
-    }
-        
-    /**
-     * @see SSHLauncher#SSHLauncher(String, int, StandardUsernameCredentials, String, String, JDKInstaller, String,
-     * String)
-     */
-    public SSHConnector(int port, StandardUsernameCredentials credentials, String username, String password,
-                        String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+    @DataBoundSetter
+    public void setJvmOptions(String jvmOptions) {
         this.jvmOptions = jvmOptions;
-        this.port = port == 0 ? 22 : port;
-        this.credentials = credentials;
-        this.credentialsId = credentials == null ? null : this.credentials.getId();
-        this.username = username;
-        this.password = Secret.fromString(fixEmpty(password));
-        this.privatekey = privatekey;
+    }
+
+    public String getJavaPath() {
+        return javaPath;
+    }
+
+    @DataBoundSetter
+    public void setJavaPath(String javaPath) {
         this.javaPath = javaPath;
-        this.jdkInstaller = jdkInstaller;
-        this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
-        this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
-        this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? null : launchTimeoutSeconds;
-        this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : 0;
-        this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : 0;
-        this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
+    }
+
+    public String getPrefixStartSlaveCmd() {
+        return prefixStartSlaveCmd;
+    }
+
+    @DataBoundSetter
+    public void setPrefixStartSlaveCmd(String prefixStartSlaveCmd) {
+        this.prefixStartSlaveCmd = prefixStartSlaveCmd;
+    }
+
+    public String getSuffixStartSlaveCmd() {
+        return suffixStartSlaveCmd;
+    }
+
+    @DataBoundSetter
+    public void setSuffixStartSlaveCmd(String suffixStartSlaveCmd) {
+        this.suffixStartSlaveCmd = suffixStartSlaveCmd;
+    }
+
+    public Integer getLaunchTimeoutSeconds() {
+        return launchTimeoutSeconds;
+    }
+
+    @DataBoundSetter
+    public void setLaunchTimeoutSeconds(Integer launchTimeoutSeconds) {
+        this.launchTimeoutSeconds = launchTimeoutSeconds;
+    }
+
+    public Integer getMaxNumRetries() {
+        return maxNumRetries;
+    }
+
+    @DataBoundSetter
+    public void setMaxNumRetries(Integer maxNumRetries) {
+        this.maxNumRetries = maxNumRetries;
+    }
+
+    public Integer getRetryWaitTime() {
+        return retryWaitTime;
+    }
+
+    @DataBoundSetter
+    public void setRetryWaitTime(Integer retryWaitTime) {
+        this.retryWaitTime = retryWaitTime;
+    }
+
+    public Boolean getTcpNoDelay() {
+        return tcpNoDelay;
+    }
+
+    @DataBoundSetter
+    public void setTcpNoDelay(Boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
+    }
+
+    public String getWorkDir() {
+        return workDir;
+    }
+
+    @DataBoundSetter
+    public void setWorkDir(String workDir) {
+        this.workDir = workDir;
     }
 
     @Override
-    public SSHLauncher launch(String host, TaskListener listener) throws IOException, InterruptedException {
-        return new SSHLauncher(host, port, getCredentials(), jvmOptions, javaPath, jdkInstaller, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
-    }
-    
-    public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
-    	return sshHostKeyVerificationStrategy;
+    public SSHLauncher launch(String host, TaskListener listener) {
+        SSHLauncher launcher = new SSHLauncher(host, this.credentialsId, sshHostKeyVerificationStrategy);
+        launcher.setPort(port);
+        launcher.setJvmOptions(jvmOptions);
+        launcher.setJavaPath(javaPath);
+        launcher.setPrefixStartSlaveCmd(prefixStartSlaveCmd);
+        launcher.setSuffixStartSlaveCmd(suffixStartSlaveCmd);
+        launcher.setLaunchTimeoutSeconds(launchTimeoutSeconds);
+        launcher.setMaxNumRetries(maxNumRetries);
+        launcher.setRetryWaitTime(retryWaitTime);
+        launcher.setTcpNoDelay(tcpNoDelay);
+        launcher.setWorkDir(workDir);
+        return launcher;
     }
 
     @Extension
@@ -311,42 +312,20 @@ public class SSHConnector extends ComputerConnector {
             return Messages.SSHLauncher_DescriptorDisplayName();
         }
 
+        @RequirePOST
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String credentialsId) {
-            AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
-                return new StandardUsernameListBoxModel()
-                        .includeCurrentValue(credentialsId);
-            }
-            return new StandardUsernameListBoxModel()
-                    .includeMatchingAs(
-                            ACL.SYSTEM,
-                            context,
-                            StandardUsernameCredentials.class,
-                            Collections.<DomainRequirement>singletonList(SSHLauncher.SSH_SCHEME),
-                            SSHAuthenticator.matcher(Connection.class)
-                    )
-                    .includeCurrentValue(credentialsId);
+            return SSHCredentialsManager.fillCredentialsIdItems(context, credentialsId);
         }
 
-        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
-                                                   @QueryParameter String value) {
-            AccessControlled _context =
-                    (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
-                return FormValidation.ok(); // no need to alarm a user that cannot configure
-            }
-            for (ListBoxModel.Option o : CredentialsProvider.listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
-                    Collections.<DomainRequirement>singletonList(SSHLauncher.SSH_SCHEME),
-                    SSHAuthenticator.matcher(Connection.class))) {
-                if (StringUtils.equals(value, o.value)) {
-                    return FormValidation.ok();
-                }
-            }
-            return FormValidation.error(Messages.SSHLauncher_SelectedCredentialsMissing());
+        @RequirePOST
+        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context, @QueryParameter String value) {
+            return SSHCredentialsManager.checkCredentialId(context, value);
         }
 
         public FormValidation doCheckLaunchTimeoutSeconds(String value) {
-            if (StringUtils.isBlank(value)) return FormValidation.ok();
+            if (StringUtils.isBlank(value)){
+                return FormValidation.ok();
+            }
             try {
                 if (Integer.parseInt(value.trim()) < 0) {
                     return FormValidation.error(Messages.SSHConnector_LaunchTimeoutMustBePositive());
