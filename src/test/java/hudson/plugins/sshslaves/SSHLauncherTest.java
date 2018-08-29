@@ -23,12 +23,6 @@
  */
 package hudson.plugins.sshslaves;
 
-import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import hudson.model.Fingerprint;
-import hudson.model.JDK;
-import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
-import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,37 +30,51 @@ import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-
-import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.test.acceptance.docker.DockerRule;
+import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.jvnet.hudson.test.BuildWatcher;
+import org.jvnet.hudson.test.Issue;
+import org.jvnet.hudson.test.JenkinsRule;
 import hudson.model.Computer;
+import hudson.model.Descriptor;
+import hudson.model.Fingerprint;
 import hudson.model.FreeStyleProject;
-import hudson.model.Node;
+import hudson.model.JDK;
 import hudson.model.Node.Mode;
 import hudson.model.Slave;
+import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
+import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
+import hudson.security.ACL;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.RetentionStrategy;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 import hudson.slaves.SlaveComputer;
 import hudson.tools.ToolLocationNodeProperty;
 import hudson.util.VersionNumber;
-import org.jenkinsci.test.acceptance.docker.DockerRule;
-import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
-import org.junit.Assert;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.Issue;
-import org.jvnet.hudson.test.JenkinsRule;
-
+import jenkins.model.Jenkins;
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import static hudson.plugins.sshslaves.SSHLauncher.WORK_DIR_PARAM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -75,9 +83,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.junit.ClassRule;
-import org.jvnet.hudson.test.BuildWatcher;
-import jenkins.model.Jenkins;
 
 public class SSHLauncherTest {
 
@@ -89,6 +94,9 @@ public class SSHLauncherTest {
 
     @Rule
     public DockerRule<JavaContainer> javaContainer = new DockerRule<>(JavaContainer.class);
+
+    @Rule
+    public TemporaryFolder temporalFolder = new TemporaryFolder();
 
     @Test
     public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
@@ -163,26 +171,24 @@ public class SSHLauncherTest {
         }
     }
 
-  private void checkRoundTrip(String host) throws Exception {
-        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-                Collections.singletonList(
-                        new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
-                )
-        );
-        SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1, new KnownHostsFileKeyVerificationStrategy());
+    private void checkRoundTrip(String host) throws Exception {
+        UsernamePasswordCredentialsImpl credentilas = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM,
+                                                                                "dummyCredentialId", null, "user",
+                                                                                "pass");
+        getDomainCredentialsMap().put(Domain.global(), Collections.singletonList(credentilas));
+        SSHLauncher launcher = createSshLauncher(host);
+
         assertEquals(host.trim(), launcher.getHost());
-        DumbSlave slave = new DumbSlave("slave", "dummy",
-                j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-                launcher, RetentionStrategy.NOOP, Collections.emptyList());
-        j.jenkins.addNode(slave);
+        DumbSlave agent = createDumbSlave(launcher);
+        j.jenkins.addNode(agent);
 
-        HtmlPage p = j.createWebClient().getPage(slave, "configure");
+        HtmlPage p = j.createWebClient().getPage(agent, "configure");
         j.submit(p.getFormByName("config"));
-        Slave n = (Slave) j.jenkins.getNode("slave");
+        Slave n = (Slave) j.jenkins.getNode(agent.getNodeName());
 
-        assertNotSame(n,slave);
-        assertNotSame(n.getLauncher(),launcher);
-        j.assertEqualDataBoundBeans(n.getLauncher(),launcher);
+        assertNotSame(n, agent);
+        assertNotSame(n.getLauncher(), launcher);
+        j.assertEqualDataBoundBeans(n.getLauncher(), launcher);
     }
 
     @Test
@@ -193,7 +199,7 @@ public class SSHLauncherTest {
 
     @Test
     public void fillCredentials() {
-        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(
+        getDomainCredentialsMap().put(
                 new Domain("test", null, Collections.singletonList(
                         new HostnamePortSpecification(null, null)
                 )),
@@ -220,15 +226,10 @@ public class SSHLauncherTest {
     @Test
     public void trackCredentialsWithUsernameAndPassword() throws Exception {
         UsernamePasswordCredentialsImpl credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass");
-        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-          Collections.singletonList(
-            credentials
-          )
-        );
-        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
-        DumbSlave slave = new DumbSlave("slave", "dummy",
-          j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-          launcher, RetentionStrategy.NOOP, Collections.emptyList());
+        getDomainCredentialsMap().put(Domain.global(), Collections.singletonList(credentials));
+        SSHLauncher launcher = createSshLauncher("localhost");
+
+        DumbSlave slave = createDumbSlave(launcher);
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -243,15 +244,12 @@ public class SSHLauncherTest {
     @Test
     public void trackCredentialsWithUsernameAndPrivateKey() throws Exception {
         BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
-        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-          Collections.singletonList(
-            credentials
-          )
-        );
-        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
-        DumbSlave slave = new DumbSlave("slave", "dummy",
-          j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-          launcher, RetentionStrategy.NOOP, Collections.emptyList());
+        getDomainCredentialsMap().put(Domain.global(), Collections.singletonList(credentials));
+
+        SSHLauncher launcher = createSshLauncher("localhost");
+        launcher.setCredentialsId(credentials.getId());
+
+        DumbSlave slave = createDumbSlave(launcher);
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -262,15 +260,20 @@ public class SSHLauncherTest {
         assertThat(fingerprint, notNullValue());
     }
 
-    @Issue("JENKINS-44830")
     @Test
-    public void upgrade() throws Exception {
+    public void connectionTest() throws Exception {
         JavaContainer c = javaContainer.get();
-        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(),
-                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
-                // Old constructor passes null sshHostKeyVerificationStrategy:
-                new SSHLauncher(c.ipBound(22), c.port(22), "test", "test", "", ""),
-                RetentionStrategy.INSTANCE, Collections.emptyList());
+        StandardUsernameCredentials credential = createGobalCredential("test", "test");
+
+        SSHLauncher launcher = new SSHLauncher(c.ipBound(22), credential.getId(), new NonVerifyingKeyVerificationStrategy());
+        launcher.setPort(c.port(22));
+        launcher.setMaxNumRetries(1);
+        launcher.setLaunchTimeoutSeconds(10);
+
+        DumbSlave slave = new DumbSlave("agent" + j.jenkins.getNodes().size(), "/home/test/slave", launcher);
+        slave.setRetentionStrategy(RetentionStrategy.INSTANCE);
+        slave.setMode(Mode.NORMAL);
+
         j.jenkins.addNode(slave);
         Computer computer = slave.toComputer();
         try {
@@ -289,24 +292,20 @@ public class SSHLauncherTest {
         String rootFS = "/home/user";
         String anotherWorkDir = "/another/workdir";
 
-        SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                               "javaPath", "prefix" ,"suffix",
-                                               60,10, 15, new NonVerifyingKeyVerificationStrategy());
+        SSHLauncher launcher = new SSHLauncher("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
         //use rootFS
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + rootFS);
 
-        launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                   "javaPath", "prefix" , "suffix" + WORK_DIR_PARAM + anotherWorkDir,
-                                   60, 10, 15, new NonVerifyingKeyVerificationStrategy());
+        launcher = new SSHLauncher("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
+        launcher.setSuffixStartSlaveCmd("suffix" + WORK_DIR_PARAM + anotherWorkDir);
+
         //if worDir is in suffix return ""
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
         //if worDir is in suffix return "", even do you set workDir in configuration
         launcher.setWorkDir(anotherWorkDir);
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
 
-        launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                   "javaPath", "prefix" , "suffix",
-                                   60,10, 15, new NonVerifyingKeyVerificationStrategy());
+        launcher = new SSHLauncher("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
         //user the workDir set in configuration
         launcher.setWorkDir(anotherWorkDir);
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir);
@@ -318,13 +317,7 @@ public class SSHLauncherTest {
         String javaHome = "/java_home";
         String javaHomeTool = "/java_home_tool";
 
-        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(),
-                                        "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
-                                        // Old constructor passes null sshHostKeyVerificationStrategy:
-                                        new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                                        "javaPath", "prefix" , "suffix",
-                                                        60, 10, 15, new NonVerifyingKeyVerificationStrategy()),
-                                        RetentionStrategy.INSTANCE, Collections.emptyList());
+        DumbSlave slave = createDumbSlave(createSshLauncher("hostname"));
         j.jenkins.addNode(slave);
         SlaveComputer computer = slave.getComputer();
 
@@ -348,5 +341,57 @@ public class SSHLauncherTest {
         assertTrue(javas.contains(javaHome + DefaultJavaProvider.BIN_JAVA));
         assertTrue(javas.contains(javaHomeTool + DefaultJavaProvider.BIN_JAVA));
         assertTrue(javas.contains(SSHLauncher.getWorkingDirectory(computer) + DefaultJavaProvider.JDK_BIN_JAVA));
+    }
+
+    /**
+     *
+     * @param host hostname to set.
+     * @return a basic launcher for the hostname, it is not valid for real connections.
+     */
+    private SSHLauncher createSshLauncher(String host) {
+        SSHLauncher launcher = new SSHLauncher(host, "dummyCredentialId", new KnownHostsFileKeyVerificationStrategy());
+        launcher.setPort(123);
+        launcher.setJavaPath("xyz");
+        launcher.setMaxNumRetries(1);
+        launcher.setLaunchTimeoutSeconds(10);
+        return launcher;
+    }
+
+    /**
+     * @param launcher launcher to use.
+     * @return a basic DumbSlave.
+     * @throws Descriptor.FormException on error.
+     * @throws IOException on error.
+     */
+    private DumbSlave createDumbSlave(SSHLauncher launcher) throws Descriptor.FormException, IOException {
+        DumbSlave slave = new DumbSlave("agent" + j.jenkins.getNodes().size(), temporalFolder.newFolder().getPath(),
+                                        launcher);
+        slave.setRetentionStrategy(RetentionStrategy.NOOP);
+        slave.setMode(Mode.NORMAL);
+        return slave;
+    }
+
+    private Map<Domain, List<Credentials>> getDomainCredentialsMap() {
+        return SystemCredentialsProvider.getInstance().getDomainCredentialsMap();
+    }
+
+    static StandardUsernameCredentials createGobalCredential(String username, String password) {
+        username = StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
+
+        StandardUsernameCredentials u = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, null, "", username, password);
+
+        final SecurityContext securityContext = ACL.impersonate(ACL.SYSTEM);
+        try {
+            CredentialsStore s = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+            try {
+                s.addCredentials(Domain.global(), u);
+                return u;
+            } catch (IOException e) {
+                // ignore
+            }
+        } finally {
+            SecurityContextHolder.setContext(securityContext);
+        }
+        return u;
     }
 }
