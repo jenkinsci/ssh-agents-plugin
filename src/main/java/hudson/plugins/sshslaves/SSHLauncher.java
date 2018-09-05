@@ -775,6 +775,16 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
+     * Gets the optional java command to use to launch the agent JVM.
+     * @return The optional java command to use to launch the agent JVM.
+     */
+    @SuppressWarnings("unused") // Used by vsphere-cloud-plugin
+    @Deprecated
+    public String getJavaPath() {
+        return javaPath == null ? "" : javaPath;
+    }
+
+    /**
      * Gets the formatted current time stamp.
      *
      * @return the formatted current time stamp.
