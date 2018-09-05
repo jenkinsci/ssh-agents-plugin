@@ -2,6 +2,14 @@
 #Changelog
 
 
+### 1.28.1 (Sep 5, 2018)
+
+* [JENKINS-53254](https://issues.jenkins-ci.org/browse/JENKINS-53254) SSH connection fails in vShpere cloud plugin with new version of SSH slaves plugin (1.27)
+
+#### Breaking changes
+
+* see 1.27
+
 ### 1.28 (Aug 27, 2018)
 
 * [JENKINS-53245](https://issues.jenkins-ci.org/browse/JENKINS-53245) UnsupportedOperationException when setting JAVA_HOME
