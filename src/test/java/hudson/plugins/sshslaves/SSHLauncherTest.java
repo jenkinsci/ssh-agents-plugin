@@ -268,7 +268,7 @@ public class SSHLauncherTest {
         SSHLauncher launcher = new SSHLauncher(c.ipBound(22), credential.getId(), new NonVerifyingKeyVerificationStrategy());
         launcher.setPort(c.port(22));
         launcher.setMaxNumRetries(1);
-        launcher.setLaunchTimeoutSeconds(10);
+        launcher.setLaunchTimeoutSeconds(30);
 
         DumbSlave slave = new DumbSlave("agent" + j.jenkins.getNodes().size(), "/home/test/slave", launcher);
         slave.setRetentionStrategy(RetentionStrategy.INSTANCE);

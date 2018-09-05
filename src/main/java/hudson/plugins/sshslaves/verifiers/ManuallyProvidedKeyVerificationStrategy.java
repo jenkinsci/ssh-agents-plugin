@@ -37,10 +37,12 @@ import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
+import hudson.plugins.sshslaves.SSHLauncherConfig;
 import hudson.remoting.Base64;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 import java.util.Collections;
+import static hudson.plugins.sshslaves.SSHLauncherConfig.getTimestamp;
 
 /**
  * Checks a key provided by a remote hosts matches a key specified as being required by the
@@ -74,10 +76,10 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     @Override
     public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
         if (key.equals(hostKey)) {
-            listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyTrusted(getTimestamp()));
             return true;
         } else {
-            listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyNotTrusted(getTimestamp()));
             return false;
         }
     }
@@ -85,7 +87,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     @Override
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
         String[] unsortedAlgorithms = super.getPreferredKeyAlgorithms(computer);
-        List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.<String>emptyList());
+        List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.emptyList());
 
         sortedAlgorithms.remove(key.getAlgorithm());
         sortedAlgorithms.add(0, key.getAlgorithm());

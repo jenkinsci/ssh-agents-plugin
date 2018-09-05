@@ -30,6 +30,7 @@ import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
+import hudson.plugins.sshslaves.SSHLauncherConfig;
 import hudson.slaves.SlaveComputer;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -40,6 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import org.kohsuke.stapler.DataBoundConstructor;
+import static hudson.plugins.sshslaves.SSHLauncherConfig.getTimestamp;
 
 /**
  * A host key verification strategy that works in a similar way to host key verification on
@@ -75,27 +77,27 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
         HostKey existingHostKey = hostManager.getHostKey(computer);
         if (null == existingHostKey) {
             if (isRequireInitialManualTrust()) {
-                listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
+                listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(getTimestamp()));
                 if (!hasExistingTrustAction(computer, hostKey)) {
                     addAction(computer, new TrustHostKeyAction(computer, hostKey));
                 }
                 return false;
             }
             else {
-                listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyAutoTrusted(SSHLauncher.getTimestamp(), hostKey.getFingerprint()));
+                listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyAutoTrusted(getTimestamp(), hostKey.getFingerprint()));
                 HostKeyHelper.getInstance().saveHostKey(computer, hostKey);
                 return true;
             }
         }
         else if (!existingHostKey.equals(hostKey)) {
-            listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(getTimestamp()));
             if (!hasExistingTrustAction(computer, hostKey)) {
                 addAction(computer, new TrustHostKeyAction(computer, hostKey));
             }
             return false;
         }
         else {
-            listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyTrusted(getTimestamp()));
             return true;
         }
     }

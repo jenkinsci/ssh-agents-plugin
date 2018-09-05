@@ -26,6 +26,7 @@ package hudson.plugins.sshslaves.verifiers;
 import java.io.File;
 import java.io.IOException;
 
+import hudson.plugins.sshslaves.SSHLauncherConfig;
 import hudson.slaves.ComputerLauncher;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -36,6 +37,7 @@ import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
+import static hudson.plugins.sshslaves.SSHLauncherConfig.getTimestamp;
 
 /**
  * A verifier that reads host keys from the Jenkins users' SSH known_hosts file.
@@ -68,13 +70,13 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
         int result = knownHosts.verifyHostkey(((SSHLauncher)launcher).getHost(), hostKey.getAlgorithm(), hostKey.getKey());
         
         if (KnownHosts.HOSTKEY_IS_OK == result) {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_KeyTrusted(getTimestamp()));
             return true;
         } else if (KnownHosts.HOSTKEY_IS_NEW == result) {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NewKeyNotTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NewKeyNotTrusted(getTimestamp()));
             return false;
         } else {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_ChangedKeyNotTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_ChangedKeyNotTrusted(getTimestamp()));
             return false;
         }
         

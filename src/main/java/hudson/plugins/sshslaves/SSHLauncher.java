@@ -23,16 +23,9 @@
  */
 package hudson.plugins.sshslaves;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.SCPClient;
-import com.trilead.ssh2.SFTPv3Client;
-import com.trilead.ssh2.SFTPv3FileAttributes;
-import com.trilead.ssh2.ServerHostKeyVerifier;
-import com.trilead.ssh2.Session;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
@@ -43,7 +36,6 @@ import hudson.model.ItemGroup;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.verifiers.HostKey;
 import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import hudson.slaves.ComputerLauncher;
@@ -56,7 +48,6 @@ import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
-import hudson.util.NullStream;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
@@ -66,13 +57,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.lang.InterruptedException;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -83,7 +69,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -91,27 +76,15 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import static hudson.Util.*;
-import hudson.model.Computer;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
+import static hudson.plugins.sshslaves.SSHLauncherConfig.getTimestamp;
 
 /**
  * A computer launcher that tries to start a linux agent by opening an SSH connection and trying to find java.
  */
-public class SSHLauncher extends ComputerLauncher {
+public class SSHLauncher extends ComputerLauncher implements SSHLauncherConfig {
 
     private static final Logger LOGGER = Logger.getLogger(SSHLauncher.class.getName());
 
-    // Some of the messages observed in the wild:
-    // "Connection refused (Connection refused)"
-    // "Connection reset"
-    // "Connection timed out", "Connection timed out (Connection timed out)"
-    // "No route to host", "No route to host (Host unreachable)"
-    // "Premature connection close"
-    private static final List<String> RECOVERABLE_FAILURES = Arrays.asList(
-            "Connection refused", "Connection reset", "Connection timed out", "No route to host", "Premature connection close"
-    );
     public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
     public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
     public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = DEFAULT_MAX_NUM_RETRIES * DEFAULT_RETRY_WAIT_TIME + 60;
@@ -146,20 +119,10 @@ public class SSHLauncher extends ComputerLauncher {
     public String javaPath;
 
     /**
-     * SSH connection to the agent.
-     */
-    private transient volatile Connection connection;
-
-    /**
      * Indicates that the {@link #tearDownConnection(SlaveComputer, TaskListener)} is in progress.
      * It is used in {@link #afterDisconnect(SlaveComputer, TaskListener)} to avoid multiple parallel calls.
      */
     private transient volatile boolean tearingDownConnection;
-
-    /**
-     * The session inside {@link #connection} that controls the agent process.
-     */
-    private transient Session session;
 
     /**
      * Field prefixStartSlaveCmd.
@@ -317,20 +280,28 @@ public class SSHLauncher extends ComputerLauncher {
         return this;
     }
 
+    @Override
     public String getCredentialsId() {
         return credentialsId;
     }
 
+    @Override
     @CheckForNull
     public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
         return sshHostKeyVerificationStrategy;
     }
 
+    /**
+     *
+     * @since 2.0
+     */
+    @Override
     @NonNull
-    SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategyDefaulted() {
+    public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategyDefaulted() {
         return sshHostKeyVerificationStrategy != null ? sshHostKeyVerificationStrategy : new NonVerifyingKeyVerificationStrategy();
     }
 
+    @Override
     public StandardUsernameCredentials getCredentials() {
         // only ever want from the system
         // lookup every time so that we always have the latest
@@ -347,33 +318,10 @@ public class SSHLauncher extends ComputerLauncher {
 
     /**
      * Gets the JVM Options used to launch the agent JVM.
-     * @return
      */
+    @Override
     public String getJvmOptions() {
         return jvmOptions == null ? "" : jvmOptions;
-    }
-
-    /**
-     * Gets the formatted current time stamp.
-     *
-     * @return the formatted current time stamp.
-     */
-    @Restricted(NoExternalUse.class)
-    public static String getTimestamp() {
-        return String.format("[%1$tD %1$tT]", new Date());
-    }
-
-    /**
-     * Returns the remote root workspace (without trailing slash).
-     *
-     * @param computer The slave computer to get the root workspace of.
-     *
-     * @return the remote root workspace (without trailing slash).
-     *
-     */
-    @CheckForNull
-    public static String getWorkingDirectory(SlaveComputer computer) {
-        return getWorkingDirectory(computer.getNode());
     }
 
     @CheckForNull
@@ -393,27 +341,16 @@ public class SSHLauncher extends ComputerLauncher {
      */
     @Override
     public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
-        connection = new Connection(host, port);
+        listener.getLogger().println(logConfiguration());
+        final SSHProvider connection = new SSHProviderImpl(this, computer, listener);
         launcherExecutorService = Executors.newSingleThreadExecutor(
                 new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
-        Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
+        Set<Callable<Boolean>> callables = new HashSet();
         callables.add(new Callable<Boolean>() {
             public Boolean call() throws InterruptedException {
                 Boolean rval = Boolean.FALSE;
                 try {
-                    String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
-                    if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
-                        connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
-                    } else {
-                        listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
-                    }
-
-                    listener.getLogger().println(logConfiguration());
-
-                    openConnection(listener, computer);
-
-                    verifyNoHeaderJunk(listener);
-                    reportEnvironment(listener);
+                    connection.openConnection();
 
                     final String workingDirectory = getWorkingDirectory(computer);
                     if (workingDirectory == null) {
@@ -425,20 +362,17 @@ public class SSHLauncher extends ComputerLauncher {
                     if (StringUtils.isNotBlank(javaPath)) {
                         java = expandExpression(computer, javaPath);
                     } else {
-                        JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
-                                                                                       connection);
+                        JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(), connection);
                         java = javaVersionChecker.resolveJava();
                     }
 
-                    copyAgentJar(listener, workingDirectory);
+                    connection.copyAgentJar(workingDirectory);
 
-                    startAgent(computer, listener, java, workingDirectory);
+                    connection.startAgent(java, workingDirectory);
 
                     PluginImpl.register(connection);
                     rval = Boolean.TRUE;
-                } catch (RuntimeException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                } catch (Error e) {
+                } catch (RuntimeException | Error e) {
                     e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
                 } catch (AbortException e) {
                     listener.getLogger().println(e.getMessage());
@@ -474,20 +408,20 @@ public class SSHLauncher extends ComputerLauncher {
             } catch (CancellationException | ExecutionException e) {
                 res = Boolean.FALSE;
                 //TODO try to improve the message, set timeout to 1 to expose the error.
-                e.printStackTrace(listener.error(e.getMessage()));
+                listener.error( e.getClass().getName()+ " - " + e.getMessage());
+                e.printStackTrace(listener.error(e.getClass().getName()));
             }
             if (!res) {
                 System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
-                        nodeName, host, duration));
+                                                                             nodeName, host, duration));
                 listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
-                cleanupConnection(listener);
+                connection.cleanupConnection();
             } else {
                 System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
-                        nodeName, host, duration));
+                                                                                nodeName, host, duration));
             }
         } catch (InterruptedException e) {
-            System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
-                    nodeName, host));
+            System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(), nodeName, host));
         } finally {
             ExecutorService srv = launcherExecutorService;
             if (srv != null) {
@@ -497,24 +431,12 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    /**
-     * Called to terminate the SSH connection. Used liberally when we back out from an error.
-     */
-    private void cleanupConnection(TaskListener listener) {
-        // we might be called multiple times from multiple finally/catch block, 
-        if (connection!=null) {
-            connection.close();
-            connection = null;
-            listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
-        }
-    }
-
     private String expandExpression(SlaveComputer computer, String expression) {
         return getEnvVars(computer).expand(expression);
     }
 
     private EnvVars getEnvVars(SlaveComputer computer) {
-        final EnvVars global = getEnvVars(Jenkins.getActiveInstance());
+        final EnvVars global = getEnvVars(Jenkins.getInstance());
 
         final Node node = computer.getNode();    
         final EnvVars local = node != null ? getEnvVars(node) : null;
@@ -553,263 +475,15 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Makes sure that SSH connection won't produce any unwanted text, which will interfere with sftp execution.
-     */
-    private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        connection.exec("exit 0",baos);
-        final String s;
-        //TODO: Seems we need to retrieve the encoding from the connection destination
-        try {
-            s = baos.toString(Charset.defaultCharset().name());
-        } catch (UnsupportedEncodingException ex) { // Should not happen
-            throw new IOException("Default encoding is unsupported", ex);
-        }
-        
-        if (s.length()!=0) {
-            listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
-            listener.getLogger().println(s);
-            throw new AbortException();
-        }
-    }
-
-    /**
-     * Starts the agent process.
-     *
-     * @param computer         The computer.
-     * @param listener         The listener.
-     * @param java             The full path name of the java executable to use.
-     * @param workingDirectory The working directory from which to start the java process.
-     *
-     * @throws IOException If something goes wrong.
-     */
-    private void startAgent(SlaveComputer computer, final TaskListener listener, String java,
-                            String workingDirectory) throws IOException {
-        session = connection.openSession();
-        expandChannelBufferSize(session,listener);
-        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
-                     getWorkDirParam(workingDirectory);
-
-        //This will wrap the cmd with prefix commands and suffix commands if they are set.
-        cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
-
-        listener.getLogger().println(Messages.SSHLauncher_StartingAgentProcess(getTimestamp(), cmd));
-        session.execCommand(cmd);
-
-        session.pipeStderr(new DelegateNoCloseOutputStream(listener.getLogger()));
-
-        try {
-            computer.setChannel(session.getStdout(), session.getStdin(), listener.getLogger(), null);
-        } catch (InterruptedException e) {
-            session.close();
-            throw new IOException(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
-        } catch (IOException e) {
-            try {
-                // often times error this early means the JVM has died, so let's see if we can capture all stderr
-                // and exit code
-                throw new AbortException(getSessionOutcomeMessage(session,false));
-            } catch (InterruptedException x) {
-                throw new IOException(e);
-            }
-        }
-    }
-
-    private void expandChannelBufferSize(Session session, TaskListener listener) {
-            // see hudson.remoting.Channel.PIPE_WINDOW_SIZE for the discussion of why 1MB is in the right ball park
-            // but this particular session is where all the master/agent communication will happen, so
-            // it's worth using a bigger buffer to really better utilize bandwidth even when the latency is even larger
-            // (and since we are draining this pipe very rapidly, it's unlikely that we'll actually accumulate this much data)
-            int sz = 4;
-            session.setWindowSize(sz*1024*1024);
-            listener.getLogger().println("Expanded the channel window size to "+sz+"MB");
-    }
-
-    /**
-     * Method copies the agent jar to the remote system.
-     *
-     * @param listener         The listener.
-     * @param workingDirectory The directory into whihc the agent jar will be copied.
-     *
-     * @throws IOException If something goes wrong.
-     */
-    private void copyAgentJar(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
-        String fileName = workingDirectory + SLASH_AGENT_JAR;
-
-        listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
-        SFTPClient sftpClient = null;
-        try {
-            sftpClient = new SFTPClient(connection);
-
-            try {
-                SFTPv3FileAttributes fileAttributes = sftpClient._stat(workingDirectory);
-                if (fileAttributes==null) {
-                    listener.getLogger().println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(),
-                            workingDirectory));
-                    sftpClient.mkdirs(workingDirectory, 0700);
-                } else if (fileAttributes.isRegularFile()) {
-                    throw new IOException(Messages.SSHLauncher_RemoteFSIsAFile(workingDirectory));
-                }
-
-                try {
-                    // try to delete the file in case the agent we are copying is shorter than the agent
-                    // that is already there
-                    sftpClient.rm(fileName);
-                } catch (IOException e) {
-                    // the file did not exist... so no need to delete it!
-                }
-
-                listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
-
-                try {
-                    byte[] agentJar = new Slave.JnlpJar(AGENT_JAR).readFully();
-                    OutputStream os = sftpClient.writeToFile(fileName);
-                    try {
-                        os.write(agentJar);
-                    } finally {
-                        os.close();
-                    }
-                    listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
-                } catch (Error error) {
-                    throw error;  
-                } catch (Throwable e) {
-                    throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarTo(fileName), e);
-                }
-            } catch (Error error) {
-                throw error;
-            } catch (Throwable e) {
-                throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarInto(workingDirectory), e);
-            }
-        } catch (IOException e) {
-            if (sftpClient == null) {
-                e.printStackTrace(listener.error(Messages.SSHLauncher_StartingSCPClient(getTimestamp())));
-                // lets try to recover if the agent doesn't have an SFTP service
-                copySlaveJarUsingSCP(listener, workingDirectory);
-            } else {
-                throw e;
-            }
-        } finally {
-            if (sftpClient != null) {
-                sftpClient.close();
-            }
-        }
-    }
-    /**
-     * Method copies the agent jar to the remote system using scp.
-     *
-     * @param listener         The listener.
-     * @param workingDirectory The directory into which the agent jar will be copied.
-     *
-     * @throws IOException If something goes wrong.
-     * @throws InterruptedException If something goes wrong.
-     */
-    private void copySlaveJarUsingSCP(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
-        SCPClient scp = new SCPClient(connection);
-        try {
-            // check if the working directory exists
-            if (connection.exec("test -d " + workingDirectory ,listener.getLogger())!=0) {
-                listener.getLogger().println(
-                        Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
-                // working directory doesn't exist, lets make it.
-                if (connection.exec("mkdir -p " + workingDirectory, listener.getLogger())!=0) {
-                    listener.getLogger().println("Failed to create "+workingDirectory);
-                }
-            }
-
-            // delete the agent jar as we do with SFTP
-            connection.exec("rm " + workingDirectory + SLASH_AGENT_JAR, new NullStream());
-
-            // SCP it to the agent. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
-            listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
-            scp.put(new Slave.JnlpJar(AGENT_JAR).readFully(), AGENT_JAR, workingDirectory, "0644");
-        } catch (IOException e) {
-            throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarInto(workingDirectory), e);
-        }
-    }
-
-    protected void reportEnvironment(TaskListener listener) throws IOException, InterruptedException {
-        listener.getLogger().println(Messages._SSHLauncher_RemoteUserEnvironment(getTimestamp()));
-        connection.exec("set",listener.getLogger());
-    }
-
-    protected void openConnection(final TaskListener listener, final SlaveComputer computer) throws IOException, InterruptedException {
-        PrintStream logger = listener.getLogger();
-        logger.println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
-        connection.setTCPNoDelay(getTcpNoDelay());
-
-        int maxNumRetries = getMaxNumRetries();
-        for (int i = 0; i <= maxNumRetries; i++) {
-            try {
-                // We pass launch timeout so that the connection will be able to abort once it reaches the timeout
-                // It is a poor man's logic, but it should cause termination if the connection goes strongly beyond the timeout
-                //TODO: JENKINS-48617 and JENKINS-48618 need to be implemented to make it fully robust
-                int launchTimeoutMillis = (int)getLaunchTimeoutMillis();
-                connection.connect(new ServerHostKeyVerifier() {
-
-                    @Override
-                    public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey) throws Exception {
-
-                        final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
-
-                        return getSshHostKeyVerificationStrategyDefaulted().verify(computer, key, listener);
-                    }
-                }, launchTimeoutMillis, 0 /*read timeout - JENKINS-48618*/, launchTimeoutMillis);
-                break;
-            } catch (IOException ioexception) {
-                @CheckForNull String message = "";
-                Throwable cause = ioexception.getCause();
-                if (cause != null) {
-                    message = cause.getMessage();
-                    logger.println(message);
-                }
-                if (cause == null || !isRecoverable(message)) {
-                    throw ioexception;
-                }
-                if (maxNumRetries - i > 0) {
-                    logger.println("SSH Connection failed with IOException: \"" + message
-                                                         + "\", retrying in " + getRetryWaitTime() + " seconds.  There "
-                                   + "are "
-                                                         + (maxNumRetries - i) + " more retries left.");
-                } else {
-                    logger.println("SSH Connection failed with IOException: \"" + message + "\".");
-                    throw ioexception;
-                }
-            }
-            Thread.sleep(TimeUnit.SECONDS.toMillis(getRetryWaitTime()));
-        }
-
-        StandardUsernameCredentials credentials = getCredentials();
-        if (credentials == null) {
-            throw new AbortException("Cannot find SSH User credentials with id: " + credentialsId);
-        }
-        if (SSHAuthenticator.newInstance(connection, credentials).authenticate(listener)
-                && connection.isAuthenticationComplete()) {
-            logger.println(Messages.SSHLauncher_AuthenticationSuccessful(getTimestamp()));
-        } else {
-            logger.println(Messages.SSHLauncher_AuthenticationFailed(getTimestamp()));
-            throw new AbortException(Messages.SSHLauncher_AuthenticationFailedException());
-        }
-    }
-
-    private boolean isRecoverable(@CheckForNull String message) {
-        if (message == null) {
-            return false;
-        }
-
-        for (String s : RECOVERABLE_FAILURES) {
-            if (message.startsWith(s)) return true;
-        }
-        return false;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public void afterDisconnect(SlaveComputer slaveComputer, final TaskListener listener) {
+        /*
         if (connection == null) {
             // Nothing to do here, the connection is not established
             return;
-        }
+        }*/
 
         ExecutorService srv = launcherExecutorService;
         if (srv != null) {
@@ -820,18 +494,21 @@ public class SSHLauncher extends ComputerLauncher {
         if (tearingDownConnection) {
             // tear down operation is in progress, do not even try to synchronize the call.
             //TODO: what if reconnect attempts collide? It should not be possible due to locks, but maybe it worth investigation
-            LOGGER.log(Level.FINE, "There is already a tear down operation in progress for connection {0}. Skipping the call", connection);
+            LOGGER.log(Level.FINE, "There is already a tear down operation in progress for connection {0}. Skipping "
+                                   + "the call" /*, connection*/);
             return;
         }
         tearDownConnection(slaveComputer, listener);
     }
 
     private synchronized void tearDownConnection(@NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
+        /*
         if (connection != null) {
             tearDownConnectionImpl(slaveComputer, listener);
         }
+        */
     }
-
+/*
     private void tearDownConnectionImpl(@NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
         try {
             tearingDownConnection = true;
@@ -908,7 +585,7 @@ public class SSHLauncher extends ComputerLauncher {
         } finally {
             tearingDownConnection = false;
         }
-    }
+    }*/
 
     /**
      * If the SSH connection as a whole is lost, report that information.
@@ -923,30 +600,11 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Find the exit code or exit status, which are differentiated in SSH protocol.
-     */
-    private String getSessionOutcomeMessage(Session session, boolean isConnectionLost) throws InterruptedException {
-        session.waitForCondition(ChannelCondition.EXIT_STATUS | ChannelCondition.EXIT_SIGNAL, 3000);
-
-        Integer exitCode = session.getExitStatus();
-        if (exitCode != null)
-            return "Slave JVM has terminated. Exit code=" + exitCode;
-
-        String sig = session.getExitSignal();
-        if (sig != null)
-            return "Slave JVM has terminated. Exit signal=" + sig;
-
-        if (isConnectionLost)
-            return "Slave JVM has not reported exit code before the socket was lost";
-
-        return "Slave JVM has not reported exit code. Is it still running?";
-    }
-
-    /**
      * Getter for property 'host'.
      *
      * @return Value for property 'host'.
      */
+    @Override
     public String getHost() {
         return host;
     }
@@ -956,19 +614,23 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return Value for property 'port'.
      */
+    @Override
     public int getPort() {
         return port;
     }
 
+    /*
     public Connection getConnection() {
         return connection;
-    }
+    }*/
 
+    @Override
     @NonNull
     public String getPrefixStartSlaveCmd() {
         return Util.fixNull(prefixStartSlaveCmd);
     }
 
+    @Override
     @NonNull
     public String getSuffixStartSlaveCmd() {
         return Util.fixNull(suffixStartSlaveCmd);
@@ -979,12 +641,17 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return launchTimeoutSeconds
      */
+    @Override
     @NonNull
     public Integer getLaunchTimeoutSeconds() {
         return launchTimeoutSeconds;
     }
 
-    private long getLaunchTimeoutMillis() {
+    /**
+     *
+     * @since 2.0
+     */
+    public long getLaunchTimeoutMillis() {
         return TimeUnit.SECONDS.toMillis(defaultIfNoValid(launchTimeoutSeconds, DEFAULT_LAUNCH_TIMEOUT_SECONDS));
     }
 
@@ -993,6 +660,7 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return maxNumRetries
      */
+    @Override
     @NonNull
     public Integer getMaxNumRetries() {
         return defaultIfNoValid(maxNumRetries, DEFAULT_MAX_NUM_RETRIES);
@@ -1003,11 +671,13 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @return retryWaitTime
      */
+    @Override
     @NonNull
     public Integer getRetryWaitTime() {
         return defaultIfNoValid(retryWaitTime, DEFAULT_RETRY_WAIT_TIME);
     }
 
+    @Override
     public boolean getTcpNoDelay() {
         return tcpNoDelay != null ? tcpNoDelay : true;
     }
@@ -1018,15 +688,18 @@ public class SSHLauncher extends ComputerLauncher {
      * credentials tacking could cause a performance issue see
      * @see  <a href="https://issues.jenkins-ci.org/browse/JENKINS-49235">JENKINS-49235</a>
      */
+    @Override
     public boolean getTrackCredentials() {
         String trackCredentials = System.getProperty(SSHLauncher.class.getName() + ".trackCredentials");
         return !"false".equalsIgnoreCase(trackCredentials);
     }
 
+    @Override
     public String getWorkDir() {
         return workDir;
     }
 
+    @Override
     public String getJavaPath() {
         return javaPath;
     }
@@ -1097,6 +770,19 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
+     * Returns the remote root workspace (without trailing slash).
+     *
+     * @param computer The slave computer to get the root workspace of.
+     *
+     * @return the remote root workspace (without trailing slash).
+     *
+     */
+    @CheckForNull
+    static String getWorkingDirectory(SlaveComputer computer) {
+        return SSHLauncher.getWorkingDirectory(computer.getNode());
+    }
+
+    /**
      * @param workingDirectory The Working directory set on the configuration of the node.
      * @return the remoting parameter to set the workDir,
      * by default it is the same as the working directory configured on the node so "-workDir " + workingDirectory,
@@ -1121,8 +807,6 @@ public class SSHLauncher extends ComputerLauncher {
     @Extension
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
 
-        // TODO move the authentication storage to descriptor... see SubversionSCM.java
-
         /**
          * {@inheritDoc}
          */
@@ -1141,7 +825,7 @@ public class SSHLauncher extends ComputerLauncher {
         public String getHelpFile(String fieldName) {
             String n = super.getHelpFile(fieldName);
             if (n==null)
-                n = Jenkins.getActiveInstance().getDescriptorOrDie(SSHConnector.class).getHelpFile(fieldName);
+                n = Jenkins.getInstance().getDescriptorOrDie(SSHConnector.class).getHelpFile(fieldName);
             return n;
         }
 
@@ -1187,39 +871,6 @@ public class SSHLauncher extends ComputerLauncher {
             } catch (NumberFormatException e) {
                 return FormValidation.error(e, Messages.SSHLauncher_PortNotANumber());
             }
-        }
-    }
-
-    private static class DelegateNoCloseOutputStream extends OutputStream {
-        private OutputStream out;
-
-        public DelegateNoCloseOutputStream(OutputStream out) {
-            this.out = out;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            if (out != null) out.write(b);
-        }
-
-        @Override
-        public void close() throws IOException {
-            out = null;
-        }
-
-        @Override
-        public void flush() throws IOException {
-            if (out != null) out.flush();
-        }
-
-        @Override
-        public void write(byte[] b) throws IOException {
-            if (out != null) out.write(b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            if (out != null) out.write(b, off, len);
         }
     }
 

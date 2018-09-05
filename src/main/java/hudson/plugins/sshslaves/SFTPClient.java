@@ -35,7 +35,7 @@ import java.io.OutputStream;
 import java.io.InputStream;
 
 /**
- * TODO: moved to Jenkins core, so pick it up from there.
+ *
  * @author Kohsuke Kawaguchi
  */
 public class SFTPClient extends SFTPv3Client {

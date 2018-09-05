@@ -29,7 +29,9 @@ import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
+import hudson.plugins.sshslaves.SSHLauncherConfig;
 import hudson.slaves.SlaveComputer;
+import static hudson.plugins.sshslaves.SSHLauncherConfig.getTimestamp;
 
 /**
  * A verifier that performs no action on the host key, thereby allowing all connections. To
@@ -48,7 +50,7 @@ public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationS
     
     @Override
     public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
-        listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
+        listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(getTimestamp()));
         return true;
     }
     
