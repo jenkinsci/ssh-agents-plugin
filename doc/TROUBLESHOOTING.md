@@ -36,7 +36,7 @@ In order to try to replicate an issue reported in Jira, we need the following in
 * OpenSSH version you have installed on your SSH agents?
 * Attach the agent connection log (http://jenkins.example.com/computer/NODENAME/log)
 * Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )? 
-Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
+* Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
 * Attach the exception on Jenkins logs associated with the fail
 * Attach the exception on build logs associated with the fail
 * Are your SSH agents static or provisioned by a cloud plugin (k8s, Mesos, Docker, EC2, Azure, ...)?
