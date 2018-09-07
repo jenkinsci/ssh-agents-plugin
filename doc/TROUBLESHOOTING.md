@@ -27,6 +27,23 @@ Make sure to reconnect the agent after changing the agents commands.
 * Avoid to use slow network filesystems (<100MB/s) for the agent work directory. This impacts preformance.
 * If you connect several jenkins nodes to the same host, you should use different user and work directory for each one, to avoid concurrence issues.
 
+### Common info needed to troubleshooting a bug
+
+In order to try to replicate an issue reported in Jira, we need the following info. Also, keep in mind that Jenkins Jira is not a support site, see [How to report an issue](https://wiki.jenkins-ci.org/display/JENKINS/How+to+report+an+issue)
+
+* Jenkins core version
+* OS you use on your SSH agents
+* OpenSSH version you have installed on your SSH agents?
+* Attach the agent connection log (http://jenkins.example.com/computer/NODENAME/log)
+* Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )? 
+Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
+* Attach the exception on Jenkins logs associated with the fail
+* Attach the exception on build logs associated with the fail
+* Are your SSH agents static or provisioned by a cloud plugin (k8s, Mesos, Docker, EC2, Azure, ...)?
+* Do it happen only on the SSH agents?
+* Do it happen on all SSH agents or only on a few? Is there something in common between those SSH agents?
+* Do you see if it happens always with the same job or type of job?
+
 ### Force disconnection
 
 In some cases the agent appears as connected but is not, and the disconnect button is not present, in those cases you
