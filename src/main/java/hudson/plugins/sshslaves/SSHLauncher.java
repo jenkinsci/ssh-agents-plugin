@@ -47,6 +47,7 @@ import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import com.trilead.ssh2.Session;
+import com.trilead.ssh2.jenkins.SFTPClient;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;

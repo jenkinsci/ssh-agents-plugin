@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package hudson.plugins.sshslaves;
+package com.trilead.ssh2.jenkins;
 
 import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.Connection;
@@ -35,7 +35,7 @@ import java.io.OutputStream;
 import java.io.InputStream;
 
 /**
- * TODO: moved to Jenkins core, so pick it up from there.
+ * This Class adds file manage capabilities to the SFTPv3Client class.
  * @author Kohsuke Kawaguchi
  */
 public class SFTPClient extends SFTPv3Client {
