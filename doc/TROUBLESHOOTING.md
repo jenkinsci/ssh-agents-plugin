@@ -39,7 +39,7 @@ In order to try to replicate an issue reported in Jira, we need the following in
 * Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
 * Attach the exception on Jenkins logs associated with the fail
 * Attach the exception on build logs associated with the fail
-* Attach a thread dump captured when the issue is exposed [Obtaining a thread dump](https://wiki.jenkins.io/display/JENKINS/Obtaining+a+thread+dump
+* Attach a thread dump captured when the issue is exposed [Obtaining a thread dump](https://wiki.jenkins.io/display/JENKINS/Obtaining+a+thread+dump)
 * Are your SSH agents static or provisioned by a cloud plugin (k8s, Mesos, Docker, EC2, Azure, ...)?
 * Do it happen only on the SSH agents?
 * Do it happen on all SSH agents or only on a few? Is there something in common between those SSH agents?
