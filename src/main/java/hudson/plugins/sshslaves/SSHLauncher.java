@@ -1091,11 +1091,8 @@ public class SSHLauncher extends ComputerLauncher {
 
                 try {
                     byte[] agentJar = new Slave.JnlpJar(AGENT_JAR).readFully();
-                    OutputStream os = sftpClient.writeToFile(fileName);
-                    try {
+                    try (OutputStream os = sftpClient.writeToFile(fileName)) {
                         os.write(agentJar);
-                    } finally {
-                        os.close();
                     }
                     listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
                 } catch (Error error) {
