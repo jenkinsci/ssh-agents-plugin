@@ -476,7 +476,6 @@ public class SSHLauncher extends ComputerLauncher {
         LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
-    @Deprecated
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
@@ -492,6 +491,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
      */
+    @Deprecated
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
                                     String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
