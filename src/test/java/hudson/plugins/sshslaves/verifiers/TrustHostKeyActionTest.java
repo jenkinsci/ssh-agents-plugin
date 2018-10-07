@@ -31,7 +31,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -100,7 +99,7 @@ public class TrustHostKeyActionTest {
 
             invoke(server, "setPort", new Class[] {Integer.TYPE}, new Object[] {port});
             invoke(server, "setKeyPairProvider", new Class[] {keyPairProviderClass}, new Object[] {provider});
-            invoke(server, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Arrays.asList(factory)});
+            invoke(server, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Collections.singletonList(factory)});
             invoke(server, "setCommandFactory", new Class[] {commandFactoryClass}, new Object[] {commandFactory});
             invoke(server, "setPasswordAuthenticator", new Class[] {commandAuthenticatorClass}, new Object[] {authenticator});
 
