@@ -1058,7 +1058,7 @@ public class SSHLauncher extends ComputerLauncher {
      * Method copies the agent jar to the remote system.
      *
      * @param listener         The listener.
-     * @param workingDirectory The directory into whihc the agent jar will be copied.
+     * @param workingDirectory The directory into which the agent jar will be copied.
      *
      * @throws IOException If something goes wrong.
      */

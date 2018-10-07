@@ -23,8 +23,8 @@ Make sure to reconnect the agent after changing the agents commands.
 * You should check for hs_err_pid error files in the root fs of the agent http://www.oracle.com/technetwork/java/javase/felog-138657.html#gbwcy
 * Check the logs in the root filesystem of the agent
  * Disable energy save options that suspend, or hibernate the host
-* If you experience Out of Memory issues on the remoting process, try to fix the memory of the remoting porcess to at least 128MB (JVM options -Xms<MEM_SYZE> and -Xmx<MEM_SYZE>).
-* Avoid to use slow network filesystems (<100MB/s) for the agent work directory. This impacts preformance.
+* If you experience Out of Memory issues on the remoting process, try to fix the memory of the remoting process to at least 128MB (JVM options -Xms<MEM_SYZE> and -Xmx<MEM_SYZE>).
+* Avoid to use slow network filesystems (<100MB/s) for the agent work directory. This impacts performance.
 * If you connect several jenkins nodes to the same host, you should use different user and work directory for each one, to avoid concurrence issues.
 
 ### Common info needed to troubleshooting a bug
