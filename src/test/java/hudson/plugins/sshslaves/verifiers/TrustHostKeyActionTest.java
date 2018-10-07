@@ -141,7 +141,6 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Object server = null;
         Class serverClass;
         try {
             serverClass = Class.forName("org.apache.sshd.SshServer");
@@ -164,7 +163,6 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Object provider = null;
         Class providerClass;
         try {
             providerClass = Class.forName("org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider");
@@ -176,7 +174,6 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Object factory = null;
         Class factoryClass;
         try {
             factoryClass = Class.forName("org.apache.sshd.server.auth.UserAuthPassword$Factory");
