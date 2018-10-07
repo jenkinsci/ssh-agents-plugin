@@ -1,6 +1,5 @@
 package hudson.plugins.sshslaves.verifiers;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import java.io.IOException;
