@@ -64,7 +64,7 @@ public class TrustHostKeyActionTest {
     public final JenkinsRule jenkins = new JenkinsRule();
 
     private static int findPort() throws IOException {
-        ServerSocket socket = new ServerSocket();;
+        ServerSocket socket = new ServerSocket();
         try {
             socket.bind(null);
             return socket.getLocalPort();
