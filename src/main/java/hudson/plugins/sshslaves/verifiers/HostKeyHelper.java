@@ -45,7 +45,7 @@ public final class HostKeyHelper {
 
     private static final HostKeyHelper INSTANCE = new HostKeyHelper();
     
-    private final Map<Computer, HostKey> cache = new WeakHashMap<Computer, HostKey>();
+    private final Map<Computer, HostKey> cache = new WeakHashMap<>();
 
     private HostKeyHelper() {
         super();

@@ -41,7 +41,7 @@ public class PluginImpl extends Plugin {
     /**
      * The connections to close when the plugin is stopped.
      */
-    private static final List<Connection> activeConnections = new ArrayList<Connection>();
+    private static final List<Connection> activeConnections = new ArrayList<>();
 
     /**
      * {@inheritDoc}

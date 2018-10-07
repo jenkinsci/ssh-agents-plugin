@@ -41,7 +41,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
@@ -51,7 +50,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.Node.Mode;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.DumbSlave;
-import hudson.slaves.NodeProperty;
 import hudson.slaves.RetentionStrategy;
 import hudson.slaves.SlaveComputer;
 
@@ -78,7 +76,7 @@ public class TrustHostKeyActionTest {
     public void testSubmitNotAuthorised() throws Exception {
 
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-                Collections.<Credentials>singletonList(
+                Collections.singletonList(
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
                 )
         );
@@ -114,7 +112,7 @@ public class TrustHostKeyActionTest {
         SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManuallyTrustedKeyVerificationStrategy(true));
         DumbSlave slave = new DumbSlave("test-slave", "SSH Test slave",
                 temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
-                launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+                launcher, RetentionStrategy.NOOP, Collections.emptyList());
         
         jenkins.getInstance().addNode(slave);
         SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-slave");

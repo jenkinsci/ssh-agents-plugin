@@ -57,7 +57,7 @@ class SFTPFileSystem implements FileSystem {
     }
 
     public List<String> listSubDirectories(String dir) throws IOException, InterruptedException {
-        List<String> r = new ArrayList<String>();
+        List<String> r = new ArrayList<>();
         for (SFTPv3DirectoryEntry e : (List<SFTPv3DirectoryEntry>)sftp.ls(dir))
             r.add(e.filename);
         return r;

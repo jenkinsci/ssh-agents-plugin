@@ -36,7 +36,6 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
@@ -827,7 +826,7 @@ public class SSHLauncher extends ComputerLauncher {
         connection = new Connection(host, port);
         launcherExecutorService = Executors.newSingleThreadExecutor(
                 new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
-        Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
+        Set<Callable<Boolean>> callables = new HashSet<>();
         callables.add(new Callable<Boolean>() {
             public Boolean call() throws InterruptedException {
                 Boolean rval = Boolean.FALSE;
@@ -1566,7 +1565,7 @@ public class SSHLauncher extends ComputerLauncher {
                                 ACL.SYSTEM,
                                 Jenkins.getActiveInstance(),
                                 StandardUsernameCredentials.class,
-                                Collections.<DomainRequirement>singletonList(
+                                Collections.singletonList(
                                         new HostnamePortRequirement(host, portValue)
                                 ),
                                 SSHAuthenticator.matcher(Connection.class))
@@ -1590,7 +1589,7 @@ public class SSHLauncher extends ComputerLauncher {
                 int portValue = Integer.parseInt(port);
                 for (ListBoxModel.Option o : CredentialsProvider
                         .listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
-                                Collections.<DomainRequirement>singletonList(
+                                Collections.singletonList(
                                         new HostnamePortRequirement(host, portValue)
                                 ),
                                 SSHAuthenticator.matcher(Connection.class))) {
