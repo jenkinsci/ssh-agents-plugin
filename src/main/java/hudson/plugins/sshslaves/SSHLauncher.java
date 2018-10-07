@@ -767,8 +767,8 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Gets the JVM Options used to launch the agent JVM.
-     * @return
+     * Gets the optional JVM Options used to launch the agent JVM.
+     * @return The optional JVM Options used to launch the agent JVM.
      */
     public String getJvmOptions() {
         return jvmOptions == null ? "" : jvmOptions;
