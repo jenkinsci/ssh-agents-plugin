@@ -129,7 +129,7 @@
         <configuration>
           <!--
             * [JENKINS-51876] Updated core, Java version, and dependencies
-            * [JENKINS-4758] Remove old JDK installer from the plugin
+            * [JENKINS-47586] Remove old JDK installer from the plugin
           -->
           <compatibleSinceVersion>1.27</compatibleSinceVersion>
         </configuration>
