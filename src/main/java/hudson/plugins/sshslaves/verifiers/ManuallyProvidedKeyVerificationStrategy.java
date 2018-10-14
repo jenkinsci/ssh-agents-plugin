@@ -85,12 +85,12 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     @Override
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
         String[] unsortedAlgorithms = super.getPreferredKeyAlgorithms(computer);
-        List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.<String>emptyList());
+        List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.emptyList());
 
         sortedAlgorithms.remove(key.getAlgorithm());
         sortedAlgorithms.add(0, key.getAlgorithm());
 
-        return sortedAlgorithms.toArray(new String[sortedAlgorithms.size()]);
+        return sortedAlgorithms.toArray(new String[0]);
     }
     
     private static HostKey parseKey(String key) throws KeyParseException {

@@ -27,7 +27,6 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.trilead.ssh2.Connection;
 import hudson.Extension;
 import hudson.model.ItemGroup;
@@ -322,7 +321,7 @@ public class SSHConnector extends ComputerConnector {
                             ACL.SYSTEM,
                             context,
                             StandardUsernameCredentials.class,
-                            Collections.<DomainRequirement>singletonList(SSHLauncher.SSH_SCHEME),
+                            Collections.singletonList(SSHLauncher.SSH_SCHEME),
                             SSHAuthenticator.matcher(Connection.class)
                     )
                     .includeCurrentValue(credentialsId);
@@ -336,7 +335,7 @@ public class SSHConnector extends ComputerConnector {
                 return FormValidation.ok(); // no need to alarm a user that cannot configure
             }
             for (ListBoxModel.Option o : CredentialsProvider.listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
-                    Collections.<DomainRequirement>singletonList(SSHLauncher.SSH_SCHEME),
+                    Collections.singletonList(SSHLauncher.SSH_SCHEME),
                     SSHAuthenticator.matcher(Connection.class))) {
                 if (StringUtils.equals(value, o.value)) {
                     return FormValidation.ok();
