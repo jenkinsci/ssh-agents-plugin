@@ -36,7 +36,6 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
@@ -476,7 +475,6 @@ public class SSHLauncher extends ComputerLauncher {
         LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
-    @Deprecated
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
@@ -492,6 +490,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
      */
+    @Deprecated
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
                                     String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
@@ -767,8 +766,8 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Gets the JVM Options used to launch the agent JVM.
-     * @return
+     * Gets the optional JVM Options used to launch the agent JVM.
+     * @return The optional JVM Options used to launch the agent JVM.
      */
     public String getJvmOptions() {
         return jvmOptions == null ? "" : jvmOptions;
@@ -829,7 +828,7 @@ public class SSHLauncher extends ComputerLauncher {
             connection = new Connection(host, port);
             launcherExecutorService = Executors.newSingleThreadExecutor(
                     new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
-            Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
+            Set<Callable<Boolean>> callables = new HashSet<>();
             callables.add(new Callable<Boolean>() {
                 public Boolean call() throws InterruptedException {
                     Boolean rval = Boolean.FALSE;
@@ -1060,7 +1059,7 @@ public class SSHLauncher extends ComputerLauncher {
      * Method copies the agent jar to the remote system.
      *
      * @param listener         The listener.
-     * @param workingDirectory The directory into whihc the agent jar will be copied.
+     * @param workingDirectory The directory into which the agent jar will be copied.
      *
      * @throws IOException If something goes wrong.
      */
@@ -1094,11 +1093,8 @@ public class SSHLauncher extends ComputerLauncher {
 
                 try {
                     byte[] agentJar = new Slave.JnlpJar(AGENT_JAR).readFully();
-                    OutputStream os = sftpClient.writeToFile(fileName);
-                    try {
+                    try (OutputStream os = sftpClient.writeToFile(fileName)) {
                         os.write(agentJar);
-                    } finally {
-                        os.close();
                     }
                     listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
                 } catch (Error error) {
@@ -1568,7 +1564,7 @@ public class SSHLauncher extends ComputerLauncher {
                                 ACL.SYSTEM,
                                 Jenkins.getActiveInstance(),
                                 StandardUsernameCredentials.class,
-                                Collections.<DomainRequirement>singletonList(
+                                Collections.singletonList(
                                         new HostnamePortRequirement(host, portValue)
                                 ),
                                 SSHAuthenticator.matcher(Connection.class))
@@ -1592,7 +1588,7 @@ public class SSHLauncher extends ComputerLauncher {
                 int portValue = Integer.parseInt(port);
                 for (ListBoxModel.Option o : CredentialsProvider
                         .listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
-                                Collections.<DomainRequirement>singletonList(
+                                Collections.singletonList(
                                         new HostnamePortRequirement(host, portValue)
                                 ),
                                 SSHAuthenticator.matcher(Connection.class))) {

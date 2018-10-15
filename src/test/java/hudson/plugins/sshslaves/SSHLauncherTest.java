@@ -346,10 +346,10 @@ public class SSHLauncherTest {
         ToolLocationNodeProperty tool = new ToolLocationNodeProperty(new ToolLocationNodeProperty.ToolLocation(
                 jdkType, "toolJdk", javaHomeTool));
 
-        List<NodeProperty<?>> porperties = new ArrayList<>();
-        porperties.add(javaHomeProperty);
-        porperties.add(tool);
-        computer.getNode().setNodeProperties(porperties);
+        List<NodeProperty<?>> properties = new ArrayList<>();
+        properties.add(javaHomeProperty);
+        properties.add(tool);
+        computer.getNode().setNodeProperties(properties);
 
         JavaProvider provider = new DefaultJavaProvider();
         List<String> javas = provider.getJavas(computer, null, null);

@@ -30,7 +30,6 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Proc;
 import hudson.Util;
-import hudson.Functions;
 import static hudson.Functions.defaulted;
 import hudson.util.StreamCopyThread;
 import hudson.model.Computer;
