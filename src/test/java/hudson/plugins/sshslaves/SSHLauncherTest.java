@@ -234,6 +234,10 @@ public class SSHLauncherTest {
         assertThat("No fingerprint created until use", fingerprint, nullValue());
 
         j.jenkins.addNode(slave);
+        while (slave.toComputer().isConnecting()) {
+            // Make sure verification takes place after launch is complete
+            Thread.sleep(100);
+        }
 
         fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat(fingerprint, notNullValue());
@@ -257,6 +261,10 @@ public class SSHLauncherTest {
         assertThat("No fingerprint created until use", fingerprint, nullValue());
 
         j.jenkins.addNode(slave);
+        while (slave.toComputer().isConnecting()) {
+            // Make sure verification takes place after launch is complete
+            Thread.sleep(100);
+        }
 
         fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat(fingerprint, notNullValue());

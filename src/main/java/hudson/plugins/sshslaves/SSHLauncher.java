@@ -822,107 +822,109 @@ public class SSHLauncher extends ComputerLauncher {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
-        connection = new Connection(host, port);
-        launcherExecutorService = Executors.newSingleThreadExecutor(
-                new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
-        Set<Callable<Boolean>> callables = new HashSet<>();
-        callables.add(new Callable<Boolean>() {
-            public Boolean call() throws InterruptedException {
-                Boolean rval = Boolean.FALSE;
+    public void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
+        final Node node = computer.getNode();
+        synchronized (this) {
+            connection = new Connection(host, port);
+            launcherExecutorService = Executors.newSingleThreadExecutor(
+                    new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
+            Set<Callable<Boolean>> callables = new HashSet<>();
+            callables.add(new Callable<Boolean>() {
+                public Boolean call() throws InterruptedException {
+                    Boolean rval = Boolean.FALSE;
+                    try {
+                        String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
+                        if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
+                            connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
+                        } else {
+                            listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
+                        }
+
+                        listener.getLogger().println(logConfiguration());
+
+                        openConnection(listener, computer);
+
+                        verifyNoHeaderJunk(listener);
+                        reportEnvironment(listener);
+
+                        final String workingDirectory = getWorkingDirectory(computer);
+                        if (workingDirectory == null) {
+                            listener.error("Cannot get the working directory for " + computer);
+                            return Boolean.FALSE;
+                        }
+
+                        String java = null;
+                        if (StringUtils.isNotBlank(javaPath)) {
+                            java = expandExpression(computer, javaPath);
+                        } else {
+                            JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
+                                    connection);
+                            java = javaVersionChecker.resolveJava();
+                        }
+
+                        copyAgentJar(listener, workingDirectory);
+
+                        startAgent(computer, listener, java, workingDirectory);
+
+                        PluginImpl.register(connection);
+                        rval = Boolean.TRUE;
+                    } catch (RuntimeException e) {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    } catch (Error e) {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    } catch (AbortException e) {
+                        listener.getLogger().println(e.getMessage());
+                    } catch (IOException e) {
+                        e.printStackTrace(listener.getLogger());
+                    } finally {
+                        return rval;
+                    }
+                }
+            });
+
+            final String nodeName = node != null ? node.getNodeName(): "unknown";
+            try {
+                long time = System.currentTimeMillis();
+                List<Future<Boolean>> results;
+                final ExecutorService srv = launcherExecutorService;
+                if (srv == null) {
+                    throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
+                }
+                if (this.getLaunchTimeoutMillis() > 0) {
+                    results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+                } else {
+                    results = srv.invokeAll(callables);
+                }
+                long duration = System.currentTimeMillis() - time;
+                Boolean res;
                 try {
-                    String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
-                    if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
-                        connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
-                    } else {
-                        listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
-                    }
-
-                    listener.getLogger().println(logConfiguration());
-
-                    openConnection(listener, computer);
-
-                    verifyNoHeaderJunk(listener);
-                    reportEnvironment(listener);
-
-                    final String workingDirectory = getWorkingDirectory(computer);
-                    if (workingDirectory == null) {
-                        listener.error("Cannot get the working directory for " + computer);
-                        return Boolean.FALSE;
-                    }
-
-                    String java = null;
-                    if (StringUtils.isNotBlank(javaPath)) {
-                        java = expandExpression(computer, javaPath);
-                    } else {
-                        JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
-                                                                                       connection);
-                        java = javaVersionChecker.resolveJava();
-                    }
-
-                    copyAgentJar(listener, workingDirectory);
-
-                    startAgent(computer, listener, java, workingDirectory);
-
-                    PluginImpl.register(connection);
-                    rval = Boolean.TRUE;
-                } catch (RuntimeException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                } catch (Error e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                } catch (AbortException e) {
-                    listener.getLogger().println(e.getMessage());
-                } catch (IOException e) {
-                    e.printStackTrace(listener.getLogger());
-                } finally {
-                    return rval;
+                    res = results.get(0).get();
+                } catch (CancellationException | ExecutionException e) {
+                    res = Boolean.FALSE;
+                    e.printStackTrace(listener.error(e.getMessage()));
+                }
+                if (!res) {
+                    System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
+                            nodeName, host, duration));
+                    listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
+                    cleanupConnection(listener);
+                } else {
+                    System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
+                            nodeName, host, duration));
+                }
+            } catch (InterruptedException e) {
+                System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
+                        nodeName, host));
+            } finally {
+                ExecutorService srv = launcherExecutorService;
+                if (srv != null) {
+                    srv.shutdownNow();
+                    launcherExecutorService = null;
                 }
             }
-        });
-
-        final Node node = computer.getNode();
-        final String nodeName = node != null ? node.getNodeName() : "unknown";
-        if(node != null && getTrackCredentials()) {
-            CredentialsProvider.track(node, getCredentials());
         }
-        try {
-            long time = System.currentTimeMillis();
-            List<Future<Boolean>> results;
-            final ExecutorService srv = launcherExecutorService;
-            if (srv == null) {
-                throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
-            }
-            if (this.getLaunchTimeoutMillis() > 0) {
-                results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
-            } else {
-                results = srv.invokeAll(callables);
-            }
-            long duration = System.currentTimeMillis() - time;
-            Boolean res;
-            try {
-                res = results.get(0).get();
-            } catch (CancellationException | ExecutionException e) {
-                res = Boolean.FALSE;
-                e.printStackTrace(listener.error(e.getMessage()));
-            }
-            if (!res) {
-                System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
-                        nodeName, host, duration));
-                listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
-                cleanupConnection(listener);
-            } else {
-                System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
-                        nodeName, host, duration));
-            }
-        } catch (InterruptedException e) {
-            System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
-                    nodeName, host));
-        } finally {
-            ExecutorService srv = launcherExecutorService;
-            if (srv != null) {
-                srv.shutdownNow();
-                launcherExecutorService = null;
-            }
+        if (node != null && getTrackCredentials()) {
+            CredentialsProvider.track(node, getCredentials());
         }
     }
 
