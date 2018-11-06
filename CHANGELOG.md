@@ -31,7 +31,7 @@
 
 #### Breaking changes
 
-* Requires [Jekins 2.73.3](https://jenkins.io/changelog-stable/#v2.73.3)
+* Requires [Jenkins 2.73.3](https://jenkins.io/changelog-stable/#v2.73.3)
 * Requires **JDK/JRE 8 installed** on agents
 * The *slave.jar* file copied on the agent work folder change name to *remoting.jar*
 
