@@ -25,7 +25,6 @@ package hudson.plugins.sshslaves;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import com.trilead.ssh2.Connection;
 import hudson.EnvVars;

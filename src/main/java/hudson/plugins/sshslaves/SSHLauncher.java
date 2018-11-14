@@ -36,7 +36,6 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
@@ -477,7 +476,6 @@ public class SSHLauncher extends ComputerLauncher {
         LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
     }
 
-    @Deprecated
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
@@ -493,6 +491,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
      */
+    @Deprecated
     public SSHLauncher(String host, int port, StandardUsernameCredentials credentials, String jvmOptions,
                                     String javaPath, JDKInstaller jdkInstaller, String prefixStartSlaveCmd,
                                     String suffixStartSlaveCmd, Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime) {
@@ -768,8 +767,8 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Gets the JVM Options used to launch the agent JVM.
-     * @return
+     * Gets the optional JVM Options used to launch the agent JVM.
+     * @return The optional JVM Options used to launch the agent JVM.
      */
     public String getJvmOptions() {
         return jvmOptions == null ? "" : jvmOptions;
@@ -824,107 +823,109 @@ public class SSHLauncher extends ComputerLauncher {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
-        connection = new Connection(host, port);
-        launcherExecutorService = Executors.newSingleThreadExecutor(
-                new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
-        Set<Callable<Boolean>> callables = new HashSet<Callable<Boolean>>();
-        callables.add(new Callable<Boolean>() {
-            public Boolean call() throws InterruptedException {
-                Boolean rval = Boolean.FALSE;
+    public void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
+        final Node node = computer.getNode();
+        synchronized (this) {
+            connection = new Connection(host, port);
+            launcherExecutorService = Executors.newSingleThreadExecutor(
+                    new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
+            Set<Callable<Boolean>> callables = new HashSet<>();
+            callables.add(new Callable<Boolean>() {
+                public Boolean call() throws InterruptedException {
+                    Boolean rval = Boolean.FALSE;
+                    try {
+                        String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
+                        if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
+                            connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
+                        } else {
+                            listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
+                        }
+
+                        listener.getLogger().println(logConfiguration());
+
+                        openConnection(listener, computer);
+
+                        verifyNoHeaderJunk(listener);
+                        reportEnvironment(listener);
+
+                        final String workingDirectory = getWorkingDirectory(computer);
+                        if (workingDirectory == null) {
+                            listener.error("Cannot get the working directory for " + computer);
+                            return Boolean.FALSE;
+                        }
+
+                        String java = null;
+                        if (StringUtils.isNotBlank(javaPath)) {
+                            java = expandExpression(computer, javaPath);
+                        } else {
+                            JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
+                                    connection);
+                            java = javaVersionChecker.resolveJava();
+                        }
+
+                        copyAgentJar(listener, workingDirectory);
+
+                        startAgent(computer, listener, java, workingDirectory);
+
+                        PluginImpl.register(connection);
+                        rval = Boolean.TRUE;
+                    } catch (RuntimeException e) {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    } catch (Error e) {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    } catch (AbortException e) {
+                        listener.getLogger().println(e.getMessage());
+                    } catch (IOException e) {
+                        e.printStackTrace(listener.getLogger());
+                    } finally {
+                        return rval;
+                    }
+                }
+            });
+
+            final String nodeName = node != null ? node.getNodeName(): "unknown";
+            try {
+                long time = System.currentTimeMillis();
+                List<Future<Boolean>> results;
+                final ExecutorService srv = launcherExecutorService;
+                if (srv == null) {
+                    throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
+                }
+                if (this.getLaunchTimeoutMillis() > 0) {
+                    results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+                } else {
+                    results = srv.invokeAll(callables);
+                }
+                long duration = System.currentTimeMillis() - time;
+                Boolean res;
                 try {
-                    String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
-                    if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
-                        connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
-                    } else {
-                        listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
-                    }
-
-                    listener.getLogger().println(logConfiguration());
-
-                    openConnection(listener, computer);
-
-                    verifyNoHeaderJunk(listener);
-                    reportEnvironment(listener);
-
-                    final String workingDirectory = getWorkingDirectory(computer);
-                    if (workingDirectory == null) {
-                        listener.error("Cannot get the working directory for " + computer);
-                        return Boolean.FALSE;
-                    }
-
-                    String java = null;
-                    if (StringUtils.isNotBlank(javaPath)) {
-                        java = expandExpression(computer, javaPath);
-                    } else {
-                        JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
-                                                                                       connection);
-                        java = javaVersionChecker.resolveJava();
-                    }
-
-                    copyAgentJar(listener, workingDirectory);
-
-                    startAgent(computer, listener, java, workingDirectory);
-
-                    PluginImpl.register(connection);
-                    rval = Boolean.TRUE;
-                } catch (RuntimeException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                } catch (Error e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                } catch (AbortException e) {
-                    listener.getLogger().println(e.getMessage());
-                } catch (IOException e) {
-                    e.printStackTrace(listener.getLogger());
-                } finally {
-                    return rval;
+                    res = results.get(0).get();
+                } catch (CancellationException | ExecutionException e) {
+                    res = Boolean.FALSE;
+                    e.printStackTrace(listener.error(e.getMessage()));
+                }
+                if (!res) {
+                    System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
+                            nodeName, host, duration));
+                    listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
+                    cleanupConnection(listener);
+                } else {
+                    System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
+                            nodeName, host, duration));
+                }
+            } catch (InterruptedException e) {
+                System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
+                        nodeName, host));
+            } finally {
+                ExecutorService srv = launcherExecutorService;
+                if (srv != null) {
+                    srv.shutdownNow();
+                    launcherExecutorService = null;
                 }
             }
-        });
-
-        final Node node = computer.getNode();
-        final String nodeName = node != null ? node.getNodeName() : "unknown";
-        if(node != null && getTrackCredentials()) {
-            CredentialsProvider.track(node, getCredentials());
         }
-        try {
-            long time = System.currentTimeMillis();
-            List<Future<Boolean>> results;
-            final ExecutorService srv = launcherExecutorService;
-            if (srv == null) {
-                throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
-            }
-            if (this.getLaunchTimeoutMillis() > 0) {
-                results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
-            } else {
-                results = srv.invokeAll(callables);
-            }
-            long duration = System.currentTimeMillis() - time;
-            Boolean res;
-            try {
-                res = results.get(0).get();
-            } catch (CancellationException | ExecutionException e) {
-                res = Boolean.FALSE;
-                e.printStackTrace(listener.error(e.getMessage()));
-            }
-            if (!res) {
-                System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
-                        nodeName, host, duration));
-                listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
-                cleanupConnection(listener);
-            } else {
-                System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
-                        nodeName, host, duration));
-            }
-        } catch (InterruptedException e) {
-            System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
-                    nodeName, host));
-        } finally {
-            ExecutorService srv = launcherExecutorService;
-            if (srv != null) {
-                srv.shutdownNow();
-                launcherExecutorService = null;
-            }
+        if (node != null && getTrackCredentials()) {
+            CredentialsProvider.track(node, getCredentials());
         }
     }
 
@@ -1059,7 +1060,7 @@ public class SSHLauncher extends ComputerLauncher {
      * Method copies the agent jar to the remote system.
      *
      * @param listener         The listener.
-     * @param workingDirectory The directory into whihc the agent jar will be copied.
+     * @param workingDirectory The directory into which the agent jar will be copied.
      *
      * @throws IOException If something goes wrong.
      */
@@ -1093,11 +1094,8 @@ public class SSHLauncher extends ComputerLauncher {
 
                 try {
                     byte[] agentJar = new Slave.JnlpJar(AGENT_JAR).readFully();
-                    OutputStream os = sftpClient.writeToFile(fileName);
-                    try {
+                    try (OutputStream os = sftpClient.writeToFile(fileName)) {
                         os.write(agentJar);
-                    } finally {
-                        os.close();
                     }
                     listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
                 } catch (Error error) {
@@ -1551,12 +1549,12 @@ public class SSHLauncher extends ComputerLauncher {
             return n;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context,
                                                      @QueryParameter String host,
                                                      @QueryParameter String port,
                                                      @QueryParameter String credentialsId) {
-            AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
+            Jenkins jenkins = Jenkins.getActiveInstance();
+            if ((context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (context != jenkins && !context.hasPermission(Computer.CONFIGURE))) {
                 return new StandardUsernameListBoxModel()
                         .includeCurrentValue(credentialsId);
             }
@@ -1565,9 +1563,9 @@ public class SSHLauncher extends ComputerLauncher {
                 return new StandardUsernameListBoxModel()
                         .includeMatchingAs(
                                 ACL.SYSTEM,
-                                Jenkins.getActiveInstance(),
+                                jenkins,
                                 StandardUsernameCredentials.class,
-                                Collections.<DomainRequirement>singletonList(
+                                Collections.singletonList(
                                         new HostnamePortRequirement(host, portValue)
                                 ),
                                 SSHAuthenticator.matcher(Connection.class))
@@ -1579,19 +1577,19 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
+                                                   @AncestorInPath AccessControlled _context,
                                                    @QueryParameter String host,
                                                    @QueryParameter String port,
                                                    @QueryParameter String value) {
-            AccessControlled _context =
-                    (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
+            Jenkins jenkins = Jenkins.getActiveInstance();
+            if ((_context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (_context != jenkins && !_context.hasPermission(Computer.CONFIGURE))) {
                 return FormValidation.ok(); // no need to alarm a user that cannot configure
             }
             try {
                 int portValue = Integer.parseInt(port);
                 for (ListBoxModel.Option o : CredentialsProvider
                         .listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
-                                Collections.<DomainRequirement>singletonList(
+                                Collections.singletonList(
                                         new HostnamePortRequirement(host, portValue)
                                 ),
                                 SSHAuthenticator.matcher(Connection.class))) {

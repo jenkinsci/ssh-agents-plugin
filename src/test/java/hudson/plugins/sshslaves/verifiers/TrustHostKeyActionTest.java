@@ -31,7 +31,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -41,7 +40,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
@@ -51,7 +49,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.Node.Mode;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.DumbSlave;
-import hudson.slaves.NodeProperty;
 import hudson.slaves.RetentionStrategy;
 import hudson.slaves.SlaveComputer;
 
@@ -64,12 +61,9 @@ public class TrustHostKeyActionTest {
     public final JenkinsRule jenkins = new JenkinsRule();
 
     private static int findPort() throws IOException {
-        ServerSocket socket = new ServerSocket();;
-        try {
+        try (ServerSocket socket = new ServerSocket()) {
             socket.bind(null);
             return socket.getLocalPort();
-        } finally {
-            socket.close();
         }
     }
     
@@ -78,7 +72,7 @@ public class TrustHostKeyActionTest {
     public void testSubmitNotAuthorised() throws Exception {
 
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-                Collections.<Credentials>singletonList(
+                Collections.singletonList(
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
                 )
         );
@@ -102,7 +96,7 @@ public class TrustHostKeyActionTest {
 
             invoke(server, "setPort", new Class[] {Integer.TYPE}, new Object[] {port});
             invoke(server, "setKeyPairProvider", new Class[] {keyPairProviderClass}, new Object[] {provider});
-            invoke(server, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Arrays.asList(factory)});
+            invoke(server, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Collections.singletonList(factory)});
             invoke(server, "setCommandFactory", new Class[] {commandFactoryClass}, new Object[] {commandFactory});
             invoke(server, "setPasswordAuthenticator", new Class[] {commandAuthenticatorClass}, new Object[] {authenticator});
 
@@ -114,7 +108,7 @@ public class TrustHostKeyActionTest {
         SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManuallyTrustedKeyVerificationStrategy(true));
         DumbSlave slave = new DumbSlave("test-slave", "SSH Test slave",
                 temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
-                launcher, RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList());
+                launcher, RetentionStrategy.NOOP, Collections.emptyList());
         
         jenkins.getInstance().addNode(slave);
         SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-slave");
@@ -141,7 +135,6 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Object server = null;
         Class serverClass;
         try {
             serverClass = Class.forName("org.apache.sshd.SshServer");
@@ -164,7 +157,6 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Object provider = null;
         Class providerClass;
         try {
             providerClass = Class.forName("org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider");
@@ -176,7 +168,6 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Object factory = null;
         Class factoryClass;
         try {
             factoryClass = Class.forName("org.apache.sshd.server.auth.UserAuthPassword$Factory");
