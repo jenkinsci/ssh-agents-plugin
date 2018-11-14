@@ -1548,12 +1548,12 @@ public class SSHLauncher extends ComputerLauncher {
             return n;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context,
                                                      @QueryParameter String host,
                                                      @QueryParameter String port,
                                                      @QueryParameter String credentialsId) {
-            AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
+            Jenkins jenkins = Jenkins.getActiveInstance();
+            if ((context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (context != jenkins && !context.hasPermission(Computer.CONFIGURE))) {
                 return new StandardUsernameListBoxModel()
                         .includeCurrentValue(credentialsId);
             }
@@ -1562,7 +1562,7 @@ public class SSHLauncher extends ComputerLauncher {
                 return new StandardUsernameListBoxModel()
                         .includeMatchingAs(
                                 ACL.SYSTEM,
-                                Jenkins.getActiveInstance(),
+                                jenkins,
                                 StandardUsernameCredentials.class,
                                 Collections.singletonList(
                                         new HostnamePortRequirement(host, portValue)
@@ -1576,12 +1576,12 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
+                                                   @AncestorInPath AccessControlled _context,
                                                    @QueryParameter String host,
                                                    @QueryParameter String port,
                                                    @QueryParameter String value) {
-            AccessControlled _context =
-                    (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
+            Jenkins jenkins = Jenkins.getActiveInstance();
+            if ((_context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (_context != jenkins && !_context.hasPermission(Computer.CONFIGURE))) {
                 return FormValidation.ok(); // no need to alarm a user that cannot configure
             }
             try {
