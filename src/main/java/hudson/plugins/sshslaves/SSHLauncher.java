@@ -666,7 +666,7 @@ public class SSHLauncher extends ComputerLauncher {
                                                                            String privatekey) {
         final String privatekeyContent = getPrivateKeyContent(password, privatekey);
         return CredentialsMatchers.firstOrNull(CredentialsProvider
-                .lookupCredentials(StandardUsernameCredentials.class, Hudson.getInstance(), ACL.SYSTEM,
+                .lookupCredentials(StandardUsernameCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
                         SSH_SCHEME), allOf(
                 withUsername(username),
                 new CredentialsMatcher() {
@@ -946,7 +946,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private EnvVars getEnvVars(SlaveComputer computer) {
-        final EnvVars global = getEnvVars(Jenkins.getActiveInstance());
+        final EnvVars global = getEnvVars(Jenkins.getInstance());
 
         final Node node = computer.getNode();    
         final EnvVars local = node != null ? getEnvVars(node) : null;
@@ -1545,7 +1545,7 @@ public class SSHLauncher extends ComputerLauncher {
         public String getHelpFile(String fieldName) {
             String n = super.getHelpFile(fieldName);
             if (n==null)
-                n = Jenkins.getActiveInstance().getDescriptorOrDie(SSHConnector.class).getHelpFile(fieldName);
+                n = Jenkins.getInstance().getDescriptorOrDie(SSHConnector.class).getHelpFile(fieldName);
             return n;
         }
 
@@ -1553,7 +1553,7 @@ public class SSHLauncher extends ComputerLauncher {
                                                      @QueryParameter String host,
                                                      @QueryParameter String port,
                                                      @QueryParameter String credentialsId) {
-            Jenkins jenkins = Jenkins.getActiveInstance();
+            Jenkins jenkins = Jenkins.getInstance();
             if ((context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (context != jenkins && !context.hasPermission(Computer.CONFIGURE))) {
                 return new StandardUsernameListBoxModel()
                         .includeCurrentValue(credentialsId);
@@ -1581,7 +1581,7 @@ public class SSHLauncher extends ComputerLauncher {
                                                    @QueryParameter String host,
                                                    @QueryParameter String port,
                                                    @QueryParameter String value) {
-            Jenkins jenkins = Jenkins.getActiveInstance();
+            Jenkins jenkins = Jenkins.getInstance();
             if ((_context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (_context != jenkins && !_context.hasPermission(Computer.CONFIGURE))) {
                 return FormValidation.ok(); // no need to alarm a user that cannot configure
             }

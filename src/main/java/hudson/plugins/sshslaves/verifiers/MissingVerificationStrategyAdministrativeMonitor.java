@@ -46,7 +46,7 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
 
     @Override
     public boolean isActivated() {
-        for (Computer computer : Jenkins.getActiveInstance().getComputers()) {
+        for (Computer computer : Jenkins.getInstance().getComputers()) {
             if (computer instanceof SlaveComputer) {
                 ComputerLauncher launcher = ((SlaveComputer) computer).getLauncher();
 

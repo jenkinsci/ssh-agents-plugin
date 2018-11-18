@@ -101,7 +101,7 @@ public class DefaultJavaProvider extends JavaProvider {
 
     private List<String> lookForTools(Node node) {
         List<String> ret = new ArrayList<>();
-        Descriptor jdk = Jenkins.getActiveInstance().getDescriptorByType(JDK.DescriptorImpl.class);
+        Descriptor jdk = Jenkins.getInstance().getDescriptorByType(JDK.DescriptorImpl.class);
         if(node != null && node.getNodeProperties() != null){
             for (NodeProperty property : node.getNodeProperties()){
                 if (property instanceof ToolLocationNodeProperty) {
