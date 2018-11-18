@@ -1,5 +1,16 @@
 # Changelog
 
+### 1.29.0 (Nov 18, 2018)
+
+* [JENKINS-54686](https://issues.jenkins-ci.org/browse/JENKINS-54686) Use trilead-api plugin instead trilead-ssh2 from core
+* [JENKINS-49235](https://issues.jenkins-ci.org/browse/JENKINS-49235) Do not record fingerprints while holding the lock
+* [JENKINS-54269](https://issues.jenkins-ci.org/browse/JENKINS-54269) MissingVerificationStrategyAdministrativeMonitor is missing its name
+* [JENKINS-52015](https://issues.jenkins-ci.org/browse/JENKINS-52015) Empty credentials dropdown when creating new agent
+
+#### Breaking changes
+
+* see 1.27
+* It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
 
 ### 1.28.1 (Sep 5, 2018)
 
