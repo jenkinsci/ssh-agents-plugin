@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
-  <version>1.29.0-SNAPSHOT</version>
+  <version>1.29.0</version>
   <packaging>hpi</packaging>
 
   <name>Jenkins SSH Slaves plugin</name>
@@ -78,7 +78,7 @@
     <connection>scm:git:git://github.com/jenkinsci/ssh-slaves-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/ssh-slaves-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
-    <tag>HEAD</tag>
+    <tag>ssh-slaves-1.29.0</tag>
   </scm>
 
   <repositories>
