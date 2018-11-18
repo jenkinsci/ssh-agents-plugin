@@ -342,7 +342,7 @@ public class SSHLauncherTest {
         NodeProperty<?> javaHomeProperty = new EnvironmentVariablesNodeProperty(env);
 
         List<ToolLocationNodeProperty.ToolLocation> locations = new ArrayList<>();
-        JDK.DescriptorImpl jdkType = Jenkins.getActiveInstance().getDescriptorByType(JDK.DescriptorImpl.class);
+        JDK.DescriptorImpl jdkType = Jenkins.getInstance().getDescriptorByType(JDK.DescriptorImpl.class);
         ToolLocationNodeProperty tool = new ToolLocationNodeProperty(new ToolLocationNodeProperty.ToolLocation(
                 jdkType, "toolJdk", javaHomeTool));
 

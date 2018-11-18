@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.15</version>
+    <version>3.19</version>
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
@@ -25,7 +25,7 @@
   </licenses>
 
   <properties>
-    <jenkins.version>2.73.3</jenkins.version>
+    <jenkins.version>2.89.4</jenkins.version>
     <java.level>8</java.level>
   </properties>
 
@@ -95,24 +95,21 @@
   </pluginRepositories>
 
   <dependencies>
-    <!-- regular dependencies -->
-    <dependency>
-      <groupId>org.jenkins-ci</groupId>
-      <artifactId>trilead-ssh2</artifactId>
-      <version>build-217-jenkins-11</version>
-      <scope>provided</scope>
-      <!-- we only need the newer version for testing, we use the bundled version during execution -->
-    </dependency>
     <!-- plugin dependencies -->
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>trilead-api</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>2.1.16</version>
+      <version>2.1.18</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>ssh-credentials</artifactId>
-      <version>1.13</version>
+      <version>1.14</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.test</groupId>
@@ -133,6 +130,13 @@
             * [JENKINS-47586] Remove old JDK installer from the plugin
           -->
           <compatibleSinceVersion>1.27</compatibleSinceVersion>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <configuration>
+          <globalMaskClasses>com.trilead.ssh2</globalMaskClasses>
         </configuration>
       </plugin>
     </plugins>
