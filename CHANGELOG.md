@@ -1,5 +1,15 @@
 # Changelog
 
+### 1.29.1 (Nov 20, 2018)
+
+* [JENKINS-54686](https://issues.jenkins-ci.org/browse/JENKINS-54686) partial revert of the change to maintain compatibility with Cloud plugins
+
+#### Breaking changes
+
+* see 1.27 and 1.29.0
+* It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
+ * **Plugins that have it as dependency (EC2 Fleet, Docker, ...) must test the upgrade to 1.29.0.**
+ 
 ### 1.29.0 (Nov 18, 2018)
 
 * [JENKINS-54686](https://issues.jenkins-ci.org/browse/JENKINS-54686) Use trilead-api plugin instead trilead-ssh2 from core
@@ -11,7 +21,7 @@
 
 * see 1.27
 * It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
- * This breaks compatibility with Cloud plugins (EC2 Fleet)
+ * **This breaks compatibility with plugins that have it as dependency (EC2 Fleet, Docker, ...).**
 
 ### 1.28.1 (Sep 5, 2018)
 
