@@ -11,7 +11,7 @@
 
 * see 1.27
 * It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
- * This breansk compatibility with Cloud plugins (EC2 Fleet)
+ * This breaks compatibility with Cloud plugins (EC2 Fleet)
 
 ### 1.28.1 (Sep 5, 2018)
 
