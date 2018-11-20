@@ -74,3 +74,28 @@ in the Jenkins properties. it can be set in runtime by executing the following c
 ```
 System.setProperty("hudson.plugins.sshslaves.SSHLauncher.trackCredentials","false");
 ```
+
+### 1.29.0 Breaks compatibility with Cloud plugins that do not use trilead-api plugin as dependency
+
+Slaves-ssh-plugins not longer uses trilead-ssh2 module from the Jenkins core so plugins that depends on slaves-ssh-plugin must include trilead-api plugin as dependency until every the plugins change to this dependency. If you find this issue with one of your cloud plugins please report it and downgrade ssh-slave-plugin to <1.28.1 until the dependency is added to your cloud plugin.
+
+```
+SSHLauncher{host='192.168.1.100', port=22, credentialsId='b6a4fe2c-9ba5-4052-b91c-XXXXXXXXX', jvmOptions='-Xmx256m', javaPath='', prefixStartSlaveCmd='', suffixStartSlaveCmd='', launchTimeoutSeconds=210, maxNumRetries=10, retryWaitTime=15, sshHostKeyVerificationStrategy=hudson.plugins.sshslaves.verifiers.ManuallyTrustedKeyVerificationStrategy, tcpNoDelay=true, trackCredentials=false}
+[11/20/18 00:29:56] [SSH] Opening SSH connection to 192.168.1.100:22.
+[11/20/18 00:29:57] [SSH] SSH host key matches key seen previously for this host. Connection will be allowed.
+ERROR: Unexpected error in launching a agent. This is probably a bug in Jenkins.
+java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
+	at com.cloudbees.jenkins.plugins.sshcredentials.impl.TrileadSSHPasswordAuthenticator$Factory.supports(TrileadSSHPasswordAuthenticator.java:194)
+	at com.cloudbees.jenkins.plugins.sshcredentials.impl.TrileadSSHPasswordAuthenticator$Factory.newInstance(TrileadSSHPasswordAuthenticator.java:181)
+	at com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator.newInstance(SSHAuthenticator.java:216)
+	at com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator.newInstance(SSHAuthenticator.java:170)
+	at hudson.plugins.sshslaves.SSHLauncher.openConnection(SSHLauncher.java:1213)
+	at hudson.plugins.sshslaves.SSHLauncher$2.call(SSHLauncher.java:846)
+	at hudson.plugins.sshslaves.SSHLauncher$2.call(SSHLauncher.java:833)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+[11/20/18 00:29:57] Launch failed - cleaning up connection
+[11/20/18 00:29:57] [SSH] Connection closed. 
+```
