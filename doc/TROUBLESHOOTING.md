@@ -77,7 +77,7 @@ System.setProperty("hudson.plugins.sshslaves.SSHLauncher.trackCredentials","fals
 
 ### 1.29.0 Breaks compatibility with Cloud plugins that do not use trilead-api plugin as dependency
 
-Slaves-ssh-plugins not longer uses trilead-ssh2 module from the Jenkins core so plugins that depends on slaves-ssh-plugin must include trilead-api plugin as dependency until every the plugins change to this dependency. If you find this issue with one of your cloud plugins please report it and downgrade ssh-slave-plugin to <1.28.1 until the dependency is added to your cloud plugin.
+ssh-slaves-plugins not longer uses trilead-ssh2 module from the Jenkins core so plugins that depends on ssh-slaves-plugin must include trilead-api plugin as dependency until every the plugins change to this dependency. If you find this issue with one of your cloud plugins please report it and downgrade ssh-slaves-plugin to <1.28.1 until the dependency is added to your cloud plugin.
 
 ```
 SSHLauncher{host='192.168.1.100', port=22, credentialsId='b6a4fe2c-9ba5-4052-b91c-XXXXXXXXX', jvmOptions='-Xmx256m', javaPath='', prefixStartSlaveCmd='', suffixStartSlaveCmd='', launchTimeoutSeconds=210, maxNumRetries=10, retryWaitTime=15, sshHostKeyVerificationStrategy=hudson.plugins.sshslaves.verifiers.ManuallyTrustedKeyVerificationStrategy, tcpNoDelay=true, trackCredentials=false}
