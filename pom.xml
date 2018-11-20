@@ -99,7 +99,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>trilead-api</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
@@ -130,13 +130,6 @@
             * [JENKINS-47586] Remove old JDK installer from the plugin
           -->
           <compatibleSinceVersion>1.27</compatibleSinceVersion>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.jenkins-ci.tools</groupId>
-        <artifactId>maven-hpi-plugin</artifactId>
-        <configuration>
-          <globalMaskClasses>com.trilead.ssh2</globalMaskClasses>
         </configuration>
       </plugin>
     </plugins>
