@@ -1,4 +1,4 @@
 <?jelly escape-by-default='true'?>
 <div>
-  Allows to launch agents over SSH, using a Java implementation of the SSH protocol.
+  Allows to launch agents over UserSSH, using a Java implementation of the SSH protocol.
 </div>

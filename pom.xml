@@ -8,13 +8,13 @@
     <version>3.19</version>
   </parent>
 
-  <artifactId>ssh-slaves</artifactId>
-  <version>1.29.2-SNAPSHOT</version>
+  <artifactId>ssh-user-slaves</artifactId>
+  <version>1.0-TESTING</version>
   <packaging>hpi</packaging>
 
-  <name>Jenkins SSH Slaves plugin</name>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
-  <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
+  <name>Jenkins UserSSH Slaves plugin</name>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/UserSSH+Slaves+plugin</url>
+  <description>Allows to launch agents over User's SSH, using a Java implementation of the SSH protocol</description>
 
   <licenses>
     <license>
@@ -27,57 +27,23 @@
   <properties>
     <jenkins.version>2.89.4</jenkins.version>
     <java.level>8</java.level>
+    <maven.test.skip>true</maven.test.skip>
   </properties>
 
   <developers>
     <developer>
-      <id>stephenconnolly</id>
-      <name>Stephen Connolly</name>
+      <id>rohangoli</id>
+      <name>Rohan Goli</name>
       <roles>
-        <role>Maintainer (retired)</role>
-      </roles>
-    </developer>
-    <developer>
-      <id>kohsuke</id>
-      <name>Kohsuke Kawaguchi</name>
-      <roles>
-        <role>Maintainer (retired)</role>
-      </roles>
-    </developer>
-    <developer>
-      <id>olamy</id>
-      <name>Olivier Lamy</name>
-      <roles>
-        <role>Maintainer (retired)</role>
-      </roles>
-    </developer>
-    <developer>
-      <id>mc1arke</id>
-      <name>Michael Clarke</name>
-      <roles>
-        <role>Maintainer (retired)</role>
-      </roles>
-    </developer>
-    <developer>
-      <id>oleg_nenashev</id>
-      <name>Oleg Nenashev</name>
-      <roles>
-        <role>Maintainer (retired)</role>
-      </roles>
-    </developer>
-    <developer>
-      <id>ifernandezcalvo</id>
-      <name>Ivan Fernandez Calvo</name>
-      <roles>
-        <role>Maintainer</role>
+        <role>Developer</role>
       </roles>
     </developer>
   </developers>
 
   <scm>
-    <connection>scm:git:git://github.com/jenkinsci/ssh-slaves-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/ssh-slaves-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
+    <connection>scm:git:git://github.com/itechniqs/ssh-slaves-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:itechniqs/ssh-slaves-plugin.git</developerConnection>
+    <url>https://github.com/itechniqs/ssh-slaves-plugin</url>
     <tag>HEAD</tag>
   </scm>
 
