@@ -76,6 +76,7 @@ import hudson.util.NullStream;
 import hudson.util.Secret;
 import java.util.Collections;
 import jenkins.model.Jenkins;
+import org.acegisecurity.Authentication;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.apache.commons.codec.binary.Base64;
@@ -265,6 +266,8 @@ public class SSHLauncher extends ComputerLauncher {
      * @see <a href="https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory">Remoting Work directory</a>
      */
     private String workDir;
+
+    private Authentication authentication = Jenkins.getAuthentication();
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
