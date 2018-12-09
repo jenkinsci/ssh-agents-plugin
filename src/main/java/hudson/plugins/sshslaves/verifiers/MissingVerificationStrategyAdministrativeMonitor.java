@@ -26,6 +26,7 @@ package hudson.plugins.sshslaves.verifiers;
 import hudson.Extension;
 import hudson.model.AdministrativeMonitor;
 import hudson.model.Computer;
+import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
@@ -45,7 +46,7 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
 
     @Override
     public boolean isActivated() {
-        for (Computer computer : Jenkins.getActiveInstance().getComputers()) {
+        for (Computer computer : Jenkins.getInstance().getComputers()) {
             if (computer instanceof SlaveComputer) {
                 ComputerLauncher launcher = ((SlaveComputer) computer).getLauncher();
 
@@ -69,5 +70,10 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
             return true;
         }
         return false;
+    }
+
+    @Override
+    public String getDisplayName() {
+        return Messages.MissingVerificationStrategyAdministrativeMonitor_DisplayName();
     }
 }

@@ -78,7 +78,7 @@ public class VerificationStrategyConfigurationTest {
     private void testConfigureRoundTrip(SshHostKeyVerificationStrategy strategy) throws Exception {
         StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "dummyUser", "dummyPassword");
 
-        List<Credentials> credentialsList = new ArrayList<Credentials>();
+        List<Credentials> credentialsList = new ArrayList<>();
         credentialsList.add(credentials);
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(), credentialsList);
         

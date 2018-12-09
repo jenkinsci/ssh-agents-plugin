@@ -44,7 +44,7 @@ public abstract class SshHostKeyVerificationStrategy implements Describable<SshH
 
     @Override
     public SshHostKeyVerificationStrategyDescriptor getDescriptor() {
-        return (SshHostKeyVerificationStrategyDescriptor)Jenkins.getActiveInstance().getDescriptorOrDie(getClass());
+        return (SshHostKeyVerificationStrategyDescriptor)Jenkins.getInstance().getDescriptorOrDie(getClass());
     }
 
     /**

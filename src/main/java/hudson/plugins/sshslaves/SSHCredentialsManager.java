@@ -70,12 +70,12 @@ public class SSHCredentialsManager {
      * @param id Id of the credential.
      * @return Ok if the credential exists, otherwise an error.
      */
-    public static FormValidation checkCredentialId(ItemGroup context, String id){
+    public static FormValidation checkCredentialId(AccessControlled context, String id){
         if (!hasPermissionsToGetCredentials(context)) {
             return FormValidation.ok(); // no need to alarm a user that cannot configure
         }
         List<DomainRequirement> domainRequirements = Collections.singletonList(SSH_SCHEME);
-        return checkCredentialId(context, id, domainRequirements);
+        return checkCredentialId(id, domainRequirements);
     }
 
     /**
@@ -86,38 +86,35 @@ public class SSHCredentialsManager {
      * @param id Id of the credential.
      * @return Ok if the credential exists, otherwise an error.
      */
-    public static FormValidation checkCredentialsIdAndDomain(ItemGroup context, String host, int port, String id) {
+    public static FormValidation checkCredentialsIdAndDomain(AccessControlled context, String host, int port, String id) {
         if (!hasPermissionsToGetCredentials(context)) {
             return FormValidation.ok(); // no need to alarm a user that cannot configure
         }
         List<DomainRequirement> domainRequirements = Collections.singletonList(new HostnamePortRequirement(host, port));
-        return checkCredentialId(context, id, domainRequirements);
+        return checkCredentialId(id, domainRequirements);
     }
 
     /**
      * list all credentials in a context that match SSHAuthenticator.matcher(Connection.class)
-     * @param context context where looking for.
      * @param domainRequirements domains where looking for.
      * @return a list of credentials.
      */
-    private static ListBoxModel listCredentials(ItemGroup context, List<DomainRequirement> domainRequirements){
+    private static ListBoxModel listCredentials(List<DomainRequirement> domainRequirements){
         return CredentialsProvider.listCredentials(StandardUsernameCredentials.class,
-                                                   context,
-                                                   ACL.SYSTEM,
-                                                   domainRequirements,
-                                                   SSHAuthenticator.matcher(Connection.class));
+                Jenkins.getInstance(),
+                ACL.SYSTEM,
+                domainRequirements,
+                SSHAuthenticator.matcher(Connection.class));
     }
 
     /**
      * Look for a credential in a context in domains with the Id passed as parameter.
-     * @param context context where looking for.
      * @param id Id of the credential.
      * @param domainRequirements domains where looking for.
      * @return Ok if the credential exists, otherwise an error.
      */
-    private static FormValidation checkCredentialId(ItemGroup context, String id,
-                                                    List<DomainRequirement> domainRequirements) {
-        for (ListBoxModel.Option o : listCredentials(context, domainRequirements)) {
+    private static FormValidation checkCredentialId(String id, List<DomainRequirement> domainRequirements) {
+        for (ListBoxModel.Option o : listCredentials(domainRequirements)) {
             if (StringUtils.equals(id, o.value)) {
                 return FormValidation.ok();
             }
@@ -131,12 +128,12 @@ public class SSHCredentialsManager {
      * @param credentialsId Id of the credential selected.
      * @return A ListBoxModel with the credentials available to select in the context.
      */
-    public static ListBoxModel fillCredentialsIdItems(ItemGroup context, String credentialsId) {
+    public static ListBoxModel fillCredentialsIdItems(AccessControlled context, String credentialsId) {
         if (!hasPermissionsToGetCredentials(context)) {
             return new StandardUsernameListBoxModel().includeCurrentValue(credentialsId);
         }
         List<DomainRequirement> domainRequirements = Collections.singletonList(SSH_SCHEME);
-        return fillCredentialsIdItems(context, domainRequirements, credentialsId);
+        return fillCredentialsIdItems(domainRequirements, credentialsId);
     }
 
     /**
@@ -147,27 +144,26 @@ public class SSHCredentialsManager {
      * @param credentialsId Id of the credential selected.
      * @return A ListBoxModel with the credentials available to select in the context and domain.
      */
-    public static ListBoxModel fillCredentialsIdItems(ItemGroup context, String host, int port, String credentialsId) {
+    public static ListBoxModel fillCredentialsIdItems(AccessControlled context, String host, int port, String credentialsId) {
         if (!hasPermissionsToGetCredentials(context)) {
             return new StandardUsernameListBoxModel().includeCurrentValue(credentialsId);
         }
         List<DomainRequirement> domainRequirements = Collections.singletonList(new HostnamePortRequirement(host, port));
-        return fillCredentialsIdItems(Jenkins.getInstance(), domainRequirements, credentialsId);
+        return fillCredentialsIdItems(domainRequirements, credentialsId);
     }
 
     /**
      *
-     * @param context context where looking for.
      * @param domainRequirements domain where looking for.
      * @param credentialsId Id of the credential selected.
      * @return A ListBoxModel with the credentials available to select in the context and domain.
      */
-    private static ListBoxModel fillCredentialsIdItems(ItemGroup context, List<DomainRequirement> domainRequirements,
+    private static ListBoxModel fillCredentialsIdItems(List<DomainRequirement> domainRequirements,
                                                 String credentialsId) {
         return new StandardUsernameListBoxModel()
                 .includeMatchingAs(
                         ACL.SYSTEM,
-                        context,
+                        Jenkins.getInstance(),
                         StandardUsernameCredentials.class,
                         domainRequirements,
                         SSHAuthenticator.matcher(Connection.class))
@@ -179,8 +175,8 @@ public class SSHCredentialsManager {
      * @param context context to check.
      * @return true if the authenticated user has access to configure credentials in the context.
      */
-    private static boolean hasPermissionsToGetCredentials(ItemGroup context) {
-        AccessControlled _context = context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance();
-        return _context != null && _context.hasPermission(Computer.CONFIGURE);
+    private static boolean hasPermissionsToGetCredentials(AccessControlled context) {
+        Jenkins jenkins = Jenkins.getInstance();
+        return (context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (context != jenkins && !context.hasPermission(Computer.CONFIGURE));
     }
 }

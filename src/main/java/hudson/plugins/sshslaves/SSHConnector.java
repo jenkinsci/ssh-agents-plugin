@@ -25,10 +25,10 @@ package hudson.plugins.sshslaves;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import hudson.Extension;
-import hudson.model.ItemGroup;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
+import hudson.security.AccessControlled;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
 import hudson.tools.JDKInstaller;
@@ -313,12 +313,12 @@ public class SSHConnector extends ComputerConnector {
         }
 
         @RequirePOST
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String credentialsId) {
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context, @QueryParameter String credentialsId) {
             return SSHCredentialsManager.fillCredentialsIdItems(context, credentialsId);
         }
 
         @RequirePOST
-        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context, @QueryParameter String value) {
+        public FormValidation doCheckCredentialsId(@AncestorInPath AccessControlled context, @QueryParameter String value) {
             return SSHCredentialsManager.checkCredentialId(context, value);
         }
 

@@ -114,7 +114,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
             sortedAlgorithms.remove(hostKey.getAlgorithm());
             sortedAlgorithms.add(0, hostKey.getAlgorithm());
 
-            algorithms = sortedAlgorithms.toArray(new String[sortedAlgorithms.size()]);
+            algorithms = sortedAlgorithms.toArray(new String[0]);
         }
 
         return algorithms;

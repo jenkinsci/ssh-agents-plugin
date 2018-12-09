@@ -1,6 +1,24 @@
+# Changelog
 
-#Changelog
+### 1.29.0 (Nov 18, 2018)
 
+* [JENKINS-54686](https://issues.jenkins-ci.org/browse/JENKINS-54686) Use trilead-api plugin instead trilead-ssh2 from core
+* [JENKINS-49235](https://issues.jenkins-ci.org/browse/JENKINS-49235) Do not record fingerprints while holding the lock
+* [JENKINS-54269](https://issues.jenkins-ci.org/browse/JENKINS-54269) MissingVerificationStrategyAdministrativeMonitor is missing its name
+* [JENKINS-52015](https://issues.jenkins-ci.org/browse/JENKINS-52015) Empty credentials dropdown when creating new agent
+
+#### Breaking changes
+
+* see 1.27
+* It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
+
+### 1.28.1 (Sep 5, 2018)
+
+* [JENKINS-53254](https://issues.jenkins-ci.org/browse/JENKINS-53254) SSH connection fails in vShpere cloud plugin with new version of SSH slaves plugin (1.27)
+
+#### Breaking changes
+
+* see 1.27
 
 ### 1.28 (Aug 27, 2018)
 
@@ -24,7 +42,7 @@
 
 #### Breaking changes
 
-* Requires [Jekins 2.73.3](https://jenkins.io/changelog-stable/#v2.73.3)
+* Requires [Jenkins 2.73.3](https://jenkins.io/changelog-stable/#v2.73.3)
 * Requires **JDK/JRE 8 installed** on agents
 * The *slave.jar* file copied on the agent work folder change name to *remoting.jar*
 

@@ -32,12 +32,12 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
-import hudson.model.ItemGroup;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
+import hudson.security.AccessControlled;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.NodeProperty;
@@ -317,7 +317,8 @@ public class SSHLauncher extends ComputerLauncher implements SSHLauncherConfig {
     }
 
     /**
-     * Gets the JVM Options used to launch the agent JVM.
+     * Gets the optional JVM Options used to launch the agent JVM.
+     * @return The optional JVM Options used to launch the agent JVM.
      */
     @Override
     public String getJvmOptions() {
@@ -340,94 +341,95 @@ public class SSHLauncher extends ComputerLauncher implements SSHLauncherConfig {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
+    public void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         listener.getLogger().println(logConfiguration());
         final SSHProvider connection = new SSHProviderImpl(this, computer, listener);
-        launcherExecutorService = Executors.newSingleThreadExecutor(
-                new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
-        Set<Callable<Boolean>> callables = new HashSet();
-        callables.add(new Callable<Boolean>() {
-            public Boolean call() throws InterruptedException {
-                Boolean rval = Boolean.FALSE;
+        final Node node = computer.getNode();
+        final String workingDirectory = getWorkingDirectory(computer);
+        if (workingDirectory == null) {
+            listener.error("Cannot get the working directory for " + computer);
+            //return Boolean.FALSE;
+        }
+        synchronized (this) {
+            launcherExecutorService = Executors.newSingleThreadExecutor(new NamingThreadFactory(
+                    Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
+            Set<Callable<Boolean>> callables = new HashSet();
+            callables.add(new Callable<Boolean>() {
+                public Boolean call() throws InterruptedException {
+                    Boolean rval = Boolean.FALSE;
+                    try {
+                        connection.openConnection();
+
+                        String java = null;
+                        if (StringUtils.isNotBlank(javaPath)) {
+                            java = expandExpression(computer, javaPath);
+                        } else {
+                            JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(), connection);
+                            java = javaVersionChecker.resolveJava();
+                        }
+
+                        connection.copyAgentJar(workingDirectory);
+
+                        connection.startAgent(java, workingDirectory);
+
+                        PluginImpl.register(connection);
+                        rval = Boolean.TRUE;
+                    } catch (RuntimeException | Error e) {
+                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    } catch (AbortException e) {
+                        listener.getLogger().println(e.getMessage());
+                    } catch (IOException e) {
+                        e.printStackTrace(listener.getLogger());
+                    } finally {
+                        return rval;
+                    }
+                }
+            });
+
+            final String nodeName = node != null ? node.getNodeName() : "unknown";
+            try {
+                long time = System.currentTimeMillis();
+                List<Future<Boolean>> results;
+                final ExecutorService srv = launcherExecutorService;
+                if (srv == null) {
+                    throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
+                }
+                if (this.getLaunchTimeoutMillis() > 0) {
+                    results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
+                } else {
+                    results = srv.invokeAll(callables);
+                }
+                long duration = System.currentTimeMillis() - time;
+                Boolean res;
                 try {
-                    connection.openConnection();
-
-                    final String workingDirectory = getWorkingDirectory(computer);
-                    if (workingDirectory == null) {
-                        listener.error("Cannot get the working directory for " + computer);
-                        return Boolean.FALSE;
-                    }
-
-                    String java = null;
-                    if (StringUtils.isNotBlank(javaPath)) {
-                        java = expandExpression(computer, javaPath);
-                    } else {
-                        JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(), connection);
-                        java = javaVersionChecker.resolveJava();
-                    }
-
-                    connection.copyAgentJar(workingDirectory);
-
-                    connection.startAgent(java, workingDirectory);
-
-                    PluginImpl.register(connection);
-                    rval = Boolean.TRUE;
-                } catch (RuntimeException | Error e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                } catch (AbortException e) {
-                    listener.getLogger().println(e.getMessage());
-                } catch (IOException e) {
-                    e.printStackTrace(listener.getLogger());
-                } finally {
-                    return rval;
+                    res = results.get(0).get();
+                } catch (CancellationException | ExecutionException e) {
+                    res = Boolean.FALSE;
+                    //TODO try to improve the message, set timeout to 1 to expose the error.
+                    listener.error( e.getClass().getName()+ " - " + e.getMessage());
+                    e.printStackTrace(listener.error(e.getClass().getName()));
+                }
+                if (!res) {
+                    System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
+                            nodeName, host, duration));
+                    listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
+                    connection.cleanupConnection();
+                } else {
+                    System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
+                            nodeName, host, duration));
+                }
+            } catch (InterruptedException e) {
+                System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(), nodeName, host));
+            } finally {
+                ExecutorService srv = launcherExecutorService;
+                if (srv != null) {
+                    srv.shutdownNow();
+                    launcherExecutorService = null;
                 }
             }
-        });
-
-        final Node node = computer.getNode();
-        final String nodeName = node != null ? node.getNodeName() : "unknown";
-        if(node != null && getTrackCredentials()) {
-            CredentialsProvider.track(node, getCredentials());
         }
-        try {
-            long time = System.currentTimeMillis();
-            List<Future<Boolean>> results;
-            final ExecutorService srv = launcherExecutorService;
-            if (srv == null) {
-                throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
-            }
-            if (this.getLaunchTimeoutMillis() > 0) {
-                results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
-            } else {
-                results = srv.invokeAll(callables);
-            }
-            long duration = System.currentTimeMillis() - time;
-            Boolean res;
-            try {
-                res = results.get(0).get();
-            } catch (CancellationException | ExecutionException e) {
-                res = Boolean.FALSE;
-                //TODO try to improve the message, set timeout to 1 to expose the error.
-                listener.error( e.getClass().getName()+ " - " + e.getMessage());
-                e.printStackTrace(listener.error(e.getClass().getName()));
-            }
-            if (!res) {
-                System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
-                                                                             nodeName, host, duration));
-                listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
-                connection.cleanupConnection();
-            } else {
-                System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
-                                                                                nodeName, host, duration));
-            }
-        } catch (InterruptedException e) {
-            System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(), nodeName, host));
-        } finally {
-            ExecutorService srv = launcherExecutorService;
-            if (srv != null) {
-                srv.shutdownNow();
-                launcherExecutorService = null;
-            }
+        if (node != null && getTrackCredentials()) {
+            CredentialsProvider.track(node, getCredentials());
         }
     }
 
@@ -830,7 +832,7 @@ public class SSHLauncher extends ComputerLauncher implements SSHLauncherConfig {
         }
 
         @RequirePOST
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context,
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context,
                                                      @QueryParameter String host,
                                                      @QueryParameter String port,
                                                      @QueryParameter String credentialsId) {
@@ -843,7 +845,7 @@ public class SSHLauncher extends ComputerLauncher implements SSHLauncherConfig {
         }
 
         @RequirePOST
-        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
+        public FormValidation doCheckCredentialsId(@AncestorInPath AccessControlled context,
                                                    @QueryParameter String host,
                                                    @QueryParameter String port,
                                                    @QueryParameter String value) {

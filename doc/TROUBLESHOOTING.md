@@ -23,9 +23,27 @@ Make sure to reconnect the agent after changing the agents commands.
 * You should check for hs_err_pid error files in the root fs of the agent http://www.oracle.com/technetwork/java/javase/felog-138657.html#gbwcy
 * Check the logs in the root filesystem of the agent
  * Disable energy save options that suspend, or hibernate the host
-* If you experience Out of Memory issues on the remoting process, try to fix the memory of the remoting porcess to at least 128MB (JVM options -Xms<MEM_SYZE> and -Xmx<MEM_SYZE>).
-* Avoid to use slow network filesystems (<100MB/s) for the agent work directory. This impacts preformance.
+* If you experience Out of Memory issues on the remoting process, try to fix the memory of the remoting process to at least 128MB (JVM options -Xms<MEM_SYZE> and -Xmx<MEM_SYZE>).
+* Avoid to use slow network filesystems (<100MB/s) for the agent work directory. This impacts performance.
 * If you connect several jenkins nodes to the same host, you should use different user and work directory for each one, to avoid concurrence issues.
+
+### Common info needed to troubleshooting a bug
+
+In order to try to replicate an issue reported in Jira, we need the following info. Also, keep in mind that Jenkins Jira is not a support site, see [How to report an issue](https://wiki.jenkins-ci.org/display/JENKINS/How+to+report+an+issue)
+
+* Jenkins core version
+* OS you use on your SSH agents
+* OpenSSH version you have installed on your SSH agents?
+* Attach the agent connection log (http://jenkins.example.com/computer/NODENAME/log)
+* Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )? 
+* Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
+* Attach the exception on Jenkins logs associated with the fail
+* Attach the exception on build logs associated with the fail
+* Attach a thread dump captured when the issue is exposed [Obtaining a thread dump](https://wiki.jenkins.io/display/JENKINS/Obtaining+a+thread+dump)
+* Are your SSH agents static or provisioned by a cloud plugin (k8s, Mesos, Docker, EC2, Azure, ...)?
+* Do it happen only on the SSH agents?
+* Do it happen on all SSH agents or only on a few? Is there something in common between those SSH agents?
+* Do you see if it happens always with the same job or type of job?
 
 ### Force disconnection
 

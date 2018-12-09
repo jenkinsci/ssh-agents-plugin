@@ -235,6 +235,10 @@ public class SSHLauncherTest {
         assertThat("No fingerprint created until use", fingerprint, nullValue());
 
         j.jenkins.addNode(slave);
+        while (slave.toComputer().isConnecting()) {
+            // Make sure verification takes place after launch is complete
+            Thread.sleep(100);
+        }
 
         fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat(fingerprint, notNullValue());
@@ -255,6 +259,10 @@ public class SSHLauncherTest {
         assertThat("No fingerprint created until use", fingerprint, nullValue());
 
         j.jenkins.addNode(slave);
+        while (slave.toComputer().isConnecting()) {
+            // Make sure verification takes place after launch is complete
+            Thread.sleep(100);
+        }
 
         fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat(fingerprint, notNullValue());
@@ -327,14 +335,14 @@ public class SSHLauncherTest {
         NodeProperty<?> javaHomeProperty = new EnvironmentVariablesNodeProperty(env);
 
         List<ToolLocationNodeProperty.ToolLocation> locations = new ArrayList<>();
-        JDK.DescriptorImpl jdkType = Jenkins.getActiveInstance().getDescriptorByType(JDK.DescriptorImpl.class);
+        JDK.DescriptorImpl jdkType = Jenkins.getInstance().getDescriptorByType(JDK.DescriptorImpl.class);
         ToolLocationNodeProperty tool = new ToolLocationNodeProperty(new ToolLocationNodeProperty.ToolLocation(
                 jdkType, "toolJdk", javaHomeTool));
 
-        List<NodeProperty<?>> porperties = new ArrayList<>();
-        porperties.add(javaHomeProperty);
-        porperties.add(tool);
-        computer.getNode().setNodeProperties(porperties);
+        List<NodeProperty<?>> properties = new ArrayList<>();
+        properties.add(javaHomeProperty);
+        properties.add(tool);
+        computer.getNode().setNodeProperties(properties);
 
         JavaProvider provider = new DefaultJavaProvider();
         List<String> javas = provider.getJavas(computer, null, null);

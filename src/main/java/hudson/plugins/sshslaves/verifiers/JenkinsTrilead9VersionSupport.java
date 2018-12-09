@@ -22,7 +22,7 @@ class JenkinsTrilead9VersionSupport extends TrileadVersionSupportManager.Trilead
         for (KeyAlgorithm<?, ?> algorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
             algorithms.add(algorithm.getKeyFormat());
         }
-        return algorithms.toArray(new String[algorithms.size()]);
+        return algorithms.toArray(new String[0]);
     }
 
     @Override

@@ -92,7 +92,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
         sortedAlgorithms.remove(key.getAlgorithm());
         sortedAlgorithms.add(0, key.getAlgorithm());
 
-        return sortedAlgorithms.toArray(new String[sortedAlgorithms.size()]);
+        return sortedAlgorithms.toArray(new String[0]);
     }
     
     private static HostKey parseKey(String key) throws KeyParseException {

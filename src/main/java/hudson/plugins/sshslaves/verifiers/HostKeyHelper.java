@@ -45,7 +45,7 @@ public final class HostKeyHelper {
 
     private static final HostKeyHelper INSTANCE = new HostKeyHelper();
     
-    private final Map<Computer, HostKey> cache = new WeakHashMap<Computer, HostKey>();
+    private final Map<Computer, HostKey> cache = new WeakHashMap<>();
 
     private HostKeyHelper() {
         super();
@@ -106,7 +106,7 @@ public final class HostKeyHelper {
     
     private File getNodesDirectory() throws IOException {
         // jenkins.model.Nodes#getNodesDirectory() is private, so we have to duplicate it here.
-        File nodesDir = new File(Jenkins.getActiveInstance().getRootDir(), "nodes");
+        File nodesDir = new File(Jenkins.getInstance().getRootDir(), "nodes");
         if (!nodesDir.exists() || !nodesDir.isDirectory()) {
             throw new IOException("Nodes directory does not exist");
         }
