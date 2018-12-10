@@ -544,8 +544,8 @@ public class SSHLauncher extends ComputerLauncher {
         this.prefixStartSlaveCmd = fixEmpty(prefixStartSlaveCmd);
         this.suffixStartSlaveCmd = fixEmpty(suffixStartSlaveCmd);
         this.launchTimeoutSeconds = launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 ? DEFAULT_LAUNCH_TIMEOUT_SECONDS : launchTimeoutSeconds;
-        this.maxNumRetries = maxNumRetries != null && maxNumRetries > 0 ? maxNumRetries : DEFAULT_MAX_NUM_RETRIES;
-        this.retryWaitTime = retryWaitTime != null && retryWaitTime > 0 ? retryWaitTime : DEFAULT_RETRY_WAIT_TIME;
+        this.maxNumRetries = maxNumRetries != null && maxNumRetries >= 0 ? maxNumRetries : DEFAULT_MAX_NUM_RETRIES;
+        this.retryWaitTime = retryWaitTime != null && retryWaitTime >= 0 ? retryWaitTime : DEFAULT_RETRY_WAIT_TIME;
         this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
     }
 
@@ -1468,7 +1468,7 @@ public class SSHLauncher extends ComputerLauncher {
      */
     @NonNull
     public Integer getRetryWaitTime() {
-        return retryWaitTime == null || retryWaitTime == 0 ? DEFAULT_RETRY_WAIT_TIME : retryWaitTime;
+        return retryWaitTime == null || retryWaitTime < 0 ? DEFAULT_RETRY_WAIT_TIME : retryWaitTime;
     }
 
     public boolean getTcpNoDelay() {
