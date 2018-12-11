@@ -79,7 +79,7 @@ Once you selected the **Launch method** to **Launch agent agents via SSH**, you 
 If empty, it will be reset to default value (210 seconds). This will only set the timeout for agent launching; once launched,
 the timeout will not apply.
 * **Maximum Number of Retries** Set the number of times the SSH connection will be retried if the initial connection results in an error.
-If empty, it will be reset to default value (10).
+If empty, it will be reset to default value (10). If the value is 0, the retries would disabled.
 * **Seconds To Wait Between Retries** Set the number of seconds to wait between retry attempts of the initial SSH connection. The default value is 15 seconds.
 * **Use TCP_NODELAY flag on the SSH connection** Enable/Disables the TCP_NODELAY flag on the SSH connection.
 If set, disable the Nagle algorithm. This means that segments are always sent as soon as possible,
