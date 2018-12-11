@@ -357,4 +357,45 @@ public class SSHLauncherTest {
         assertTrue(javas.contains(javaHomeTool + DefaultJavaProvider.BIN_JAVA));
         assertTrue(javas.contains(SSHLauncher.getWorkingDirectory(computer) + DefaultJavaProvider.JDK_BIN_JAVA));
     }
+
+    @Test
+    public void timeoutAndRetrySettings() {
+        final SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
+                                                    "javaPath", "prefix" , "suffix",
+                                                    39, 18, 25,
+                                                    new NonVerifyingKeyVerificationStrategy());
+        assertEquals(39, launcher.getLaunchTimeoutSeconds().intValue());
+        assertEquals(18, launcher.getMaxNumRetries().intValue());
+        assertEquals(25, launcher.getRetryWaitTime().intValue());
+    }
+
+    @Issue("JENKINS-54934")
+    @Test
+    public void timeoutAndRetrySettingsAllowZero() {
+        final SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
+                                                    "javaPath", "prefix" , "suffix",
+                                                    0, 0, 0,
+                                                    new NonVerifyingKeyVerificationStrategy());
+        assertEquals(0, launcher.getMaxNumRetries().intValue());
+        assertEquals(0, launcher.getRetryWaitTime().intValue());
+    }
+
+    @Test
+    public void timeoutAndRetrySettingsSetDefaultsIfOutOfRange() {
+        final SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
+                                                    "javaPath", "prefix" , "suffix",
+                                                    0, -1, -1,
+                                                    new NonVerifyingKeyVerificationStrategy());
+        assertEquals(SSHLauncher.DEFAULT_LAUNCH_TIMEOUT_SECONDS, launcher.getLaunchTimeoutSeconds());
+        assertEquals(SSHLauncher.DEFAULT_MAX_NUM_RETRIES, launcher.getMaxNumRetries());
+        assertEquals(SSHLauncher.DEFAULT_RETRY_WAIT_TIME, launcher.getRetryWaitTime());
+
+        final SSHLauncher launcher2 = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
+                                                    "javaPath", "prefix" , "suffix",
+                                                    null, null, null,
+                                                    new NonVerifyingKeyVerificationStrategy());
+        assertEquals(SSHLauncher.DEFAULT_LAUNCH_TIMEOUT_SECONDS, launcher2.getLaunchTimeoutSeconds());
+        assertEquals(SSHLauncher.DEFAULT_MAX_NUM_RETRIES, launcher2.getMaxNumRetries());
+        assertEquals(SSHLauncher.DEFAULT_RETRY_WAIT_TIME, launcher2.getRetryWaitTime());
+    }
 }
