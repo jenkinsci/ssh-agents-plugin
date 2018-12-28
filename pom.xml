@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.19</version>
+    <version>3.32</version>
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
@@ -25,7 +25,7 @@
   </licenses>
 
   <properties>
-    <jenkins.version>2.89.4</jenkins.version>
+    <jenkins.version>2.121.3</jenkins.version>
     <java.level>8</java.level>
   </properties>
 
@@ -130,7 +130,7 @@
             * [JENKINS-51876] Updated core, Java version, and dependencies
             * [JENKINS-47586] Remove old JDK installer from the plugin
           -->
-          <compatibleSinceVersion>1.27</compatibleSinceVersion>
+          <compatibleSinceVersion>1.30</compatibleSinceVersion>
         </configuration>
       </plugin>
     </plugins>
