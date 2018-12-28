@@ -7,7 +7,7 @@
 
 #### Breaking changes
 
-* see 1.27 and 1.29.0
+* see 1.27
 
 ### 1.29.1 (Nov 20, 2018)
 
