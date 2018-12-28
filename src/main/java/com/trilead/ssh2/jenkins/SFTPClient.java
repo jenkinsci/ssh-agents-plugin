@@ -37,7 +37,7 @@ import java.io.InputStream;
 /**
  * This Class adds file manage capabilities to the SFTPv3Client class.
  * @author Kohsuke Kawaguchi
- * @Deprecated is now in the trilead-ssh2 plugin we are waiting for the core to upgrade to the right version.
+ * @deprecated is now in the trilead-ssh2 plugin we are waiting for the core to upgrade to the right version.
  */
 public class SFTPClient extends SFTPv3Client {
     public SFTPClient(Connection conn) throws IOException {
