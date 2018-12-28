@@ -3,6 +3,7 @@
 ### 1.29.2 (Dec 28, 2018)
 
 * [JENKINS-54884](https://issues.jenkins-ci.org/browse/JENKINS-54884) [JENKINS-54746](https://issues.jenkins-ci.org/browse/JENKINS-54746) Use Trilead ssh2 from Jenkins Core and use Trilead API plugin for test
+* [JENKINS-54934](https://issues.jenkins-ci.org/browse/JENKINS-54934) Max number of retries and retry wait time do not allow 0
 
 #### Breaking changes
 
