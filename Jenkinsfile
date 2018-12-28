@@ -1,2 +1,4 @@
-// Builds a module using https://github.com/jenkins-infra/pipeline-library
-buildPlugin()
+buildPlugin(configurations: [
+  [ platform: "linux", jdk: "8", jenkins: null ],
+  [ platform: "windows", jdk: "8", jenkins: null ]
+])
