@@ -1,5 +1,13 @@
 # Changelog
 
+### 1.29.2 (Dec 28, 2018)
+
+* [JENKINS-54884](https://issues.jenkins-ci.org/browse/JENKINS-54884) [JENKINS-54746](https://issues.jenkins-ci.org/browse/JENKINS-54746) Use Trilead ssh2 from Jenkins Core and use Trilead API plugin for test
+
+#### Breaking changes
+
+* see 1.27 and 1.29.0
+
 ### 1.29.1 (Nov 20, 2018)
 
 * [JENKINS-54686](https://issues.jenkins-ci.org/browse/JENKINS-54686) partial revert of the change to maintain compatibility with Cloud plugins
