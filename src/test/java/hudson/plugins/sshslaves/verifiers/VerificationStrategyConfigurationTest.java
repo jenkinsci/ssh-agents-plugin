@@ -84,13 +84,18 @@ public class VerificationStrategyConfigurationTest {
         
         SSHConnector connector = new SSHConnector(12, credentials.getId());
         connector.setSshHostKeyVerificationStrategy(strategy);
+        connector.setJvmOptions("jvmOptions");
+        connector.setSuffixStartSlaveCmd("suffix");
+        connector.setPrefixStartSlaveCmd("prefix");
+        connector.setJavaPath("/path");
+        connector.setRetryWaitTime(10);
+        connector.setMaxNumRetries(10);
+        connector.setLaunchTimeoutSeconds(10);
 
         SSHConnector output = jenkins.configRoundtrip(connector);
 
         assertNotSame(connector, output);
         jenkins.assertEqualDataBoundBeans(connector, output);
-        
-        
     }
     
 }
