@@ -8,6 +8,7 @@
 #### Breaking changes
 
 * if you upgrade from 1.29.X, you would have to uninstall trilead-api plugin is no longer used.
+* Due [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440) ssh-credentials couldbe not correctly migrated see [Troubleshooting Guide](https://github.com/jenkinsci/ssh-slaves-plugin/blob/master/doc/TROUBLESHOOTING.md#after-upgrade-to-ssh-slaves-128-failed-to-connect-using-ssh-key-credentials-from-files)
 * see 1.27
 
 ### 1.29.1 (Nov 20, 2018)
