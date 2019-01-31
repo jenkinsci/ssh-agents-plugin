@@ -1080,7 +1080,7 @@ public class SSHLauncher extends ComputerLauncher {
                 SFTPv3FileAttributes fileAttributes = sftpClient._stat(workingDirectory);
                 if (fileAttributes==null) {
                     listener.getLogger().println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(),
-                      workingDirectory));
+                            workingDirectory));
                     sftpClient.mkdirs(workingDirectory, 0700);
                 } else if (fileAttributes.isRegularFile()) {
                     throw new IOException(Messages.SSHLauncher_RemoteFSIsAFile(workingDirectory));
@@ -1109,24 +1109,22 @@ public class SSHLauncher extends ComputerLauncher {
                         // the file did not exist... so no need to delete it!
                     }
 
-                    try ( OutputStream os = sftpClient.writeToFile(fileName)) {
+                    try (OutputStream os = sftpClient.writeToFile(fileName)) {
                         os.write(agentJar);
                         listener.getLogger()
                           .println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
-                    } catch ( Error error ) {
+                    } catch (Error error) {
                         throw error;
-                    } catch ( Throwable e ) {
-                        throw new IOException( Messages.SSHLauncher_ErrorCopyingAgentJarTo( fileName ), e );
+                    } catch (Throwable e) {
+                        throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarTo(fileName), e);
                     }
                 }else{
                     listener.getLogger().println("Verified agent jar. No update is necessary.");
                 }
-
-
             } catch (Error error) {
                 throw error;
             } catch (Throwable e) {
-                throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarInto( workingDirectory), e);
+                throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarInto(workingDirectory), e);
             }
         } catch (IOException e) {
             if (sftpClient == null) {
