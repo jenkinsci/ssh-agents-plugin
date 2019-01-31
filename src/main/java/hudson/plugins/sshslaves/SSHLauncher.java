@@ -1068,23 +1068,22 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @throws IOException If something goes wrong.
      */
-    private void copyAgentJar( TaskListener listener, String workingDirectory )
-      throws IOException, InterruptedException {
+    private void copyAgentJar(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
         String fileName = workingDirectory + SLASH_AGENT_JAR;
 
-        listener.getLogger().println( Messages.SSHLauncher_StartingSFTPClient( getTimestamp() ) );
+        listener.getLogger().println(Messages.SSHLauncher_StartingSFTPClient(getTimestamp()));
         SFTPClient sftpClient = null;
         try {
-            sftpClient = new SFTPClient( connection );
+            sftpClient = new SFTPClient(connection);
 
             try {
-                SFTPv3FileAttributes fileAttributes = sftpClient._stat( workingDirectory );
-                if ( fileAttributes == null ) {
-                    listener.getLogger().println( Messages.SSHLauncher_RemoteFSDoesNotExist( getTimestamp(),
-                        workingDirectory));
-                      sftpClient.mkdirs( workingDirectory, 0700 );
-                } else if ( fileAttributes.isRegularFile() ) {
-                    throw new IOException( Messages.SSHLauncher_RemoteFSIsAFile( workingDirectory ) );
+                SFTPv3FileAttributes fileAttributes = sftpClient._stat(workingDirectory);
+                if (fileAttributes==null) {
+                    listener.getLogger().println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(),
+                      workingDirectory));
+                    sftpClient.mkdirs(workingDirectory, 0700);
+                } else if (fileAttributes.isRegularFile()) {
+                    throw new IOException(Messages.SSHLauncher_RemoteFSIsAFile(workingDirectory));
                 }
 
                 listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
@@ -1092,28 +1091,28 @@ public class SSHLauncher extends ComputerLauncher {
 
                 // If the agent jar already exists see if it needs to be updated
                 boolean overwrite = true;
-                if ( sftpClient.exists( fileName ) ) {
-                    String sourceAgentHash = getMd5Hash( agentJar );
-                    String existingAgentHash = getMd5Hash( readFileIntoByteArray( sftpClient, fileName ) );
-                    listener.getLogger().println( MessageFormat.format( "Source agent hash is {0}. "
-                      + "Installed agent hash is {1}", sourceAgentHash, existingAgentHash ) );
+                if (sftpClient.exists(fileName)) {
+                    String sourceAgentHash = getMd5Hash(agentJar);
+                    String existingAgentHash = getMd5Hash(readFileIntoByteArray(sftpClient, fileName));
+                    listener.getLogger().println(MessageFormat.format( "Source agent hash is {0}. "
+                      + "Installed agent hash is {1}", sourceAgentHash, existingAgentHash));
 
-                    overwrite = !sourceAgentHash.equals( existingAgentHash );
+                    overwrite = !sourceAgentHash.equals(existingAgentHash);
                 }
 
-                if ( overwrite ) {
+                if (overwrite) {
                     try {
                         // try to delete the file in case the agent we are copying is shorter than the agent
                         // that is already there
-                        sftpClient.rm( fileName );
-                    } catch ( IOException e ) {
+                        sftpClient.rm(fileName);
+                    } catch (IOException e) {
                         // the file did not exist... so no need to delete it!
                     }
 
-                    try ( OutputStream os = sftpClient.writeToFile( fileName ) ) {
-                        os.write( agentJar );
+                    try ( OutputStream os = sftpClient.writeToFile(fileName)) {
+                        os.write(agentJar);
                         listener.getLogger()
-                          .println( Messages.SSHLauncher_CopiedXXXBytes( getTimestamp(), agentJar.length ) );
+                          .println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
                     } catch ( Error error ) {
                         throw error;
                     } catch ( Throwable e ) {
@@ -1124,12 +1123,12 @@ public class SSHLauncher extends ComputerLauncher {
                 }
 
 
-            } catch ( Error error ) {
+            } catch (Error error) {
                 throw error;
-            } catch ( Throwable e ) {
-                throw new IOException( Messages.SSHLauncher_ErrorCopyingAgentJarInto( workingDirectory ), e );
+            } catch (Throwable e) {
+                throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarInto( workingDirectory), e);
             }
-        } catch ( IOException e ) {
+        } catch (IOException e) {
             if (sftpClient == null) {
                 e.printStackTrace(listener.error(Messages.SSHLauncher_StartingSCPClient(getTimestamp())));
                 // lets try to recover if the agent doesn't have an SFTP service
@@ -1150,16 +1149,15 @@ public class SSHLauncher extends ComputerLauncher {
      * @return
      * @throws NoSuchAlgorithmException
      */
-
-    String getMd5Hash(byte[] bytes) throws NoSuchAlgorithmException {
+    private String getMd5Hash(byte[] bytes) throws NoSuchAlgorithmException {
 
         String hash = "";
         try {
-            MessageDigest md = MessageDigest.getInstance( "MD5" );
-            md.update( bytes );
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(bytes);
             byte[] digest = md.digest();
-            hash = DatatypeConverter.printHexBinary( digest ).toUpperCase();
-        }catch ( NoSuchAlgorithmException e ){
+            hash = DatatypeConverter.printHexBinary(digest).toUpperCase();
+        }catch (NoSuchAlgorithmException e){
             throw e;
         } finally {
             return hash;
@@ -1172,13 +1170,13 @@ public class SSHLauncher extends ComputerLauncher {
      * @return
      * @throws Exception
      */
-    byte[] readFileIntoByteArray(SFTPClient sftpClient, String fileName) throws Exception {
+    private byte[] readFileIntoByteArray(SFTPClient sftpClient, String fileName) throws Exception {
 
         InputStream is = null;
         byte[] bytes = null;
         try{
-            is = sftpClient.read( fileName );
-            bytes = ByteStreams.toByteArray( is );
+            is = sftpClient.read(fileName);
+            bytes = ByteStreams.toByteArray(is);
         }catch(Exception e){
             throw e;
         } finally {
