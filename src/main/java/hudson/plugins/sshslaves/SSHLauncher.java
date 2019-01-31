@@ -1087,7 +1087,7 @@ public class SSHLauncher extends ComputerLauncher {
                 }
 
                 listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
-                byte[] agentJar = new Slave.JnlpJar( AGENT_JAR ).readFully();
+                byte[] agentJar = new Slave.JnlpJar(AGENT_JAR).readFully();
 
                 // If the agent jar already exists see if it needs to be updated
                 boolean overwrite = true;
