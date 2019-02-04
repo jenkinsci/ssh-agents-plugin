@@ -34,7 +34,7 @@ THE SOFTWARE.
         <f:helpArea/>
     </j:if>
 	
-	<f:entry title="${%Require manual verification of initial connection}" field="requireInitialManualTrust">
-		<f:checkbox />
-	</f:entry>
+    <f:entry field="requireInitialManualTrust">
+      	<f:checkbox title="${%Require manual verification of initial connection}" field="requireInitialManualTrust" />
+    </f:entry>
 </j:jelly>
