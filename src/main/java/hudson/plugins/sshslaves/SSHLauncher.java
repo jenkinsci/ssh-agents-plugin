@@ -1093,7 +1093,7 @@ public class SSHLauncher extends ComputerLauncher {
                 boolean overwrite = true;
                 if (sftpClient.exists(fileName)) {
                     String sourceAgentHash = getMd5Hash(agentJar);
-                    String existingAgentHash = getMd5Hash(readFileIntoByteArray(sftpClient, fileName));
+                    String existingAgentHash = getMd5Hash(readInputStreamIntoByteArrayAndClose(sftpClient.read(fileName)));
                     listener.getLogger().println(MessageFormat.format( "Source agent hash is {0}. "
                       + "Installed agent hash is {1}", sourceAgentHash, existingAgentHash));
 
@@ -1142,14 +1142,15 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     /**
+     * Method reads a byte array and returns an upper case md5 hash for it.
      *
      * @param bytes
      * @return
      * @throws NoSuchAlgorithmException
      */
-    private String getMd5Hash(byte[] bytes) throws NoSuchAlgorithmException {
+    static String getMd5Hash(byte[] bytes) throws NoSuchAlgorithmException {
 
-        String hash = "";
+        String hash;
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(bytes);
@@ -1157,33 +1158,33 @@ public class SSHLauncher extends ComputerLauncher {
             hash = DatatypeConverter.printHexBinary(digest).toUpperCase();
         }catch (NoSuchAlgorithmException e){
             throw e;
-        } finally {
-            return hash;
         }
+        return hash;
     }
 
     /**
+     * Method reads an input stream into a byte array and closes the input stream when finished.
+     * Added for reading the remoting jar and generating a hash value for it.
      *
-     * @param fileName
+     * @param inputStream
      * @return
-     * @throws Exception
+     * @throws IOException
      */
-    private byte[] readFileIntoByteArray(SFTPClient sftpClient, String fileName) throws Exception {
+    static byte[] readInputStreamIntoByteArrayAndClose(InputStream inputStream) throws IOException {
 
-        InputStream is = null;
         byte[] bytes = null;
         try{
-            is = sftpClient.read(fileName);
-            bytes = ByteStreams.toByteArray(is);
-        }catch(Exception e){
+            bytes = ByteStreams.toByteArray(inputStream);
+        }catch(IOException e){
             throw e;
         } finally {
-            IOUtils.closeQuietly(is);
+            IOUtils.closeQuietly(inputStream);
             if(bytes==null) {
-                return new byte[ 1 ];
+                bytes = new byte[ 1 ];
             }
-            return bytes;
         }
+
+        return bytes;
     }
 
     /**

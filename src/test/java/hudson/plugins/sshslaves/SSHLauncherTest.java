@@ -30,6 +30,8 @@ import hudson.model.JDK;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -58,6 +60,7 @@ import java.util.concurrent.ExecutionException;
 import hudson.slaves.SlaveComputer;
 import hudson.tools.ToolLocationNodeProperty;
 import hudson.util.VersionNumber;
+import org.apache.commons.io.IOUtils;
 import org.jenkinsci.test.acceptance.docker.DockerRule;
 import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
 import org.junit.Assert;
@@ -75,6 +78,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotNull;
 import org.junit.ClassRule;
 import org.jvnet.hudson.test.BuildWatcher;
 import jenkins.model.Jenkins;
@@ -398,4 +402,40 @@ public class SSHLauncherTest {
         assertEquals(SSHLauncher.DEFAULT_MAX_NUM_RETRIES, launcher2.getMaxNumRetries());
         assertEquals(SSHLauncher.DEFAULT_RETRY_WAIT_TIME, launcher2.getRetryWaitTime());
     }
+
+  @Test
+  public void getMd5Hash() {
+
+    try {
+      byte[] bytes = "Leave me alone!".getBytes();
+      String result = SSHLauncher.getMd5Hash(bytes);
+      assertTrue( "1EB226C8E950BAC1494BE197E84A264C".equals(result));
+    }catch(Exception e){
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void readInputStreamIntoByteArrayAndClose() {
+
+    InputStream inputStream = null;
+    File testFile = null;
+    try {
+
+      testFile = new File("target" + File.separator + "test-classes",
+        "readInputStreamIntoByteArrayTestFile.txt" );
+      assertTrue(testFile.exists());
+      inputStream = new FileInputStream(testFile);
+      byte[] bytes = SSHLauncher.readInputStreamIntoByteArrayAndClose(inputStream);
+      assertNotNull(bytes);
+      assertTrue(bytes.length > 0);
+      assertTrue( "Don't change me or add newlines!".equals(new String(bytes)) );
+
+    }catch(Exception e){
+      e.printStackTrace();
+    }finally {
+      IOUtils.closeQuietly(inputStream);
+    }
+  }
+
 }
