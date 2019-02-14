@@ -102,7 +102,7 @@ java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
 
 ### After upgrade to ssh-slaves 1.28+ Failed to connect using SSH key credentials from files
 
-The ssh-slaves version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins master ~/.ssh", and "From a file on Jenkins master" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it faisl or it is not possible. 
+The ssh-slaves version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins master ~/.ssh", and "From a file on Jenkins master" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it fails or it is not possible. 
 
 The issue is related to ssh-credentials and a deprecated type of credentials, the workaround it is to recreate the credential with the same ID using "Enter directly" for the key, probably if you only save again the credential it will be migrated.
 
