@@ -1,5 +1,13 @@
 # Changelog
 
+### 1.30.0 (TBD)
+* [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353)
+* [JENKINS-5149](https://issues.jenkins-ci.org/browse/JENKINS-5149) Overwrite remoting.jar only when necessary.
+
+#### Breaking changes
+* this version remove deprecated methods on SSHLauncher see [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353)
+* Support 2.138.4+ LTS Jenkins Core versions
+
 ### 1.29.4 (Dec 28, 2018)
 
 * [JENKINS-54884](https://issues.jenkins-ci.org/browse/JENKINS-54884) [JENKINS-54746](https://issues.jenkins-ci.org/browse/JENKINS-54746) Use Trilead ssh2 from Jenkins Core and use Trilead API plugin for test
