@@ -29,6 +29,8 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
+import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
+import com.google.common.io.ByteStreams;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
@@ -37,20 +39,23 @@ import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.jenkins.SFTPClient;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
+import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.verifiers.HostKey;
-import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
+import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.security.ACL;
+import hudson.security.AccessControlled;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.NodeProperty;
@@ -63,6 +68,7 @@ import hudson.util.NamingThreadFactory;
 import hudson.util.NullStream;
 import java.util.Collections;
 import jenkins.model.Jenkins;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -73,9 +79,15 @@ import org.kohsuke.stapler.QueryParameter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.InterruptedException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -92,14 +104,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import static hudson.Util.*;
-import hudson.model.Computer;
-import hudson.security.AccessControlled;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
+import static hudson.Util.fixEmpty;
 
 /**
  * A computer launcher that tries to start a linux agent by opening an SSH connection and trying to find java.
@@ -646,26 +651,40 @@ public class SSHLauncher extends ComputerLauncher {
                     throw new IOException(Messages.SSHLauncher_RemoteFSIsAFile(workingDirectory));
                 }
 
-                try {
-                    // try to delete the file in case the agent we are copying is shorter than the agent
-                    // that is already there
-                    sftpClient.rm(fileName);
-                } catch (IOException e) {
-                    // the file did not exist... so no need to delete it!
+                listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
+                byte[] agentJar = new Slave.JnlpJar(AGENT_JAR).readFully();
+
+                // If the agent jar already exists see if it needs to be updated
+                boolean overwrite = true;
+                if (sftpClient.exists(fileName)) {
+                    String sourceAgentHash = getMd5Hash(agentJar);
+                    String existingAgentHash = getMd5Hash(readInputStreamIntoByteArrayAndClose(sftpClient.read(fileName)));
+                    listener.getLogger().println(MessageFormat.format( "Source agent hash is {0}. "
+                      + "Installed agent hash is {1}", sourceAgentHash, existingAgentHash));
+
+                    overwrite = !sourceAgentHash.equals(existingAgentHash);
                 }
 
-                listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
+                if (overwrite) {
+                    try {
+                        // try to delete the file in case the agent we are copying is shorter than the agent
+                        // that is already there
+                        sftpClient.rm(fileName);
+                    } catch (IOException e) {
+                        // the file did not exist... so no need to delete it!
+                    }
 
-                try {
-                    byte[] agentJar = new Slave.JnlpJar(AGENT_JAR).readFully();
                     try (OutputStream os = sftpClient.writeToFile(fileName)) {
                         os.write(agentJar);
+                        listener.getLogger()
+                          .println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
+                    } catch (Error error) {
+                        throw error;
+                    } catch (Throwable e) {
+                        throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarTo(fileName), e);
                     }
-                    listener.getLogger().println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
-                } catch (Error error) {
-                    throw error;  
-                } catch (Throwable e) {
-                    throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarTo(fileName), e);
+                }else{
+                    listener.getLogger().println("Verified agent jar. No update is necessary.");
                 }
             } catch (Error error) {
                 throw error;
@@ -686,6 +705,61 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
     }
+
+    /**
+     * Method reads a byte array and returns an upper case md5 hash for it.
+     *
+     * @param bytes
+     * @return
+     * @throws NoSuchAlgorithmException
+     */
+    static String getMd5Hash(byte[] bytes) throws NoSuchAlgorithmException {
+
+        String hash;
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(bytes);
+            byte[] digest = md.digest();
+
+            char[] hexCode = "0123456789ABCDEF".toCharArray();
+            StringBuilder r = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                r.append(hexCode[(b >> 4) & 0xF]);
+                r.append(hexCode[(b & 0xF)]);
+            }
+
+            hash = r.toString().toUpperCase();
+        }catch (NoSuchAlgorithmException e){
+            throw e;
+        }
+        return hash;
+    }
+
+    /**
+     * Method reads an input stream into a byte array and closes the input stream when finished.
+     * Added for reading the remoting jar and generating a hash value for it.
+     *
+     * @param inputStream
+     * @return
+     * @throws IOException
+     */
+    static byte[] readInputStreamIntoByteArrayAndClose(InputStream inputStream) throws IOException {
+
+        byte[] bytes = null;
+        try{
+            bytes = ByteStreams.toByteArray(inputStream);
+        }catch(IOException e){
+            throw e;
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+            if(bytes==null) {
+                bytes = new byte[ 1 ];
+            }
+        }
+
+        return bytes;
+    }
+
     /**
      * Method copies the agent jar to the remote system using scp.
      *

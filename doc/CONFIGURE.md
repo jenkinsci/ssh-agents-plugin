@@ -203,3 +203,20 @@ This can help differentiate between multiple keys/password associated with the s
 See [SSH slaves and Cygwin](https://wiki.jenkins.io/display/JENKINS/SSH+slaves+and+Cygwin) for the discussion of how to use this plugin to talk to Cygwin SSHD server.
 
 [Remoting documentation](https://github.com/jenkinsci/remoting/tree/master/docs)
+
+## launch Windows slaves using Microsoft OpenSSH
+
+The current version of the plugin does not run directly on PowerShell, you have to use prefix and suffix settings to trick the command and make it works, Windows 10 machines can run as SSH agents with the Microsoft OpenSSH server by using:
+
+**Prefix Start Agent Command**
+
+```
+powershell -Command "cd C:\J\S ; C:\J\S\jdk\bin\java.exe -jar remoting.jar" ; exit 0 ; rem '
+```
+**Suffix Start Agent Command**
+
+```
+'
+```
+
+[see this Mark Waite's comment](https://issues.jenkins-ci.org/browse/JENKINS-42856?focusedCommentId=355486&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-355486)

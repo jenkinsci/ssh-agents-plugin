@@ -99,3 +99,29 @@ java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
 [11/20/18 00:29:57] Launch failed - cleaning up connection
 [11/20/18 00:29:57] [SSH] Connection closed. 
 ```
+
+### After upgrade to ssh-slaves 1.28+ Failed to connect using SSH key credentials from files
+
+The ssh-slaves version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins master ~/.ssh", and "From a file on Jenkins master" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it fails or it is not possible. 
+
+The issue is related to ssh-credentials and a deprecated type of credentials, the workaround it is to recreate the credential with the same ID using "Enter directly" for the key, probably if you only save again the credential it will be migrated.
+
+for more details see [JENKINS-54746](https://issues.jenkins-ci.org/browse/JENKINS-54746)
+
+Agent log
+
+```
+SSHLauncher{host='HOSTNAME', port=22, credentialsId='XXXXXX', jvmOptions='', javaPath='', prefixStartSlaveCmd='', suffixStartSlaveCmd='', launchTimeoutSeconds=210, maxNumRetries=10, retryWaitTime=15, sshHostKeyVerificationStrategy=hudson.plugins.sshslaves.verifiers.ManuallyTrustedKeyVerificationStrategy, tcpNoDelay=true, trackCredentials=true}
+[11/21/18 09:40:05] [SSH] Opening SSH connection to HOSTNAME:22.
+[11/21/18 09:40:05] [SSH] SSH host key matches key seen previously for this host. Connection will be allowed.
+[11/21/18 09:40:05] [SSH] Authentication failed.
+Authentication failed.
+[11/21/18 09:40:05] Launch failed - cleaning up connection
+[11/21/18 09:40:05] [SSH] Connection closed.
+```
+
+Manage old data 
+
+```
+ConversionException: Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission ---- Debugging information ---- message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission cause-exception : com.thoughtworks.xstream.converters.reflection.ObjectAccessException cause-message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission class : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource required-type : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource converter-type : hudson.util.RobustReflectionConverter path : /com.cloudbees.plugins.credentials.SystemCredentialsProvider/domainCredentialsMap/entry/java.util.concurrent.CopyOnWriteArrayList/com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey/privateKeySource line number : 21 -------------------------------
+```

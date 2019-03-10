@@ -1,12 +1,14 @@
 # Changelog
 
-### 1.29.2 (Dec 28, 2018)
+### 1.29.4 (Dec 28, 2018)
 
 * [JENKINS-54884](https://issues.jenkins-ci.org/browse/JENKINS-54884) [JENKINS-54746](https://issues.jenkins-ci.org/browse/JENKINS-54746) Use Trilead ssh2 from Jenkins Core and use Trilead API plugin for test
 * [JENKINS-54934](https://issues.jenkins-ci.org/browse/JENKINS-54934) Max number of retries and retry wait time do not allow 0
 
 #### Breaking changes
 
+* if you upgrade from 1.29.X, you would have to uninstall trilead-api plugin is no longer used.
+* Due [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440) ssh-credentials couldbe not correctly migrated see [Troubleshooting Guide](https://github.com/jenkinsci/ssh-slaves-plugin/blob/master/doc/TROUBLESHOOTING.md#after-upgrade-to-ssh-slaves-128-failed-to-connect-using-ssh-key-credentials-from-files)
 * see 1.27
 
 ### 1.29.1 (Nov 20, 2018)
