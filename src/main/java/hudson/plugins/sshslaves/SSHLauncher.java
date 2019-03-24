@@ -394,6 +394,8 @@ public class SSHLauncher extends ComputerLauncher {
     @Override
     public void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         final Node node = computer.getNode();
+        final String host = this.host;
+        final int port = this.port;
         synchronized (this) {
             connection = new Connection(host, port);
             launcherExecutorService = Executors.newSingleThreadExecutor(
