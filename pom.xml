@@ -99,19 +99,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>trilead-api</artifactId>
-      <version>1.0.1</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>net.i2p.crypto</groupId>
-          <artifactId>eddsa</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>net.i2p.crypto</groupId>
-      <artifactId>eddsa</artifactId>
-      <version>0.3.0</version>
+      <version>1.0.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -144,10 +132,6 @@
         <artifactId>maven-hpi-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
-          <!--
-            * [JENKINS-51876] Updated core, Java version, and dependencies
-            * [JENKINS-47586] Remove old JDK installer from the plugin
-          -->
           <minimumJavaVersion>1.8</minimumJavaVersion>
           <compatibleSinceVersion>1.30.0</compatibleSinceVersion>
         </configuration>
