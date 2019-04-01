@@ -45,17 +45,11 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
-import hudson.model.Computer;
-import hudson.model.FreeStyleProject;
-import hudson.model.Node;
-import hudson.model.Node.Mode;
 import hudson.model.Slave;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.NodeProperty;
-import hudson.slaves.RetentionStrategy;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import hudson.slaves.SlaveComputer;
 import hudson.tools.ToolLocationNodeProperty;
@@ -105,17 +99,17 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void checkJavaVersionOpenJDK6Linux() throws Exception {
+    public void checkJavaVersionOpenJDK6Linux() {
         assertNotSupported("openjdk-6-linux.version");   
     }
 
     @Test
-    public void checkJavaVersionSun6Linux() throws Exception {
+    public void checkJavaVersionSun6Linux() {
         assertNotSupported("sun-java-1.6-linux.version");
     }
 
     @Test
-    public void checkJavaVersionSun6Mac() throws Exception {
+    public void checkJavaVersionSun6Mac() {
         assertNotSupported("sun-java-1.6-mac.version");
     }
 
@@ -135,7 +129,7 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void checkJavaVersionSun4Linux() throws IOException {
+    public void checkJavaVersionSun4Linux() {
         assertNotSupported("sun-java-1.4-linux.version");
     }
     
@@ -158,7 +152,7 @@ public class SSHLauncherTest {
         return null != result;
     }
 
-    private static void assertNotSupported(final String testVersionOutput) throws AssertionError, IOException {
+    private static void assertNotSupported(final String testVersionOutput) throws AssertionError {
         try {
             checkSupported(testVersionOutput);
             fail("Expected version " + testVersionOutput + " to be not supported, but it is supported");
@@ -173,11 +167,10 @@ public class SSHLauncherTest {
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
                 )
         );
-        SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1, new KnownHostsFileKeyVerificationStrategy());
+        SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId");
+        launcher.setSshHostKeyVerificationStrategy(new KnownHostsFileKeyVerificationStrategy());
         assertEquals(host.trim(), launcher.getHost());
-        DumbSlave slave = new DumbSlave("slave", "dummy",
-                j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-                launcher, RetentionStrategy.NOOP, Collections.emptyList());
+        DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
         j.jenkins.addNode(slave);
 
         HtmlPage p = j.createWebClient().getPage(slave, "configure");
@@ -229,10 +222,8 @@ public class SSHLauncherTest {
             credentials
           )
         );
-        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
-        DumbSlave slave = new DumbSlave("slave", "dummy",
-          j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-          launcher, RetentionStrategy.NOOP, Collections.emptyList());
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
+        DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -256,10 +247,8 @@ public class SSHLauncherTest {
             credentials
           )
         );
-        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId", null, "xyz", null, null, 1, 1, 1);
-        DumbSlave slave = new DumbSlave("slave", "dummy",
-          j.createTmpDir().getPath(), "1", Mode.NORMAL, "",
-          launcher, RetentionStrategy.NOOP, Collections.emptyList());
+        SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
+        DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -274,30 +263,9 @@ public class SSHLauncherTest {
         assertThat(fingerprint, notNullValue());
     }
 
-    @Issue("JENKINS-44830")
-    @Test
-    public void upgrade() throws Exception {
-        JavaContainer c = javaContainer.get();
-        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(),
-                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
-                // Old constructor passes null sshHostKeyVerificationStrategy:
-                new SSHLauncher(c.ipBound(22), c.port(22), "test", "test", "", ""),
-                RetentionStrategy.INSTANCE, Collections.emptyList());
-        j.jenkins.addNode(slave);
-        Computer computer = slave.toComputer();
-        try {
-            computer.connect(false).get();
-        } catch (ExecutionException x) {
-            throw new AssertionError("failed to connect: " + computer.getLog(), x);
-        }
-        FreeStyleProject p = j.createFreeStyleProject();
-        p.setAssignedNode(slave);
-        j.buildAndAssertSuccess(p);
-    }
-
     @Issue("JENKINS-44111")
     @Test
-    public void workDirTest() throws Exception {
+    public void workDirTest() {
         String rootFS = "/home/user";
         String anotherWorkDir = "/another/workdir";
 
@@ -330,13 +298,8 @@ public class SSHLauncherTest {
         String javaHome = "/java_home";
         String javaHomeTool = "/java_home_tool";
 
-        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(),
-                                        "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
-                                        // Old constructor passes null sshHostKeyVerificationStrategy:
-                                        new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                                        "javaPath", "prefix" , "suffix",
-                                                        60, 10, 15, new NonVerifyingKeyVerificationStrategy()),
-                                        RetentionStrategy.INSTANCE, Collections.emptyList());
+        SSHLauncher sshLauncher = new SSHLauncher("Hostname", 22, "credentialID");
+        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(), "/home/test/slave", sshLauncher);
         j.jenkins.addNode(slave);
         SlaveComputer computer = slave.getComputer();
 
@@ -345,8 +308,7 @@ public class SSHLauncherTest {
         env.add(entry);
         NodeProperty<?> javaHomeProperty = new EnvironmentVariablesNodeProperty(env);
 
-        List<ToolLocationNodeProperty.ToolLocation> locations = new ArrayList<>();
-        JDK.DescriptorImpl jdkType = Jenkins.getInstance().getDescriptorByType(JDK.DescriptorImpl.class);
+        JDK.DescriptorImpl jdkType = Jenkins.get().getDescriptorByType(JDK.DescriptorImpl.class);
         ToolLocationNodeProperty tool = new ToolLocationNodeProperty(new ToolLocationNodeProperty.ToolLocation(
                 jdkType, "toolJdk", javaHomeTool));
 
