@@ -107,8 +107,13 @@ public class SSHConnector extends ComputerConnector {
      *  Field retryWaitTime.
      */
     private Integer retryWaitTime;
-    
+
     private SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
+
+    /**
+     *  Field tcpNoDelay.
+     */
+    private Boolean tcpNoDelay;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -135,10 +140,12 @@ public class SSHConnector extends ComputerConnector {
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
      * @param sshHostKeyVerificationStrategy Host key verification method selected.
+     * @param tcpNoDelay Allow to enable/disable the TCP_NODELAY flag on the SSH connection.
      */
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy,
+                        Boolean tcpNoDelay) {
         setJvmOptions(jvmOptions);
         setPort(port);
         this.credentialsId = credentialsId;
@@ -151,12 +158,15 @@ public class SSHConnector extends ComputerConnector {
         setLaunchTimeoutSeconds(launchTimeoutSeconds);
         setMaxNumRetries(maxNumRetries);
         setRetryWaitTime(retryWaitTime);
+        setTcpNoDelay(tcpNoDelay);
     }
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) {
-        return new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+        SSHLauncher sshLauncher = new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
+            suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+        sshLauncher.setTcpNoDelay(tcpNoDelay);
+        return sshLauncher;
     }
 
     @DataBoundSetter
@@ -202,7 +212,12 @@ public class SSHConnector extends ComputerConnector {
     public void setPort(int value){
         this.port = value == 0 ? DEFAULT_SSH_PORT : value;
     }
-    
+
+    @DataBoundSetter
+    public void setTcpNoDelay(Boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
+    }
+
     public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
     	return sshHostKeyVerificationStrategy;
     }
@@ -245,6 +260,10 @@ public class SSHConnector extends ComputerConnector {
 
     public Integer getRetryWaitTime() {
         return retryWaitTime;
+    }
+
+    public Boolean getTcpNoDelay() {
+        return tcpNoDelay != null ? tcpNoDelay : true;
     }
 
     @Extension
