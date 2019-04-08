@@ -165,7 +165,7 @@ public class SSHConnector extends ComputerConnector {
     public SSHLauncher launch(String host, TaskListener listener) {
         SSHLauncher sshLauncher = new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
             suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
-        sshLauncher.setTcpNoDelay(tcpNoDelay);
+        sshLauncher.setTcpNoDelay(getTcpNoDelay());
         return sshLauncher;
     }
 
