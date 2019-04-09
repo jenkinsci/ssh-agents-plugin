@@ -140,12 +140,10 @@ public class SSHConnector extends ComputerConnector {
      * @param maxNumRetries The number of times to retry connection if the SSH connection is refused during initial connect
      * @param retryWaitTime The number of seconds to wait between retries
      * @param sshHostKeyVerificationStrategy Host key verification method selected.
-     * @param tcpNoDelay Allow to enable/disable the TCP_NODELAY flag on the SSH connection.
      */
     public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
                         String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy,
-                        Boolean tcpNoDelay) {
+                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
         setJvmOptions(jvmOptions);
         setPort(port);
         this.credentialsId = credentialsId;
@@ -158,7 +156,6 @@ public class SSHConnector extends ComputerConnector {
         setLaunchTimeoutSeconds(launchTimeoutSeconds);
         setMaxNumRetries(maxNumRetries);
         setRetryWaitTime(retryWaitTime);
-        setTcpNoDelay(tcpNoDelay);
     }
 
     @Override
