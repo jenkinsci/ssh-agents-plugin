@@ -45,6 +45,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import static hudson.Util.fixEmpty;
+import static hudson.Util.fixEmptyAndTrim;
 import static hudson.plugins.sshslaves.SSHLauncher.*;
 
 import hudson.model.Computer;
@@ -107,8 +108,14 @@ public class SSHConnector extends ComputerConnector {
      *  Field retryWaitTime.
      */
     private Integer retryWaitTime;
-    
+
     private SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
+
+    /**
+     * Set the value to add to the remoting parameter -workDir
+     * @see <a href="https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory">Remoting Work directory</a>
+     */
+    private String workDir;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -155,8 +162,10 @@ public class SSHConnector extends ComputerConnector {
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) {
-        return new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
+        SSHLauncher sshLauncher = new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
                 suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+        sshLauncher.setWorkDir(workDir);
+        return sshLauncher;
     }
 
     @DataBoundSetter
@@ -202,9 +211,14 @@ public class SSHConnector extends ComputerConnector {
     public void setPort(int value){
         this.port = value == 0 ? DEFAULT_SSH_PORT : value;
     }
-    
+
     public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
     	return sshHostKeyVerificationStrategy;
+    }
+
+    @DataBoundSetter
+    public void setWorkDir(String workDir) {
+        this.workDir = fixEmptyAndTrim(workDir);
     }
 
     public String getCredentialsId() {
@@ -245,6 +259,10 @@ public class SSHConnector extends ComputerConnector {
 
     public Integer getRetryWaitTime() {
         return retryWaitTime;
+    }
+
+    public String getWorkDir() {
+        return workDir;
     }
 
     @Extension
