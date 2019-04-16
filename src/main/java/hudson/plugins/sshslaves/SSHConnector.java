@@ -118,6 +118,11 @@ public class SSHConnector extends ComputerConnector {
     private String workDir;
 
     /**
+     *  Field tcpNoDelay.
+     */
+    private Boolean tcpNoDelay;
+
+    /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
      * @param port       The port to connect on.
@@ -165,6 +170,7 @@ public class SSHConnector extends ComputerConnector {
         SSHLauncher sshLauncher = new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
                 suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
         sshLauncher.setWorkDir(workDir);
+        sshLauncher.setTcpNoDelay(getTcpNoDelay());
         return sshLauncher;
     }
 
@@ -210,6 +216,11 @@ public class SSHConnector extends ComputerConnector {
 
     public void setPort(int value){
         this.port = value == 0 ? DEFAULT_SSH_PORT : value;
+    }
+
+    @DataBoundSetter
+    public void setTcpNoDelay(Boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
     }
 
     public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
@@ -263,6 +274,10 @@ public class SSHConnector extends ComputerConnector {
 
     public String getWorkDir() {
         return workDir;
+    }
+  
+    public Boolean getTcpNoDelay() {
+        return tcpNoDelay != null ? tcpNoDelay : true;
     }
 
     @Extension
