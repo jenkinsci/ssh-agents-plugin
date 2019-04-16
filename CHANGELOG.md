@@ -3,6 +3,7 @@
 ### 1.30.0 (TBD)
 * [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353) Upgrade Jenkins core to 2.150.1
 * [JENKINS-5149](https://issues.jenkins-ci.org/browse/JENKINS-5149) Overwrite remoting.jar only when necessary.
+* [JENKINS-56885](https://issues.jenkins-ci.org/browse/JENKINS-56885) It is possible to save a Node without host configuration
 
 #### Breaking changes
 * this version remove deprecated methods on SSHLauncher see [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353)
