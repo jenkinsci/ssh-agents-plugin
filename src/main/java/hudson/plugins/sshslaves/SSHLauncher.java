@@ -245,7 +245,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param retryWaitTime The number of seconds to wait between retries
      * @param sshHostKeyVerificationStrategy Host key verification method selected.
      */
-    public SSHLauncher(String host, int port, String credentialsId,
+    public SSHLauncher(@NonNull String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
              Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
         setHost(host);
@@ -269,7 +269,7 @@ public class SSHLauncher extends ComputerLauncher {
      * @param credentialsId The credentials id to connect as.
      */
     @DataBoundConstructor
-    public SSHLauncher(String host, int port, String credentialsId) {
+    public SSHLauncher(@NonNull String host, int port, String credentialsId) {
         setHost(host);
         setPort(port);
         this.credentialsId = credentialsId;
@@ -396,6 +396,7 @@ public class SSHLauncher extends ComputerLauncher {
         final Node node = computer.getNode();
         final String host = this.host;
         final int port = this.port;
+        checkConfig();
         synchronized (this) {
             connection = new Connection(host, port);
             launcherExecutorService = Executors.newSingleThreadExecutor(
@@ -859,6 +860,34 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
+    private void checkConfig() throws InterruptedException {
+        DescriptorImpl descriptor = (DescriptorImpl) this.getDescriptor();
+        String message = "Validate configuration:\n";
+        boolean isValid = true;
+
+        String port = String.valueOf(this.port);
+        FormValidation validatePort = descriptor.doCheckPort(port);
+        FormValidation validateHost = descriptor.doCheckHost(this.host);
+        FormValidation validateCredentials = descriptor.doCheckCredentialsId(Jenkins.get(), Jenkins.get(), this.host, port, this.credentialsId);
+
+        if(validatePort.kind == FormValidation.Kind.ERROR){
+            isValid = false;
+            message += validatePort.getMessage() + "\n";
+        }
+        if(validateHost.kind == FormValidation.Kind.ERROR){
+            isValid = false;
+            message += validateHost.getMessage() + "\n";
+        }
+        if(validateCredentials.kind == FormValidation.Kind.ERROR){
+            isValid = false;
+            message += validateCredentials.getMessage() + "\n";
+        }
+
+        if(!isValid){
+            throw new InterruptedException(message);
+        }
+    }
+
     private boolean isRecoverable(@CheckForNull String message) {
         if (message == null) {
             return false;
@@ -1292,7 +1321,13 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
 
-
+        public FormValidation doCheckHost(@QueryParameter String value) {
+            FormValidation ret = FormValidation.ok();
+            if (StringUtils.isEmpty(value)) {
+                return FormValidation.error(Messages.SSHLauncher_HostNotSpecified());
+            }
+            return ret;
+        }
     }
 
     private static final Logger LOGGER = Logger.getLogger(SSHLauncher.class.getName());

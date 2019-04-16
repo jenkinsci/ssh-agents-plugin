@@ -107,8 +107,13 @@ public class SSHConnector extends ComputerConnector {
      *  Field retryWaitTime.
      */
     private Integer retryWaitTime;
-    
+
     private SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
+
+    /**
+     *  Field tcpNoDelay.
+     */
+    private Boolean tcpNoDelay;
 
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -155,8 +160,10 @@ public class SSHConnector extends ComputerConnector {
 
     @Override
     public SSHLauncher launch(String host, TaskListener listener) {
-        return new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+        SSHLauncher sshLauncher = new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
+            suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+        sshLauncher.setTcpNoDelay(getTcpNoDelay());
+        return sshLauncher;
     }
 
     @DataBoundSetter
@@ -202,7 +209,12 @@ public class SSHConnector extends ComputerConnector {
     public void setPort(int value){
         this.port = value == 0 ? DEFAULT_SSH_PORT : value;
     }
-    
+
+    @DataBoundSetter
+    public void setTcpNoDelay(Boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
+    }
+
     public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
     	return sshHostKeyVerificationStrategy;
     }
@@ -245,6 +257,10 @@ public class SSHConnector extends ComputerConnector {
 
     public Integer getRetryWaitTime() {
         return retryWaitTime;
+    }
+
+    public Boolean getTcpNoDelay() {
+        return tcpNoDelay != null ? tcpNoDelay : true;
     }
 
     @Extension
