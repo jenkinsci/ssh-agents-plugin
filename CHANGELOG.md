@@ -2,7 +2,7 @@
 
 ### 1.30.0 (TBD)
 * [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353) Upgrade Jenkins core to 2.150.1
-* [JENKINS-5149](https://issues.jenkins-ci.org/browse/JENKINS-5149) Overwrite remoting.jar only when necessary.
+* [JENKINS-56147](https://issues.jenkins-ci.org/browse/JENKINS-56147) Overwrite remoting.jar only when necessary.
 * [JENKINS-56885](https://issues.jenkins-ci.org/browse/JENKINS-56885) It is possible to save a Node without host configuration
 * [JENKINS-57019](https://issues.jenkins-ci.org/browse/JENKINS-57019) Allow to set working directory in SSHConnector
 * [JENKINS-57018](https://issues.jenkins-ci.org/browse/JENKINS-57018) Allow to enable/disable TCP_NODELAY in SSHConnector
