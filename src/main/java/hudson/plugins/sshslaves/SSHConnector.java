@@ -45,6 +45,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import static hudson.Util.fixEmpty;
+import static hudson.Util.fixEmptyAndTrim;
 import static hudson.plugins.sshslaves.SSHLauncher.*;
 
 import hudson.model.Computer;
@@ -111,6 +112,12 @@ public class SSHConnector extends ComputerConnector {
     private SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy;
 
     /**
+     * Set the value to add to the remoting parameter -workDir
+     * @see <a href="https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory">Remoting Work directory</a>
+     */
+    private String workDir;
+
+    /**
      *  Field tcpNoDelay.
      */
     private Boolean tcpNoDelay;
@@ -161,7 +168,8 @@ public class SSHConnector extends ComputerConnector {
     @Override
     public SSHLauncher launch(String host, TaskListener listener) {
         SSHLauncher sshLauncher = new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
-            suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+                suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+        sshLauncher.setWorkDir(workDir);
         sshLauncher.setTcpNoDelay(getTcpNoDelay());
         return sshLauncher;
     }
@@ -219,6 +227,11 @@ public class SSHConnector extends ComputerConnector {
     	return sshHostKeyVerificationStrategy;
     }
 
+    @DataBoundSetter
+    public void setWorkDir(String workDir) {
+        this.workDir = fixEmptyAndTrim(workDir);
+    }
+
     public String getCredentialsId() {
         return credentialsId;
     }
@@ -259,6 +272,10 @@ public class SSHConnector extends ComputerConnector {
         return retryWaitTime;
     }
 
+    public String getWorkDir() {
+        return workDir;
+    }
+  
     public Boolean getTcpNoDelay() {
         return tcpNoDelay != null ? tcpNoDelay : true;
     }
