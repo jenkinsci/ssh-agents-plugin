@@ -1,8 +1,7 @@
-buildPlugin(configurations: [
-  [ platform: "linux", jdk: "8", jenkins: null ],
-  [ platform: "windows", jdk: "8", jenkins: null ],
-  [ platform: "linux", jdk: "8", jenkins: "2.164.1", javaLevel: "8" ],
-  [ platform: "windows", jdk: "8", jenkins: "2.164.1", javaLevel: "8" ],
-  [ platform: "linux", jdk: "11", jenkins: "2.170", javaLevel: "8" ],
-  [ platform: "windows", jdk: "11", jenkins: "2.170", javaLevel: "8" ]
-])
+def buildConfiguration = buildPlugin.recommendedConfigurations()
+
+// Also build on recent weekly
+buildConfiguration << [ platform: "linux",   jdk: "11", jenkins: "2.170", javaLevel: "8" ]
+buildConfiguration << [ platform: "windows", jdk: "11", jenkins: "2.170", javaLevel: "8" ]
+
+buildPlugin(configurations: buildConfiguration)
