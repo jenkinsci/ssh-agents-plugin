@@ -34,6 +34,7 @@ In order to try to replicate an issue reported in Jira, we need the following in
 * Jenkins core version
 * OS you use on your SSH agents
 * OpenSSH version you have installed on your SSH agents?
+* Did you check the SSHD service logs on your agent? try to increase the verbosity by setting `LogLevel VERBOSE` or `LogLevel DEBUG1` on your /etc/ssh/sshd_config file and see [Logging_and_Troubleshooting](https://en.wikibooks.org/wiki/OpenSSH/Logging_and_Troubleshooting)
 * Attach the agent connection log (http://jenkins.example.com/computer/NODENAME/log)
 * Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )? 
 * Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
