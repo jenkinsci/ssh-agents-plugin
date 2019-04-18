@@ -155,4 +155,49 @@ Caused by: java.io.EOFException
         at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:63)
 ```
 
+### Corrupt agent workdir folder
 
+If you experience a immmediate disconnection without any clear trace it could be related with a corrupt file in the agent workdir folder.
+
+```
+Apr 17, 2019 2:16:23 PM INFO hudson.remoting.SynchronousCommandTransport$ReaderThread run
+When attempting to connect a slave using "Launch Agent via SSH" getting the following error.
+
+[04/17/19 16:27:27] [SSH] Checking java version of /home/jenkins/jdk/bin/java
+[04/17/19 16:27:28] [SSH] /home/jenkins/jdk/bin/java -version returned 1.8.0_191.
+[04/17/19 16:27:28] [SSH] Starting sftp client.
+[04/17/19 16:27:28] [SSH] Copying latest remoting.jar...
+[04/17/19 16:27:28] [SSH] Copied 776,717 bytes.
+Expanded the channel window size to 4MB
+[04/17/19 16:27:28] [SSH] Starting agent process: cd "/home/jenkins" && /home/jenkins/jdk/bin/java -jar remoting.jar -workDir /home/jenkins
+Apr 17, 2019 4:27:28 PM org.jenkinsci.remoting.engine.WorkDirManager initializeWorkDir
+INFO: Using /home/jenkins/remoting as a remoting work directory
+Both error and output logs will be printed to /home/jenkins/remoting
+<===[JENKINS REMOTING CAPACITY]===>channel started
+Remoting version: 3.27
+This is a Unix agent
+Evacuated stdout
+Slave JVM has not reported exit code. Is it still running?
+[04/17/19 16:27:33] Launch failed - cleaning up connection
+[04/17/19 16:27:33] [SSH] Connection closed.
+ERROR: Connection terminated
+java.io.EOFException
+ at java.io.ObjectInputStream$PeekInputStream.readFully(ObjectInputStream.java:2678)
+ at java.io.ObjectInputStream$BlockDataInputStream.readShort(ObjectInputStream.java:3153)
+ at java.io.ObjectInputStream.readStreamHeader(ObjectInputStream.java:861)
+ at java.io.ObjectInputStream.<init>(ObjectInputStream.java:357)
+ at hudson.remoting.ObjectInputStreamEx.<init>(ObjectInputStreamEx.java:49)
+ at hudson.remoting.Command.readFrom(Command.java:140)
+ at hudson.remoting.Command.readFrom(Command.java:126)
+ at hudson.remoting.AbstractSynchronousByteArrayCommandTransport.read(AbstractSynchronousByteArrayCommandTransport.java:36)
+ at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:63)
+Caused: java.io.IOException: Unexpected termination of the channel
+ at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:77)
+```
+
+Try to connect the slave via "command on the master", if you see the following error, you would wipe out the workdir and the issue would be resolved.
+
+```
+Unable to launch the agent for *************
+java.io.IOException: Invalid encoded sequence encountered: 3D 3D 5B 4A 45 4E 4B 49 4E 53 20 52 45 4D 4F 54 49 4E 47 20 43 41 50 41 43 49 54 59 5D 3D 3D 3D 3E 72 4F 30 41 42 58 4E 79 41 42 70 6F 64 57 52 7A 62 32 34 75 63 6D 56 74 62 33 52 70 62 6D 63 75 51 32 46 77 59 57 4A 70 62 47 6C 30 65 51 41 41 41 41 41 41 41 41 41 42 41 67 41 42 53 67 41 45 62 57 46 7A 61 33 68 77 41 41 41 41 41 41 41 41 41 66 34
+```
