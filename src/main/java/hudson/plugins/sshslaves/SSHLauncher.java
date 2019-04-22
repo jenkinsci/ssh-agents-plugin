@@ -67,6 +67,8 @@ import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
 import hudson.util.NullStream;
 import java.util.Collections;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -591,7 +593,16 @@ public class SSHLauncher extends ComputerLauncher {
                             String workingDirectory) throws IOException {
         session = connection.openSession();
         expandChannelBufferSize(session,listener);
-        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
+
+        String cdArguments = "";
+        Pattern windowsDrivePattern = Pattern.compile("^[a-zA-Z]:\\\\");
+        Matcher windowsDriveMatcher = windowsDrivePattern.matcher(workingDirectory);
+        if ( windowsDriveMatcher.find() && ! "false".equals(System.getProperty("hudson.plugins.sshslaves.alternativewindowsdrive")) ) {
+            // To support alternate drives for the remote root directory on Windows, when not using cygwin.
+            // You can disable this feature with startup option: -Dhudson.plugins.sshslaves.alternativewindowsdrive=false
+            cdArguments = "/d ";
+        }
+        String cmd = "cd " + cdArguments + "\"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
                      getWorkDirParam(workingDirectory);
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
