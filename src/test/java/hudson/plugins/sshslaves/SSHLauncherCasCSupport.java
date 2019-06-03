@@ -17,6 +17,16 @@ public class SSHLauncherCasCSupport {
     @Test
     @ConfiguredWithCode("SSHCasCConfig.yml")
     public void shouldBeAbleToConfigureSSHSlaves() {
+        validateConfiguration();
+    }
+
+    @Test
+    @ConfiguredWithCode("SSHCasCConfigLegacy.yml")
+    public void shouldBeAbleToConfigureLegacySSHSlaves() {
+        validateConfiguration();
+    }
+
+    private void validateConfiguration() {
         final Node node = j.jenkins.getNode("this-ssh-agent");
         assertNotNull(node);
 

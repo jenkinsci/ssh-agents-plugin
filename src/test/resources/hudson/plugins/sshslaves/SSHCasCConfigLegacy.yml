@@ -1,0 +1,10 @@
+jenkins:
+  nodes:
+    - permanent:
+        name: "this-ssh-agent"
+        remoteFS: "/home/jenkins"
+        launcher:
+          sSHLauncher:
+            host: ssh-host
+            port: 2222
+            jvmOptions: "-DuberImportantParam=uberImportantValue"
