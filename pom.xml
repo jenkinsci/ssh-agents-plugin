@@ -128,7 +128,7 @@
     <dependency>
       <groupId>io.jenkins.configuration-as-code</groupId>
       <artifactId>configuration-as-code-support</artifactId>
-      <version>1.17</version>
+      <version>${configuration-as-code.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
