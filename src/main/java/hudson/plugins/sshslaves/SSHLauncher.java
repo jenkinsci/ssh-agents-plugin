@@ -1224,7 +1224,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     @Extension
-    @Symbol({"sSHLauncher", "ssh"})
+    @Symbol({"ssh", "sSHLauncher"})
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
 
         // TODO move the authentication storage to descriptor... see SubversionSCM.java
