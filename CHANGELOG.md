@@ -6,8 +6,11 @@
 * [JENKINS-56885](https://issues.jenkins-ci.org/browse/JENKINS-56885) It is possible to save a Node without host configuration
 * [JENKINS-57019](https://issues.jenkins-ci.org/browse/JENKINS-57019) Allow to set working directory in SSHConnector
 * [JENKINS-57018](https://issues.jenkins-ci.org/browse/JENKINS-57018) Allow to enable/disable TCP_NODELAY in SSHConnector
+* [JENKINS-57797](https://issues.jenkins-ci.org/browse/JENKINS-57797) Support Configuration-as-Code
 * Java 11 readiness: build both on JDK8 and JDK11
 * Correct spelling error faisl to fails
+* update org.jenkins-ci.plugins/plugin from 3.42 to 3.43
+* udpate ssh-credentials from 1.14 to 1.16
 
 #### Breaking changes
 * this version remove deprecated methods on SSHLauncher see [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353)
