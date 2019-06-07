@@ -2,13 +2,13 @@ package hudson.plugins.sshslaves;
 
 import hudson.model.Node;
 import hudson.slaves.SlaveComputer;
-import io.jenkins.plugins.casc.misc.ExportImportRoundTripAbstractTest;
+import io.jenkins.plugins.casc.misc.RoundTripAbstractTest;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class SSHLauncherCasCRoundTripTest extends ExportImportRoundTripAbstractTest {
+public class SSHLauncherCasCRoundTripTest extends RoundTripAbstractTest {
     @Override
     protected void assertConfiguredAsExpected(RestartableJenkinsRule restartableJenkinsRule, String s) {
         final Node node = r.j.jenkins.getNode("this-ssh-agent");
