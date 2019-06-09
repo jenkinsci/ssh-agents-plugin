@@ -79,7 +79,7 @@ Once you selected the **Launch method** to **Launch agent agents via SSH**, you 
 If empty, it will be reset to default value (210 seconds). This will only set the timeout for agent launching; once launched,
 the timeout will not apply.
 * **Maximum Number of Retries** Set the number of times the SSH connection will be retried if the initial connection results in an error.
-If empty, it will be reset to default value (10).
+If empty, it will be reset to default value (10). If the value is 0, the retries would disabled.
 * **Seconds To Wait Between Retries** Set the number of seconds to wait between retry attempts of the initial SSH connection. The default value is 15 seconds.
 * **Use TCP_NODELAY flag on the SSH connection** Enable/Disables the TCP_NODELAY flag on the SSH connection.
 If set, disable the Nagle algorithm. This means that segments are always sent as soon as possible,
@@ -114,7 +114,7 @@ potentially using the ssh hostname command to initiate a connection and update t
 Checks the key provided by the remote host matches the key set by the user who configured this connection.
 
 The SSH key expected for this connection. This key should be in the form `algorithm value`
-where algorithm is one of ssh-rsa or ssh-dss, and value is the Base 64 encoded content of the key.
+where algorithm is one of ssh-rsa or ssh-dss, and value is the Base 64 encoded content of the key. The keys should be placed in /etc/ssh/<key_name>.pub
 
 ### Manually trusted key Verification Strategy
 
@@ -203,3 +203,20 @@ This can help differentiate between multiple keys/password associated with the s
 See [SSH slaves and Cygwin](https://wiki.jenkins.io/display/JENKINS/SSH+slaves+and+Cygwin) for the discussion of how to use this plugin to talk to Cygwin SSHD server.
 
 [Remoting documentation](https://github.com/jenkinsci/remoting/tree/master/docs)
+
+## launch Windows slaves using Microsoft OpenSSH
+
+The current version of the plugin does not run directly on PowerShell, you have to use prefix and suffix settings to trick the command and make it works, Windows 10 machines can run as SSH agents with the Microsoft OpenSSH server by using:
+
+**Prefix Start Agent Command**
+
+```
+powershell -Command "cd C:\J\S ; C:\J\S\jdk\bin\java.exe -jar remoting.jar" ; exit 0 ; rem '
+```
+**Suffix Start Agent Command**
+
+```
+'
+```
+
+[see this Mark Waite's comment](https://issues.jenkins-ci.org/browse/JENKINS-42856?focusedCommentId=355486&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-355486)

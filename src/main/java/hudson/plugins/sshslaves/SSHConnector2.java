@@ -31,7 +31,6 @@ import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.security.AccessControlled;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
-import hudson.tools.JDKInstaller;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import java.util.logging.Logger;
@@ -134,63 +133,6 @@ public class SSHConnector2 extends ComputerConnector {
         this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
     }
 
-    /**
-     * @see SSHLauncher#SSHLauncher
-     * @deprecated use {@link #SSHConnector2(String credentialsId, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) } and setter methods instead.
-     */
-    public SSHConnector2(int port, String credentialsId, String jvmOptions, String javaPath,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
-        this(credentialsId, sshHostKeyVerificationStrategy);
-
-        setPort(port);
-        setJvmOptions(jvmOptions);
-        setJavaPath(javaPath);
-        setPrefixStartSlaveCmd(prefixStartSlaveCmd);
-        setSuffixStartSlaveCmd(suffixStartSlaveCmd);
-        setLaunchTimeoutSeconds(launchTimeoutSeconds);
-        setMaxNumRetries(maxNumRetries);
-        setRetryWaitTime(retryWaitTime);
-        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
-    }
-
-    /**
-     * @see SSHLauncher#SSHLauncher
-     * @deprecated use {@link #SSHConnector2(String credentialsId, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) } and setter methods instead.
-     */
-    public SSHConnector2(int port, StandardUsernameCredentials credentials, String username, String password,
-                        String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd) {
-        this(credentials.getId(), new NonVerifyingKeyVerificationStrategy());
-        setPort(port);
-        setJvmOptions(jvmOptions);
-        setJavaPath(javaPath);
-        setPrefixStartSlaveCmd(prefixStartSlaveCmd);
-        setSuffixStartSlaveCmd(suffixStartSlaveCmd);
-        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
-    }
-
-    /**
-     * @see SSHLauncher#SSHLauncher
-     * @deprecated use {@link #SSHConnector2(String credentialsId, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) } and setter methods instead.
-     */
-    public SSHConnector2(int port,@NonNull StandardUsernameCredentials credentials, String username, String password,
-                        String privatekey, String jvmOptions, String javaPath, JDKInstaller jdkInstaller,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
-        this(credentials.getId(), sshHostKeyVerificationStrategy);
-
-        setPort(port);
-        setJvmOptions(jvmOptions);
-        setJavaPath(javaPath);
-        setPrefixStartSlaveCmd(prefixStartSlaveCmd);
-        setSuffixStartSlaveCmd(suffixStartSlaveCmd);
-        setLaunchTimeoutSeconds(launchTimeoutSeconds);
-        setMaxNumRetries(maxNumRetries);
-        setRetryWaitTime(retryWaitTime);
-        LOGGER.warning("This constructor is deprecated and will be removed on next versions, please do not use it.");
-    }
-
     public String getCredentialsId() {
         return credentialsId;
     }
@@ -272,7 +214,7 @@ public class SSHConnector2 extends ComputerConnector {
     }
 
     public Boolean getTcpNoDelay() {
-        return tcpNoDelay;
+        return tcpNoDelay != null ? tcpNoDelay : true;
     }
 
     @DataBoundSetter
@@ -290,8 +232,8 @@ public class SSHConnector2 extends ComputerConnector {
     }
 
     @Override
-    public SSHLauncher launch(String host, TaskListener listener) {
-        SSHLauncher launcher = new SSHLauncher(host, this.credentialsId, sshHostKeyVerificationStrategy);
+    public SSHLauncher2 launch(String host, TaskListener listener) {
+        SSHLauncher2 launcher = new SSHLauncher2(host, this.credentialsId, sshHostKeyVerificationStrategy);
         launcher.setPort(port);
         launcher.setJvmOptions(jvmOptions);
         launcher.setJavaPath(javaPath);
@@ -300,8 +242,8 @@ public class SSHConnector2 extends ComputerConnector {
         launcher.setLaunchTimeoutSeconds(launchTimeoutSeconds);
         launcher.setMaxNumRetries(maxNumRetries);
         launcher.setRetryWaitTime(retryWaitTime);
-        launcher.setTcpNoDelay(tcpNoDelay);
         launcher.setWorkDir(workDir);
+        launcher.setTcpNoDelay(getTcpNoDelay());
         return launcher;
     }
 

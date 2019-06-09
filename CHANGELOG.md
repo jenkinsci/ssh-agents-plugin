@@ -1,5 +1,42 @@
 # Changelog
 
+### 1.30.0 (Jun 9, 2019)
+* [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353) Upgrade Jenkins core to 2.150.1
+* [JENKINS-56147](https://issues.jenkins-ci.org/browse/JENKINS-56147) Overwrite remoting.jar only when necessary.
+* [JENKINS-56885](https://issues.jenkins-ci.org/browse/JENKINS-56885) It is possible to save a Node without host configuration
+* [JENKINS-57019](https://issues.jenkins-ci.org/browse/JENKINS-57019) Allow to set working directory in SSHConnector
+* [JENKINS-57018](https://issues.jenkins-ci.org/browse/JENKINS-57018) Allow to enable/disable TCP_NODELAY in SSHConnector
+* [JENKINS-57797](https://issues.jenkins-ci.org/browse/JENKINS-57797) Support Configuration-as-Code
+* Java 11 readiness: build both on JDK8 and JDK11
+* Correct spelling error faisl to fails
+* update org.jenkins-ci.plugins/plugin from 3.42 to 3.43
+* udpate ssh-credentials from 1.14 to 1.16
+
+#### Breaking changes
+* this version remove deprecated methods on SSHLauncher see [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353)
+* Support 2.150.1+ LTS Jenkins Core versions
+
+### 1.29.4 (Dec 28, 2018)
+
+* [JENKINS-54884](https://issues.jenkins-ci.org/browse/JENKINS-54884) [JENKINS-54746](https://issues.jenkins-ci.org/browse/JENKINS-54746) Use Trilead ssh2 from Jenkins Core and use Trilead API plugin for test
+* [JENKINS-54934](https://issues.jenkins-ci.org/browse/JENKINS-54934) Max number of retries and retry wait time do not allow 0
+
+#### Breaking changes
+
+* if you upgrade from 1.29.X, you would have to uninstall trilead-api plugin is no longer used.
+* Due [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440) ssh-credentials couldbe not correctly migrated see [Troubleshooting Guide](https://github.com/jenkinsci/ssh-slaves-plugin/blob/master/doc/TROUBLESHOOTING.md#after-upgrade-to-ssh-slaves-128-failed-to-connect-using-ssh-key-credentials-from-files)
+* see 1.27
+
+### 1.29.1 (Nov 20, 2018)
+
+* [JENKINS-54686](https://issues.jenkins-ci.org/browse/JENKINS-54686) partial revert of the change to maintain compatibility with Cloud plugins
+
+#### Breaking changes
+
+* see 1.27 and 1.29.0
+* It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
+ * **Plugins that have it as dependency (EC2 Fleet, Docker, ...) must test the upgrade to 1.29.0.**
+ 
 ### 1.29.0 (Nov 18, 2018)
 
 * [JENKINS-54686](https://issues.jenkins-ci.org/browse/JENKINS-54686) Use trilead-api plugin instead trilead-ssh2 from core
@@ -11,6 +48,7 @@
 
 * see 1.27
 * It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
+ * **This breaks compatibility with plugins that have it as dependency (EC2 Fleet, Docker, ...).**
 
 ### 1.28.1 (Sep 5, 2018)
 

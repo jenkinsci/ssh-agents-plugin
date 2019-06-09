@@ -34,6 +34,7 @@ In order to try to replicate an issue reported in Jira, we need the following in
 * Jenkins core version
 * OS you use on your SSH agents
 * OpenSSH version you have installed on your SSH agents?
+* Did you check the SSHD service logs on your agent? try to increase the verbosity by setting `LogLevel VERBOSE` or `LogLevel DEBUG1` on your /etc/ssh/sshd_config file and see [Logging_and_Troubleshooting](https://en.wikibooks.org/wiki/OpenSSH/Logging_and_Troubleshooting)
 * Attach the agent connection log (http://jenkins.example.com/computer/NODENAME/log)
 * Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )? 
 * Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
@@ -73,4 +74,130 @@ in the Jenkins properties. it can be set in runtime by executing the following c
 
 ```
 System.setProperty("hudson.plugins.sshslaves.SSHLauncher.trackCredentials","false");
+```
+
+### 1.29.0 Breaks compatibility with Cloud plugins that do not use trilead-api plugin as dependency
+
+ssh-slaves-plugins not longer uses trilead-ssh2 module from the Jenkins core so plugins that depends on ssh-slaves-plugin must include trilead-api plugin as dependency until every the plugins change to this dependency. If you find this issue with one of your cloud plugins please report it and downgrade ssh-slaves-plugin to <1.28.1 until the dependency is added to your cloud plugin.
+
+```
+SSHLauncher{host='192.168.1.100', port=22, credentialsId='b6a4fe2c-9ba5-4052-b91c-XXXXXXXXX', jvmOptions='-Xmx256m', javaPath='', prefixStartSlaveCmd='', suffixStartSlaveCmd='', launchTimeoutSeconds=210, maxNumRetries=10, retryWaitTime=15, sshHostKeyVerificationStrategy=hudson.plugins.sshslaves.verifiers.ManuallyTrustedKeyVerificationStrategy, tcpNoDelay=true, trackCredentials=false}
+[11/20/18 00:29:56] [SSH] Opening SSH connection to 192.168.1.100:22.
+[11/20/18 00:29:57] [SSH] SSH host key matches key seen previously for this host. Connection will be allowed.
+ERROR: Unexpected error in launching a agent. This is probably a bug in Jenkins.
+java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
+	at com.cloudbees.jenkins.plugins.sshcredentials.impl.TrileadSSHPasswordAuthenticator$Factory.supports(TrileadSSHPasswordAuthenticator.java:194)
+	at com.cloudbees.jenkins.plugins.sshcredentials.impl.TrileadSSHPasswordAuthenticator$Factory.newInstance(TrileadSSHPasswordAuthenticator.java:181)
+	at com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator.newInstance(SSHAuthenticator.java:216)
+	at com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator.newInstance(SSHAuthenticator.java:170)
+	at hudson.plugins.sshslaves.SSHLauncher.openConnection(SSHLauncher.java:1213)
+	at hudson.plugins.sshslaves.SSHLauncher$2.call(SSHLauncher.java:846)
+	at hudson.plugins.sshslaves.SSHLauncher$2.call(SSHLauncher.java:833)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+[11/20/18 00:29:57] Launch failed - cleaning up connection
+[11/20/18 00:29:57] [SSH] Connection closed. 
+```
+
+### After upgrade to ssh-slaves 1.28+ Failed to connect using SSH key credentials from files
+
+The ssh-slaves version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins master ~/.ssh", and "From a file on Jenkins master" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it fails or it is not possible. 
+
+The issue is related to ssh-credentials and a deprecated type of credentials, the workaround it is to recreate the credential with the same ID using "Enter directly" for the key, probably if you only save again the credential it will be migrated.
+
+for more details see [JENKINS-54746](https://issues.jenkins-ci.org/browse/JENKINS-54746)
+
+Agent log
+
+```
+SSHLauncher{host='HOSTNAME', port=22, credentialsId='XXXXXX', jvmOptions='', javaPath='', prefixStartSlaveCmd='', suffixStartSlaveCmd='', launchTimeoutSeconds=210, maxNumRetries=10, retryWaitTime=15, sshHostKeyVerificationStrategy=hudson.plugins.sshslaves.verifiers.ManuallyTrustedKeyVerificationStrategy, tcpNoDelay=true, trackCredentials=true}
+[11/21/18 09:40:05] [SSH] Opening SSH connection to HOSTNAME:22.
+[11/21/18 09:40:05] [SSH] SSH host key matches key seen previously for this host. Connection will be allowed.
+[11/21/18 09:40:05] [SSH] Authentication failed.
+Authentication failed.
+[11/21/18 09:40:05] Launch failed - cleaning up connection
+[11/21/18 09:40:05] [SSH] Connection closed.
+```
+
+Manage old data 
+
+```
+ConversionException: Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission ---- Debugging information ---- message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission cause-exception : com.thoughtworks.xstream.converters.reflection.ObjectAccessException cause-message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission class : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource required-type : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource converter-type : hudson.util.RobustReflectionConverter path : /com.cloudbees.plugins.credentials.SystemCredentialsProvider/domainCredentialsMap/entry/java.util.concurrent.CopyOnWriteArrayList/com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey/privateKeySource line number : 21 -------------------------------
+```
+
+### Selenium Grid agents failed to connect
+
+On recent versions of Jenkins Core, [Agent - Master Access Control](https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control) was introduced it seems causes an issue with Selenium Grid Agents, to fix this problem you have to disable: "Manage Jenkins" > "Configure Global Security", and check "Enable Agent → Master Access Control" (as it's said in Jenkin documentation)
+https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control
+
+"On the other hand, if all your agents are trusted to the same degree as your master, then it is safe to leave this subsystem off"
+
+```
+Apr 03, 2019 9:46:01 AM org.jenkinsci.remoting.util.AnonymousClassWarnings warn
+
+WARNING: Attempt to (de-)serialize anonymous class hudson.plugins.selenium.configuration.DirectJsonInputConfiguration$1; see: https://jenkins.io/redirect/serialization-of-anonymous-classes/
+Apr 03, 2019 9:46:06 AM hudson.remoting.SynchronousCommandTransport$ReaderThread run
+INFO: I/O error in channel channel
+
+java.io.IOException: Unexpected termination of the channel
+        at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:77)
+Caused by: java.io.EOFException
+        at java.io.ObjectInputStream$PeekInputStream.readFully(ObjectInputStream.java:2681)
+        at java.io.ObjectInputStream$BlockDataInputStream.readShort(ObjectInputStream.java:3156)
+        at java.io.ObjectInputStream.readStreamHeader(ObjectInputStream.java:862)
+        at java.io.ObjectInputStream.<init>(ObjectInputStream.java:358)
+        at hudson.remoting.ObjectInputStreamEx.<init>(ObjectInputStreamEx.java:49)
+        at hudson.remoting.Command.readFrom(Command.java:140)
+        at hudson.remoting.Command.readFrom(Command.java:126)
+        at hudson.remoting.AbstractSynchronousByteArrayCommandTransport.read(AbstractSynchronousByteArrayCommandTransport.java:36)
+        at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:63)
+```
+
+### Corrupt agent workdir folder
+
+If you experience a immmediate disconnection without any clear trace it could be related with a corrupt file in the agent workdir folder.
+
+```
+Apr 17, 2019 2:16:23 PM INFO hudson.remoting.SynchronousCommandTransport$ReaderThread run
+When attempting to connect a slave using "Launch Agent via SSH" getting the following error.
+
+[04/17/19 16:27:27] [SSH] Checking java version of /home/jenkins/jdk/bin/java
+[04/17/19 16:27:28] [SSH] /home/jenkins/jdk/bin/java -version returned 1.8.0_191.
+[04/17/19 16:27:28] [SSH] Starting sftp client.
+[04/17/19 16:27:28] [SSH] Copying latest remoting.jar...
+[04/17/19 16:27:28] [SSH] Copied 776,717 bytes.
+Expanded the channel window size to 4MB
+[04/17/19 16:27:28] [SSH] Starting agent process: cd "/home/jenkins" && /home/jenkins/jdk/bin/java -jar remoting.jar -workDir /home/jenkins
+Apr 17, 2019 4:27:28 PM org.jenkinsci.remoting.engine.WorkDirManager initializeWorkDir
+INFO: Using /home/jenkins/remoting as a remoting work directory
+Both error and output logs will be printed to /home/jenkins/remoting
+<===[JENKINS REMOTING CAPACITY]===>channel started
+Remoting version: 3.27
+This is a Unix agent
+Evacuated stdout
+Slave JVM has not reported exit code. Is it still running?
+[04/17/19 16:27:33] Launch failed - cleaning up connection
+[04/17/19 16:27:33] [SSH] Connection closed.
+ERROR: Connection terminated
+java.io.EOFException
+ at java.io.ObjectInputStream$PeekInputStream.readFully(ObjectInputStream.java:2678)
+ at java.io.ObjectInputStream$BlockDataInputStream.readShort(ObjectInputStream.java:3153)
+ at java.io.ObjectInputStream.readStreamHeader(ObjectInputStream.java:861)
+ at java.io.ObjectInputStream.<init>(ObjectInputStream.java:357)
+ at hudson.remoting.ObjectInputStreamEx.<init>(ObjectInputStreamEx.java:49)
+ at hudson.remoting.Command.readFrom(Command.java:140)
+ at hudson.remoting.Command.readFrom(Command.java:126)
+ at hudson.remoting.AbstractSynchronousByteArrayCommandTransport.read(AbstractSynchronousByteArrayCommandTransport.java:36)
+ at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:63)
+Caused: java.io.IOException: Unexpected termination of the channel
+ at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:77)
+```
+
+Try to connect the slave via "command on the master", if you see the following error, you would wipe out the workdir and the issue would be resolved.
+
+```
+Unable to launch the agent for *************
+java.io.IOException: Invalid encoded sequence encountered: 3D 3D 5B 4A 45 4E 4B 49 4E 53 20 52 45 4D 4F 54 49 4E 47 20 43 41 50 41 43 49 54 59 5D 3D 3D 3D 3E 72 4F 30 41 42 58 4E 79 41 42 70 6F 64 57 52 7A 62 32 34 75 63 6D 56 74 62 33 52 70 62 6D 63 75 51 32 46 77 59 57 4A 70 62 47 6C 30 65 51 41 41 41 41 41 41 41 41 41 42 41 67 41 42 53 67 41 45 62 57 46 7A 61 33 68 77 41 41 41 41 41 41 41 41 41 66 34
 ```

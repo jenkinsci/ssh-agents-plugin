@@ -43,7 +43,6 @@ import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.NodePropertyDescriptor;
 import hudson.slaves.SlaveComputer;
-import hudson.tools.JDKInstaller;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
@@ -280,7 +279,7 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
                         if (StringUtils.isNotBlank(javaPath)) {
                             java = expandExpression(computer, javaPath);
                         } else {
-                            JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(), connection);
+                            JavaVersionChecker2 javaVersionChecker = new JavaVersionChecker2(computer, listener, getJvmOptions(), connection);
                             java = javaVersionChecker.resolveJava();
                         }
 
