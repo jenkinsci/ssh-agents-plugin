@@ -1,6 +1,6 @@
 # Changelog
 
-### 1.30.0 (TBD)
+### 1.30.0 (Jun 9, 2019)
 * [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353) Upgrade Jenkins core to 2.150.1
 * [JENKINS-56147](https://issues.jenkins-ci.org/browse/JENKINS-56147) Overwrite remoting.jar only when necessary.
 * [JENKINS-56885](https://issues.jenkins-ci.org/browse/JENKINS-56885) It is possible to save a Node without host configuration
