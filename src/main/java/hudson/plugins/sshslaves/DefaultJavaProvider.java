@@ -26,6 +26,7 @@ package hudson.plugins.sshslaves;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import com.trilead.ssh2.Connection;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.Descriptor;
@@ -63,7 +64,7 @@ public class DefaultJavaProvider extends JavaProvider {
     public static final String JDK_BIN_JAVA = "/jdk/bin/java";
 
     @Override
-    public List<String> getJavas(SlaveComputer computer, TaskListener listener, SSHProvider connection) {
+    public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
         List<String> javas = new ArrayList<>();
 
         String workingDirectory = SSHLauncher.getWorkingDirectory(computer);

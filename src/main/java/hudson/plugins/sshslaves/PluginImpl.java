@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.trilead.ssh2.Connection;
 import hudson.Plugin;
 
 /**
@@ -40,7 +41,7 @@ public class PluginImpl extends Plugin {
     /**
      * The connections to close when the plugin is stopped.
      */
-    private static final List<SSHProvider> activeConnections = new ArrayList<>();
+    private static final List<Connection> activeConnections = new ArrayList<>();
 
     /**
      * {@inheritDoc}
@@ -64,9 +65,9 @@ public class PluginImpl extends Plugin {
      * Closes all the registered connections.
      */
     private static synchronized void closeRegisteredConnections() {
-        for (SSHProvider connection : activeConnections) {
+        for (Connection connection : activeConnections) {
             LOGGER.log(Level.INFO, "Forcing connection to {0}:{1} closed.",
-                    new Object[]{connection.getHost(), connection.getPort()});
+                    new Object[]{connection.getHostname(), connection.getPort()});
             // force closed just in case
             connection.close();
         }
@@ -78,7 +79,7 @@ public class PluginImpl extends Plugin {
      *
      * @param connection The connection.
      */
-    public static synchronized void register(SSHProvider connection) {
+    public static synchronized void register(Connection connection) {
         if (!activeConnections.contains(connection)) {
             activeConnections.add(connection);
         }
@@ -89,7 +90,7 @@ public class PluginImpl extends Plugin {
      *
      * @param connection The connection.
      */
-    public static synchronized void unregister(SSHProvider connection) {
+    public static synchronized void unregister(Connection connection) {
         activeConnections.remove(connection);
     }
 

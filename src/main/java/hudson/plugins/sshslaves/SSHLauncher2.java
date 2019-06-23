@@ -31,7 +31,9 @@ import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
+import hudson.model.Computer;
 import hudson.model.Descriptor;
+import hudson.model.ItemGroup;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.TaskListener;
@@ -258,6 +260,7 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
     @Override
     public void launch(final SlaveComputer computer, final TaskListener listener) throws InterruptedException {
         listener.getLogger().println(logConfiguration());
+        checkConfig();
         final SSHProvider connection = new SSHProviderImpl(this, computer, listener);
         final Node node = computer.getNode();
         final String workingDirectory = getWorkingDirectory(computer);
@@ -274,20 +277,13 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
                     Boolean rval = Boolean.FALSE;
                     try {
                         connection.openConnection();
-
-                        String java = null;
+                        String java = "java";
                         if (StringUtils.isNotBlank(javaPath)) {
                             java = expandExpression(computer, javaPath);
-                        } else {
-                            JavaVersionChecker2 javaVersionChecker = new JavaVersionChecker2(computer, listener, getJvmOptions(), connection);
-                            java = javaVersionChecker.resolveJava();
-                        }
-
+                        } 
                         connection.copyAgentJar(workingDirectory);
-
                         connection.startAgent(java, workingDirectory);
-
-                        PluginImpl.register(connection);
+                        PluginImpl2.register(connection);
                         rval = Boolean.TRUE;
                     } catch (RuntimeException | Error e) {
                         e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
@@ -348,6 +344,34 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
         }
     }
 
+    private void checkConfig() throws InterruptedException {
+        DescriptorImpl descriptor = (DescriptorImpl) this.getDescriptor();
+        String message = "Validate configuration:\n";
+        boolean isValid = true;
+
+        String port = String.valueOf(this.port);
+        FormValidation validatePort = descriptor.doCheckPort(port);
+        FormValidation validateHost = descriptor.doCheckHost(this.host);
+        FormValidation validateCredentials = descriptor.doCheckCredentialsId(Jenkins.get(), Jenkins.get(), this.host, port, this.credentialsId);
+
+        if(validatePort.kind == FormValidation.Kind.ERROR){
+            isValid = false;
+            message += validatePort.getMessage() + "\n";
+        }
+        if(validateHost.kind == FormValidation.Kind.ERROR){
+            isValid = false;
+            message += validateHost.getMessage() + "\n";
+        }
+        if(validateCredentials.kind == FormValidation.Kind.ERROR){
+            isValid = false;
+            message += validateCredentials.getMessage() + "\n";
+        }
+
+        if(!isValid){
+            throw new InterruptedException(message);
+        }
+    }
+    
     private String expandExpression(SlaveComputer computer, String expression) {
         return getEnvVars(computer).expand(expression);
     }
@@ -682,13 +706,15 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
         }
 
         @RequirePOST
-        public FormValidation doCheckCredentialsId(@AncestorInPath AccessControlled context,
+        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
+                                                   @AncestorInPath AccessControlled _context,
                                                    @QueryParameter String host,
                                                    @QueryParameter String port,
                                                    @QueryParameter String value) {
+            /** TODO check this method with the original */
             try {
                 int portValue = Integer.parseInt(port);
-                return SSHCredentialsManager.checkCredentialsIdAndDomain(context, host, portValue, value);
+                return SSHCredentialsManager.checkCredentialsIdAndDomain(_context, host, portValue, value);
             } catch (NumberFormatException e) {
                 return FormValidation.warning(e, Messages.SSHLauncher_PortNotANumber());
             }
@@ -710,6 +736,14 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
             } catch (NumberFormatException e) {
                 return FormValidation.error(e, Messages.SSHLauncher_PortNotANumber());
             }
+        }
+        
+        public FormValidation doCheckHost(@QueryParameter String value) {
+            FormValidation ret = FormValidation.ok();
+            if (StringUtils.isEmpty(value)) {
+                return FormValidation.error(Messages.SSHLauncher_HostNotSpecified());
+            }
+            return ret;
         }
     }
 
