@@ -31,7 +31,6 @@ import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
-import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
 import hudson.model.Node;
@@ -82,9 +81,9 @@ import static hudson.plugins.sshslaves.SSHLauncherConfig.getTimestamp;
 /**
  * A computer launcher that tries to start a linux agent by opening an SSH connection and trying to find java.
  */
-public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig {
+public class SSHModularLauncher extends ComputerLauncher implements SSHLauncherConfig {
 
-    private static final Logger LOGGER = Logger.getLogger(SSHLauncher2.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SSHModularLauncher.class.getName());
 
     public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
     public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
@@ -177,7 +176,7 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
     private transient volatile ExecutorService launcherExecutorService;
 
     /**
-     * Constructor SSHLauncher2 creates a new SSHLauncher2 instance.
+     * Constructor SSHModularLauncher creates a new SSHModularLauncher instance.
      *
      * @param host       The host to connect to.
      * @param credentialsId The credentials id to connect as.
@@ -185,8 +184,8 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
      * @since 2.0
      */
     @DataBoundConstructor
-    public SSHLauncher2(@NonNull String host,@NonNull String credentialsId,
-                       @NonNull SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+    public SSHModularLauncher(@NonNull String host, @NonNull String credentialsId,
+                              @NonNull SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
         this.host = Util.fixEmptyAndTrim(host);
         this.credentialsId = credentialsId;
         this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
@@ -270,7 +269,7 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
         }
         synchronized (this) {
             launcherExecutorService = Executors.newSingleThreadExecutor(new NamingThreadFactory(
-                    Executors.defaultThreadFactory(), "SSHLauncher2.launch for '" + computer.getName() + "' node"));
+                    Executors.defaultThreadFactory(), "SSHModularLauncher.launch for '" + computer.getName() + "' node"));
             Set<Callable<Boolean>> callables = new HashSet();
             callables.add(new Callable<Boolean>() {
                 public Boolean call() throws InterruptedException {
@@ -283,7 +282,7 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
                         } 
                         connection.copyAgentJar(workingDirectory);
                         connection.startAgent(java, workingDirectory);
-                        PluginImpl2.register(connection);
+                        PluginImpl.register(connection);
                         rval = Boolean.TRUE;
                     } catch (RuntimeException | Error e) {
                         e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
@@ -553,7 +552,7 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
      */
     @Override
     public boolean getTrackCredentials() {
-        String trackCredentials = System.getProperty(SSHLauncher2.class.getName() + ".trackCredentials");
+        String trackCredentials = System.getProperty(SSHModularLauncher.class.getName() + ".trackCredentials");
         return !"false".equalsIgnoreCase(trackCredentials);
     }
 
@@ -642,7 +641,7 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
      */
     @CheckForNull
     static String getWorkingDirectory(SlaveComputer computer) {
-        return SSHLauncher2.getWorkingDirectory(computer.getNode());
+        return SSHModularLauncher.getWorkingDirectory(computer.getNode());
     }
 
     /**
@@ -748,7 +747,7 @@ public class SSHLauncher2 extends ComputerLauncher implements SSHLauncherConfig 
     }
 
     public String logConfiguration() {
-        final StringBuilder sb = new StringBuilder("SSHLauncher2{");
+        final StringBuilder sb = new StringBuilder("SSHModularLauncher{");
         sb.append("host='").append(getHost()).append('\'');
         sb.append(", port=").append(getPort());
         sb.append(", credentialsId='").append(Util.fixNull(credentialsId)).append('\'');

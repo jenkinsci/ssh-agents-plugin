@@ -75,7 +75,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import static hudson.plugins.sshslaves.SSHLauncher2.WORK_DIR_PARAM;
+import static hudson.plugins.sshslaves.SSHModularLauncher.WORK_DIR_PARAM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -176,7 +176,7 @@ public class SSHLauncher2Test {
                                                                                 "dummyCredentialId", null, "user",
                                                                                 "pass");
         getDomainCredentialsMap().put(Domain.global(), Collections.singletonList(credentilas));
-        SSHLauncher2 launcher = createSSHLauncher2(host);
+        SSHModularLauncher launcher = createSSHLauncher2(host);
 
         assertEquals(host.trim(), launcher.getHost());
         DumbSlave agent = createDumbSlave(launcher);
@@ -208,7 +208,7 @@ public class SSHLauncher2Test {
                 )
         );
 
-        SSHLauncher2.DescriptorImpl desc = (SSHLauncher2.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher2.class);
+        SSHModularLauncher.DescriptorImpl desc = (SSHModularLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHModularLauncher.class);
         assertEquals(2, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "does-not-exist").size());
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "dummyCredentialId").size());
         assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two", "does-not-exist").size());
@@ -227,7 +227,7 @@ public class SSHLauncher2Test {
     public void trackCredentialsWithUsernameAndPassword() throws Exception {
         UsernamePasswordCredentialsImpl credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass");
         getDomainCredentialsMap().put(Domain.global(), Collections.singletonList(credentials));
-        SSHLauncher2 launcher = createSSHLauncher2("localhost");
+        SSHModularLauncher launcher = createSSHLauncher2("localhost");
 
         DumbSlave slave = createDumbSlave(launcher);
 
@@ -250,7 +250,7 @@ public class SSHLauncher2Test {
         BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
         getDomainCredentialsMap().put(Domain.global(), Collections.singletonList(credentials));
 
-        SSHLauncher2 launcher = createSSHLauncher2("localhost");
+        SSHModularLauncher launcher = createSSHLauncher2("localhost");
         launcher.setCredentialsId(credentials.getId());
 
         DumbSlave slave = createDumbSlave(launcher);
@@ -273,7 +273,7 @@ public class SSHLauncher2Test {
         JavaContainer c = javaContainer.get();
         StandardUsernameCredentials credential = createGobalCredential("test", "test");
 
-        SSHLauncher2 launcher = new SSHLauncher2(c.ipBound(22), credential.getId(), new NonVerifyingKeyVerificationStrategy());
+        SSHModularLauncher launcher = new SSHModularLauncher(c.ipBound(22), credential.getId(), new NonVerifyingKeyVerificationStrategy());
         launcher.setPort(c.port(22));
         launcher.setMaxNumRetries(1);
         launcher.setLaunchTimeoutSeconds(30);
@@ -300,11 +300,11 @@ public class SSHLauncher2Test {
         String rootFS = "/home/user";
         String anotherWorkDir = "/another/workdir";
 
-        SSHLauncher2 launcher = new SSHLauncher2("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
+        SSHModularLauncher launcher = new SSHModularLauncher("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
         //use rootFS
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + rootFS);
 
-        launcher = new SSHLauncher2("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
+        launcher = new SSHModularLauncher("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
         launcher.setSuffixStartSlaveCmd("suffix" + WORK_DIR_PARAM + anotherWorkDir);
 
         //if worDir is in suffix return ""
@@ -313,7 +313,7 @@ public class SSHLauncher2Test {
         launcher.setWorkDir(anotherWorkDir);
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
 
-        launcher = new SSHLauncher2("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
+        launcher = new SSHModularLauncher("Hostname", "credentialID", new NonVerifyingKeyVerificationStrategy());
         //user the workDir set in configuration
         launcher.setWorkDir(anotherWorkDir);
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir);
@@ -348,7 +348,7 @@ public class SSHLauncher2Test {
         List<String> javas = provider.getJavas(computer, null, null);
         assertTrue(javas.contains(javaHome + DefaultJavaProvider.BIN_JAVA));
         assertTrue(javas.contains(javaHomeTool + DefaultJavaProvider.BIN_JAVA));
-        assertTrue(javas.contains(SSHLauncher2.getWorkingDirectory(computer) + DefaultJavaProvider.JDK_BIN_JAVA));
+        assertTrue(javas.contains(SSHModularLauncher.getWorkingDirectory(computer) + DefaultJavaProvider.JDK_BIN_JAVA));
     }
 
     /**
@@ -356,8 +356,8 @@ public class SSHLauncher2Test {
      * @param host hostname to set.
      * @return a basic launcher for the hostname, it is not valid for real connections.
      */
-    private SSHLauncher2 createSSHLauncher2(String host) {
-        SSHLauncher2 launcher = new SSHLauncher2(host, "dummyCredentialId", new KnownHostsFileKeyVerificationStrategy());
+    private SSHModularLauncher createSSHLauncher2(String host) {
+        SSHModularLauncher launcher = new SSHModularLauncher(host, "dummyCredentialId", new KnownHostsFileKeyVerificationStrategy());
         launcher.setPort(123);
         launcher.setJavaPath("xyz");
         launcher.setMaxNumRetries(1);
@@ -371,7 +371,7 @@ public class SSHLauncher2Test {
      * @throws Descriptor.FormException on error.
      * @throws IOException on error.
      */
-    private DumbSlave createDumbSlave(SSHLauncher2 launcher) throws Descriptor.FormException, IOException {
+    private DumbSlave createDumbSlave(SSHModularLauncher launcher) throws Descriptor.FormException, IOException {
         DumbSlave slave = new DumbSlave("agent" + j.jenkins.getNodes().size(), temporalFolder.newFolder().getPath(),
                                         launcher);
         slave.setRetentionStrategy(RetentionStrategy.NOOP);

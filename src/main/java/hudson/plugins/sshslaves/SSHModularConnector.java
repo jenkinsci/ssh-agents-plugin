@@ -23,10 +23,8 @@
  */
 package hudson.plugins.sshslaves;
 
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import hudson.Extension;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.security.AccessControlled;
 import hudson.slaves.ComputerConnector;
@@ -54,11 +52,11 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  *
  * NOTE: if need, default launcher values will be applied when we create the SSHLauncher
  * on {@link #launch(String, TaskListener)} method. It means it is not need to initialized default values on
- * SSHConnector2 constructors and setters.
+ * SSHModularConnector constructors and setters.
  *
  * @author Kohsuke Kawaguchi
  */
-public class SSHConnector2 extends ComputerConnector {
+public class SSHModularConnector extends ComputerConnector {
     private static final Logger LOGGER = Logger.getLogger(ComputerConnector.class.getName());
 
     /**
@@ -127,8 +125,8 @@ public class SSHConnector2 extends ComputerConnector {
      * @see SSHLauncher#SSHLauncher
      */
     @DataBoundConstructor
-    public SSHConnector2(@NonNull String credentialsId,
-                        @NonNull SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy){
+    public SSHModularConnector(@NonNull String credentialsId,
+                               @NonNull SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy){
         this.credentialsId = credentialsId;
         this.sshHostKeyVerificationStrategy = sshHostKeyVerificationStrategy;
     }
@@ -232,8 +230,8 @@ public class SSHConnector2 extends ComputerConnector {
     }
 
     @Override
-    public SSHLauncher2 launch(String host, TaskListener listener) {
-        SSHLauncher2 launcher = new SSHLauncher2(host, this.credentialsId, sshHostKeyVerificationStrategy);
+    public SSHModularLauncher launch(String host, TaskListener listener) {
+        SSHModularLauncher launcher = new SSHModularLauncher(host, this.credentialsId, sshHostKeyVerificationStrategy);
         launcher.setPort(port);
         launcher.setJvmOptions(jvmOptions);
         launcher.setJavaPath(javaPath);

@@ -85,6 +85,11 @@ public class PluginImpl extends Plugin {
         }
     }
 
+    /** TODO register connections */
+    public static void register(SSHProvider connection) {
+        //NOOP
+    }
+
     /**
      * Unregisters a connection for cleanup when the plugin is stopped.
      *
