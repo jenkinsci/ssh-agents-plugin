@@ -1,13 +1,16 @@
 # Changelog
 
-### 1.30.0 (TBD)
+### 1.30.0 (Jun 9, 2019)
 * [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353) Upgrade Jenkins core to 2.150.1
 * [JENKINS-56147](https://issues.jenkins-ci.org/browse/JENKINS-56147) Overwrite remoting.jar only when necessary.
 * [JENKINS-56885](https://issues.jenkins-ci.org/browse/JENKINS-56885) It is possible to save a Node without host configuration
 * [JENKINS-57019](https://issues.jenkins-ci.org/browse/JENKINS-57019) Allow to set working directory in SSHConnector
 * [JENKINS-57018](https://issues.jenkins-ci.org/browse/JENKINS-57018) Allow to enable/disable TCP_NODELAY in SSHConnector
+* [JENKINS-57797](https://issues.jenkins-ci.org/browse/JENKINS-57797) Support Configuration-as-Code
 * Java 11 readiness: build both on JDK8 and JDK11
 * Correct spelling error faisl to fails
+* update org.jenkins-ci.plugins/plugin from 3.42 to 3.43
+* udpate ssh-credentials from 1.14 to 1.16
 
 #### Breaking changes
 * this version remove deprecated methods on SSHLauncher see [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353)
@@ -21,7 +24,7 @@
 #### Breaking changes
 
 * if you upgrade from 1.29.X, you would have to uninstall trilead-api plugin is no longer used.
-* Due [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440) ssh-credentials couldbe not correctly migrated see [Troubleshooting Guide](https://github.com/jenkinsci/ssh-slaves-plugin/blob/master/doc/TROUBLESHOOTING.md#after-upgrade-to-ssh-slaves-128-failed-to-connect-using-ssh-key-credentials-from-files)
+* Due to [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), ssh-credentials could be incorrectly migrated see [Troubleshooting Guide](https://github.com/jenkinsci/ssh-slaves-plugin/blob/master/doc/TROUBLESHOOTING.md#after-upgrade-to-ssh-slaves-128-failed-to-connect-using-ssh-key-credentials-from-files)
 * see 1.27
 
 ### 1.29.1 (Nov 20, 2018)
@@ -32,7 +35,7 @@
 
 * see 1.27 and 1.29.0
 * It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
- * **Plugins that have it as dependency (EC2 Fleet, Docker, ...) must test the upgrade to 1.29.0.**
+ * **Plugins that have it as a dependency (EC2 Fleet, Docker, ...) must test the upgrade to 1.29.0.**
  
 ### 1.29.0 (Nov 18, 2018)
 
@@ -45,11 +48,11 @@
 
 * see 1.27
 * It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
- * **This breaks compatibility with plugins that have it as dependency (EC2 Fleet, Docker, ...).**
+ * **This breaks compatibility with plugins that have it as a dependency (EC2 Fleet, Docker, ...).**
 
 ### 1.28.1 (Sep 5, 2018)
 
-* [JENKINS-53254](https://issues.jenkins-ci.org/browse/JENKINS-53254) SSH connection fails in vShpere cloud plugin with new version of SSH slaves plugin (1.27)
+* [JENKINS-53254](https://issues.jenkins-ci.org/browse/JENKINS-53254) SSH connection fails in vSphere cloud plugin with a new version of SSH slaves plugin (1.27)
 
 #### Breaking changes
 
@@ -83,7 +86,7 @@
 
 ### 1.26 (Feb 26, 2018)
 * [JENKINS-49607](https://issues.jenkins-ci.org/browse/JENKINS-49607) - Report the required Java version when the plugin cannot find Java on the agent
-* [JENKINS-43786](https://issues.jenkins-ci.org/browse/JENKINS-43786) - Adapt the adminisitrative monitor to new design in Jenkins 2.103+
+* [JENKINS-43786](https://issues.jenkins-ci.org/browse/JENKINS-43786) - Adapt the administrative monitor to the new design in Jenkins 2.103+
 * [PR #82](https://github.com/jenkinsci/ssh-slaves-plugin/pull/82) - Do not lookup for credentials in SSHLauncher constructor so that the launcher can be initialized before the Credentials store is fully loaded (for Configuration-as-Code plugin)
 
 ### 1.25.1 (Jan 26, 2018)
@@ -162,7 +165,7 @@
 * German localization updated.
 
 ### 1.7.1 (Sep 29, 2014)
-* Fix NPE when trying to launch non-reconfigured slaves after upgrade to 1.7 version of plugin.
+* Fix NPE when trying to launch non-reconfigured slaves after upgrade to 1.7 version of the plugin.
 
 ### 1.7 (Sep 26, 2014)
 * Protect against some cases where there is no private key resulting in an NPE (possible fix for [JENKINS-20332](https://issues.jenkins-ci.org/browse/JENKINS-20332))
@@ -204,11 +207,11 @@
 * When upgrading credentials from pre 0.23 format, ensure that the credentials are persisted with the correct security context for persisting system/global credentials (issue #17648)
 
 ### 0.24 (Apr 16, 2013)
-* Removed some unnecessary debug code that remained as a fragment during development of the bulk data transfer improvements in 0.23
+* Removed some unnecessary debug code that remained as a fragment during the development of the bulk data transfer improvements in 0.23
 * Added some Japanese localizations
 * Prevented persistence of duplicate credentials under some code paths
-* Restored support for empty username as indicator of the user that Jenkins is running as.
-* Upgrade to latest version of te ssh-credentials plugin. 
+* Restored support for using an empty username as an indicator of the user that Jenkins is running as.
+* Upgrade to the latest version of the ssh-credentials plugin. 
 
 ### 0.23 (Mar 21, 2013)
 * Rely on SSH Credentials Plugin for unified credential handling across different places that use SSH
@@ -263,7 +266,7 @@
 
 ### 0.8 (October 23, 2009)
 * Allow OpenJDK in Java discovery (report)
-* Added a fool-proof check to detect a garbage in SSH exec session to avoid SFTP packet length problem (report)
+* Added a fool-proof check to detect garbage in SSH exec session to avoid SFTP packet length problem (report)
 
 ### 0.7 (July 27, 2009)
 * Supports private keys in the PuTTY format.

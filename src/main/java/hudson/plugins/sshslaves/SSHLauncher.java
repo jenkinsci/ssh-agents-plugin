@@ -72,6 +72,7 @@ import java.util.regex.Matcher;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
@@ -1234,6 +1235,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     @Extension
+    @Symbol({"ssh", "sSHLauncher"})
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
 
         // TODO move the authentication storage to descriptor... see SubversionSCM.java
