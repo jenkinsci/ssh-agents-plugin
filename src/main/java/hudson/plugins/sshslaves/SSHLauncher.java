@@ -595,14 +595,28 @@ public class SSHLauncher extends ComputerLauncher {
         session = connection.openSession();
         expandChannelBufferSize(session,listener);
 
-        String cdArguments = "";
+        PrintStream logger = listener.getLogger();
+
+         // Code to support alternate drives (such as D:\) for the remote root directory on Windows, when not using cygwin.
+         // You can disable this feature with startup option: -Dhudson.plugins.sshslaves.alternativewindowsdrive=false
+        boolean AlternativeWindowsDriveCheck = ! "false".equals(System.getProperty("hudson.plugins.sshslaves.alternativewindowsdrive"));
+        String agentOSTYPE="";
+        try {
+            ByteArrayOutputStream agentOsTypeStream = new ByteArrayOutputStream();
+            connection.exec("echo \"$OSTYPE\"", agentOsTypeStream);
+            agentOSTYPE = StringUtils.chomp( agentOsTypeStream.toString(Charset.defaultCharset().name()) );
+        } catch (InterruptedException ex) {
+            // exceptions here will only disable the AlternativeWindowsDriveCheck
+            logger.println(Messages.SSHLauncher_UnableToGetEnvironment(getTimestamp()));
+            AlternativeWindowsDriveCheck=false;
+        }
         Pattern windowsDrivePattern = Pattern.compile("^[a-zA-Z]:\\\\");
         Matcher windowsDriveMatcher = windowsDrivePattern.matcher(workingDirectory);
-        if ( windowsDriveMatcher.find() && ! "false".equals(System.getProperty("hudson.plugins.sshslaves.alternativewindowsdrive")) ) {
-            // To support alternate drives for the remote root directory on Windows, when not using cygwin.
-            // You can disable this feature with startup option: -Dhudson.plugins.sshslaves.alternativewindowsdrive=false
+        String cdArguments = "";
+        if ( AlternativeWindowsDriveCheck && ! "cygwin".equals(agentOSTYPE) && windowsDriveMatcher.find() ) {
             cdArguments = "/d ";
         }
+
         String cmd = "cd " + cdArguments + "\"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
                      getWorkDirParam(workingDirectory);
 
