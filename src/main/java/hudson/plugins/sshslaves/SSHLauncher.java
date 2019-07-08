@@ -234,6 +234,11 @@ public class SSHLauncher extends ComputerLauncher {
     private String workDir;
 
     /**
+     * [JENKINS-57126] Support alternative drive letters for Windows ssh agents using PowerShell/Win32-OpenSSH
+     */
+    private static final Pattern windowsDrivePattern = Pattern.compile("^[a-zA-Z]:\\\\");
+
+    /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
      * @param host       The host to connect to.
@@ -599,21 +604,20 @@ public class SSHLauncher extends ComputerLauncher {
 
          // Code to support alternate drives (such as D:\) for the remote root directory on Windows, when not using cygwin.
          // You can disable this feature with startup option: -Dhudson.plugins.sshslaves.alternativewindowsdrive=false
-        boolean AlternativeWindowsDriveCheck = ! "false".equals(System.getProperty("hudson.plugins.sshslaves.alternativewindowsdrive"));
+        boolean alternativeWindowsDriveCheck = ! "false".equals(System.getProperty("hudson.plugins.sshslaves.alternativewindowsdrive"));
         String agentOSTYPE="";
         try {
             ByteArrayOutputStream agentOsTypeStream = new ByteArrayOutputStream();
             connection.exec("echo \"$OSTYPE\"", agentOsTypeStream);
             agentOSTYPE = StringUtils.chomp( agentOsTypeStream.toString(Charset.defaultCharset().name()) );
         } catch (InterruptedException ex) {
-            // exceptions here will only disable the AlternativeWindowsDriveCheck
+            // exceptions here will only disable the alternativeWindowsDriveCheck
             logger.println(Messages.SSHLauncher_UnableToGetEnvironment(getTimestamp()));
-            AlternativeWindowsDriveCheck=false;
+            alternativeWindowsDriveCheck=false;
         }
-        Pattern windowsDrivePattern = Pattern.compile("^[a-zA-Z]:\\\\");
         Matcher windowsDriveMatcher = windowsDrivePattern.matcher(workingDirectory);
         String cdArguments = "";
-        if ( AlternativeWindowsDriveCheck && ! "cygwin".equals(agentOSTYPE) && windowsDriveMatcher.find() ) {
+        if ( alternativeWindowsDriveCheck && ! "cygwin".equals(agentOSTYPE) && windowsDriveMatcher.find() ) {
             cdArguments = "/d ";
         }
 
