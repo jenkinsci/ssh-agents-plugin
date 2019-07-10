@@ -614,6 +614,7 @@ public class SSHLauncher extends ComputerLauncher {
             // exceptions here will only disable the alternativeWindowsDriveCheck
             logger.println(Messages.SSHLauncher_UnableToGetEnvironment(getTimestamp()));
             alternativeWindowsDriveCheck=false;
+            Thread.currentThread().interrupt();
         }
         Matcher windowsDriveMatcher = windowsDrivePattern.matcher(workingDirectory);
         String cdArguments = "";
