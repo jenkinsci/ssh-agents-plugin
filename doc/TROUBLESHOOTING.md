@@ -49,7 +49,7 @@ In order to try to replicate an issue reported in Jira, we need the following in
 ### Force disconnection
 
 In some cases the agent appears as connected but is not, and the disconnect button is not present, in those cases you
-can force the disconnection of the agent by using an URL like this one `http://jenkins.example.com/jenkins/computer/NODE_NAME/disconnect`
+can force the disconnection of the agent by using an URL like this one `http://jenkins.example.com/jenkins/computer/NODE_NAME/doDisconnect`
 
 ### Threads stuck at CredentialsProvider.trackAll
 
