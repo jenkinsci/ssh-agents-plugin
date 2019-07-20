@@ -30,10 +30,7 @@ import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
-import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.DoNotUse;
 
 /**
  * An administrative warning that checks all SSH slaves have a {@link SshHostKeyVerificationStrategy}
@@ -56,19 +53,6 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
             }
         }
 
-        return false;
-    }
-
-    //TODO: This method can be removed when the baseline is updated to 2.103.
-    /**
-     * @return true if this version of the plugin is running on a Jenkins version where JENKINS-43786 is included.
-     */
-    @Restricted(DoNotUse.class)
-    public boolean isTheNewDesignAvailable() {
-        final VersionNumber version = Jenkins.getVersion();
-        if (version != null && version.isNewerThan(new VersionNumber("2.103"))) {
-            return true;
-        }
         return false;
     }
 
