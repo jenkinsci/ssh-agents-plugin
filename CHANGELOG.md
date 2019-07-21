@@ -1,5 +1,11 @@
 # Changelog
 
+### 1.30.1 (Jul 21, 2019)
+* [JENKINS-58340](https://issues.jenkins-ci.org/browse/JENKINS-58340) docker-plugin-1.1.6 docker cloud does not work with >=ssh-slaves-plugin-1.30.0
+
+#### Breaking changes
+* see 1.30.0
+
 ### 1.30.0 (Jun 9, 2019)
 * [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353) Upgrade Jenkins core to 2.150.1
 * [JENKINS-56147](https://issues.jenkins-ci.org/browse/JENKINS-56147) Overwrite remoting.jar only when necessary.
@@ -15,6 +21,7 @@
 #### Breaking changes
 * this version remove deprecated methods on SSHLauncher see [JENKINS-55353](https://issues.jenkins-ci.org/browse/JENKINS-55353)
 * Support 2.150.1+ LTS Jenkins Core versions
+* SSHConnector fields are now encapsulated, it breaks binary compatibility with older versions.
 
 ### 1.29.4 (Dec 28, 2018)
 
