@@ -399,6 +399,10 @@ public class SSHLauncher extends ComputerLauncher {
         final int port = this.port;
         checkConfig();
         synchronized (this) {
+            if(connection != null){
+                listener.getLogger().println(Messages.SSHLauncher_alreadyConnected());
+                return;
+            }
             connection = new Connection(host, port);
             launcherExecutorService = Executors.newSingleThreadExecutor(
                     new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
