@@ -862,7 +862,13 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private void checkConfig() throws InterruptedException {
-        DescriptorImpl descriptor = (DescriptorImpl) this.getDescriptor();
+        //JENKINS-58340 some plugins does not implement Descriptor
+        Descriptor descriptorOrg = Jenkins.get().getDescriptor(this.getClass());
+        if (!(descriptorOrg instanceof DescriptorImpl)) {
+            return;
+        }
+
+        DescriptorImpl descriptor = (DescriptorImpl) descriptorOrg;
         String message = "Validate configuration:\n";
         boolean isValid = true;
 
