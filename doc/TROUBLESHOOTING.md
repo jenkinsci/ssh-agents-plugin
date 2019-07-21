@@ -201,3 +201,7 @@ Try to connect the slave via "command on the master", if you see the following e
 Unable to launch the agent for *************
 java.io.IOException: Invalid encoded sequence encountered: 3D 3D 5B 4A 45 4E 4B 49 4E 53 20 52 45 4D 4F 54 49 4E 47 20 43 41 50 41 43 49 54 59 5D 3D 3D 3D 3E 72 4F 30 41 42 58 4E 79 41 42 70 6F 64 57 52 7A 62 32 34 75 63 6D 56 74 62 33 52 70 62 6D 63 75 51 32 46 77 59 57 4A 70 62 47 6C 30 65 51 41 41 41 41 41 41 41 41 41 42 41 67 41 42 53 67 41 45 62 57 46 7A 61 33 68 77 41 41 41 41 41 41 41 41 41 66 34
 ```
+
+### Use Remote root directory in a no C: drive
+
+The default configuration assumes the Remote root directory in `C:` drive, so the agent command launch will fail if the Remote root directory is in another drive. You can change the Remote root directory drive by using `Prefix Start Agent Command`, if you set `Prefix Start Agent Command` to `cd /d D:\ &&` you would change to the drive `D:` before to enter in the Remote root directory.
