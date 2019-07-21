@@ -35,7 +35,7 @@ THE SOFTWARE.
     </j:if>           
 
 	<f:entry title="${%SSH Key}" field="key">
-		<f:textarea />
+		<f:textarea checkMethod="post"/>
 	</f:entry>
 
 </j:jelly>

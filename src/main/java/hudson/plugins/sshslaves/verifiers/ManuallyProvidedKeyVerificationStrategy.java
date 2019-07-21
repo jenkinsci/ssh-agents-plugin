@@ -119,7 +119,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             try {
                 ManuallyProvidedKeyVerificationStrategy.parseKey(key);
                 return FormValidation.ok();
-            } catch (KeyParseException ex) {
+            } catch (KeyParseException|IllegalArgumentException ex) {
                 return FormValidation.error(ex.getMessage());
             }
         }
