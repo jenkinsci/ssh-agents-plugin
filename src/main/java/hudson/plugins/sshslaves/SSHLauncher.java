@@ -132,6 +132,8 @@ public class SSHLauncher extends ComputerLauncher {
     public static final String AGENT_JAR = "remoting.jar";
     public static final String SLASH_AGENT_JAR = "/" + AGENT_JAR;
     public static final String WORK_DIR_PARAM = " -workDir ";
+    public static final String JAR_CACHE_PARAM = " -jar-cache ";
+    public static final String JAR_CACHE_DIR = "/remoting/jarCache";
     public static final int DEFAULT_SSH_PORT = 22;
 
     /**
@@ -1170,13 +1172,13 @@ public class SSHLauncher extends ComputerLauncher {
     @Restricted(NoExternalUse.class)
     public String getWorkDirParam(@NonNull String workingDirectory){
         String ret;
-        if(getSuffixStartSlaveCmd().contains(WORK_DIR_PARAM)){
+        if(getSuffixStartSlaveCmd().contains(WORK_DIR_PARAM) || getSuffixStartSlaveCmd().contains(JAR_CACHE_PARAM)){
             //the parameter is already set on suffixStartSlaveCmd
             ret = "";
         } else if (StringUtils.isNotBlank(getWorkDir())){
-            ret = WORK_DIR_PARAM + getWorkDir();
+            ret = WORK_DIR_PARAM + getWorkDir() + JAR_CACHE_PARAM + getWorkDir() + JAR_CACHE_DIR;
         } else {
-            ret = WORK_DIR_PARAM + workingDirectory;
+            ret = WORK_DIR_PARAM + workingDirectory + JAR_CACHE_PARAM + workingDirectory + JAR_CACHE_DIR;
         }
         return ret;
     }

@@ -64,6 +64,8 @@ import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import static hudson.plugins.sshslaves.SSHLauncher.JAR_CACHE_DIR;
+import static hudson.plugins.sshslaves.SSHLauncher.JAR_CACHE_PARAM;
 import static hudson.plugins.sshslaves.SSHLauncher.WORK_DIR_PARAM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -273,7 +275,7 @@ public class SSHLauncherTest {
                                                "javaPath", "prefix" ,"suffix",
                                                60,10, 15, new NonVerifyingKeyVerificationStrategy());
         //use rootFS
-        Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + rootFS);
+        Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + rootFS + JAR_CACHE_PARAM + rootFS + JAR_CACHE_DIR);
 
         launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
                                    "javaPath", "prefix" , "suffix" + WORK_DIR_PARAM + anotherWorkDir,
@@ -289,7 +291,7 @@ public class SSHLauncherTest {
                                    60,10, 15, new NonVerifyingKeyVerificationStrategy());
         //user the workDir set in configuration
         launcher.setWorkDir(anotherWorkDir);
-        Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir);
+        Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir + JAR_CACHE_PARAM + anotherWorkDir + JAR_CACHE_DIR);
     }
 
     @Issue("JENKINS-53245")
