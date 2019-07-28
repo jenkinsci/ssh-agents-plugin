@@ -960,58 +960,6 @@ public class SSHLauncher extends ComputerLauncher {
                 session = null;
             }
 
-            Slave n = slaveComputer.getNode();
-            if (n != null && !connectionLost) {
-                String workingDirectory = getWorkingDirectory(n);
-                final String fileName = workingDirectory + SLASH_AGENT_JAR;
-                Future<?> tidyUp = Computer.threadPoolForRemoting.submit(new Runnable() {
-                    public void run() {
-                        // this would fail if the connection is already lost, so we want to check that.
-                        // TODO: Connection class should expose whether it is still connected or not.
-
-                        SFTPv3Client sftpClient = null;
-                        try {
-                            sftpClient = new SFTPv3Client(connection);
-                            sftpClient.rm(fileName);
-                        } catch (Exception e) {
-                            if (sftpClient == null) {// system without SFTP
-                                try {
-                                    connection.exec("rm " + fileName, listener.getLogger());
-                                } catch (Error error) {
-                                    throw error;
-                                } catch (Throwable x) {
-                                    x.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                                    // We ignore other Exception types
-                                }
-                            } else {
-                                e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                            }
-                        } finally {
-                            if (sftpClient != null) {
-                                sftpClient.close();
-                            }
-                        }
-                    }
-                });
-                try {
-                    // the delete is best effort only and if it takes longer than 60 seconds - or the launch 
-                    // timeout (if specified) - then we should just give up and leave the file there.
-                    tidyUp.get(getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                    // we should either re-apply our interrupt flag or propagate... we don't want to propagate, so...
-                    Thread.currentThread().interrupt();
-                } catch (ExecutionException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                } catch (TimeoutException e) {
-                    e.printStackTrace(listener.error(Messages.SSHLauncher_ErrorDeletingFile(getTimestamp())));
-                } finally {
-                    if (!tidyUp.isDone()) {
-                        tidyUp.cancel(true);
-                    }
-                }
-            }
-
             PluginImpl.unregister(connection);
             cleanupConnection(listener);
         } finally {
