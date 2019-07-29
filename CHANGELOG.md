@@ -1,5 +1,12 @@
 # Changelog
 
+| WARNING: Changelogs have been moved to [GitHub Releases](https://github.com/jenkinsci/ssh-slaves-plugin/releases) |
+| --- |
+
+### Newer versions
+
+* See [GitHub Releases](https://github.com/jenkinsci/ssh-slaves-plugin/releases)
+
 ### 1.30.1 (Jul 21, 2019)
 * [JENKINS-58340](https://issues.jenkins-ci.org/browse/JENKINS-58340) docker-plugin-1.1.6 docker cloud does not work with >=ssh-slaves-plugin-1.30.0
 
