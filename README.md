@@ -16,4 +16,4 @@ See [SSH Slaves Plugin](https://plugins.jenkins.io/ssh-slaves) on the Jenkins Wi
 ## Changelog
 
 * For 1.30.0 and newer versions, see [GitHub Releases](https://github.com/jenkinsci/ssh-slaves-plugin/releases)
-* For previus versions, see [this file](./CHANGELOG.md)
+* For previous versions, see [this file](./CHANGELOG.md)
