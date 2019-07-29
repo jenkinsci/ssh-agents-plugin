@@ -1,0 +1,6 @@
+# https://github.com/jenkinsci/.github/blob/master/.github/release-drafter.adoc
+_extends: .github
+# Semantic versioning is used d=for this plugin: https://semver.org/
+version-template: $MAJOR.$MINOR.$PATCH
+tag-template: ssh-slaves-$NEXT_PATCH_VERSION
+name-template: $NEXT_PATCH_VERSION
