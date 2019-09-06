@@ -11,7 +11,7 @@ See [SSH Slaves Plugin](https://plugins.jenkins.io/ssh-slaves) on the Jenkins Wi
 
 [Configure guide](doc/CONFIGURE.md)
 
-[Troubleshoting guide](doc/TROUBLESHOOTING.md)
+[Troubleshooting guide](doc/TROUBLESHOOTING.md)
 
 ## Changelog
 
