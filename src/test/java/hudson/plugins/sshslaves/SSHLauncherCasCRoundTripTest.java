@@ -27,7 +27,7 @@ public class SSHLauncherCasCRoundTripTest extends RoundTripAbstractTest {
 
     @Override
     protected String stringInLogExpected() {
-        return "Setting class hudson.plugins.sshslaves.SSHLauncher. host = ssh-host";
+        return "Setting class hudson.plugins.sshslaves.SSHLauncher.host = ssh-host";
     }
 
     @Override
