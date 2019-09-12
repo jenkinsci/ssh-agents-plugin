@@ -25,6 +25,7 @@ package hudson.plugins.sshslaves;
 
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import hudson.model.Descriptor;
 import hudson.model.Fingerprint;
 import hudson.model.JDK;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
@@ -400,6 +401,26 @@ public class SSHLauncherTest {
     }finally {
       IOUtils.closeQuietly(inputStream);
     }
+  }
+
+  @Test
+  public void retryTest() throws IOException, InterruptedException, Descriptor.FormException {
+      BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
+      SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
+              Collections.singletonList(
+                      credentials
+              )
+      );
+      final SSHLauncher launcher = new SSHLauncher("IdoNotExists", 22, "dummyCredentialId");
+      launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
+      launcher.setLaunchTimeoutSeconds(5);
+      launcher.setRetryWaitTime(1);
+      launcher.setMaxNumRetries(3);
+      DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
+
+      j.jenkins.addNode(slave);
+      Thread.sleep(20000);
+      System.out.println(slave.getComputer().getLog());
   }
 
 }

@@ -822,16 +822,13 @@ public class SSHLauncher extends ComputerLauncher {
         int maxNumRetries = getMaxNumRetries();
         for (int i = 0; i <= maxNumRetries; i++) {
             try {
-                // We pass launch timeout so that the connection will be able to abort once it reaches the timeout
-                // It is a poor man's logic, but it should cause termination if the connection goes strongly beyond the timeout
-                //TODO: JENKINS-48617 and JENKINS-48618 need to be implemented to make it fully robust
                 int launchTimeoutMillis = (int)getLaunchTimeoutMillis();
                 connection.connect(new ServerHostKeyVerifierImpl(computer, listener),
                         launchTimeoutMillis, 0 /*read timeout - JENKINS-48618*/,
                         (int) (launchTimeoutMillis + TimeUnit.SECONDS.toMillis(5)));
                 break;
             } catch (Exception ex) {
-                @CheckForNull String message = "";
+                String message = "unknown error";
                 Throwable cause = ex.getCause();
                 if (cause != null) {
                     message = cause.getMessage();
@@ -845,9 +842,8 @@ public class SSHLauncher extends ComputerLauncher {
 
                 if (maxNumRetries - i > 0) {
                     logger.println("SSH Connection failed with IOException: \"" + message
-                                                         + "\", retrying in " + getRetryWaitTime() + " seconds.  There "
-                                   + "are "
-                                                         + (maxNumRetries - i) + " more retries left.");
+                            + "\", retrying in " + getRetryWaitTime() + " seconds." +
+                            " There are " + (maxNumRetries - i) + " more retries left.");
                 }
             }
             Thread.sleep(TimeUnit.SECONDS.toMillis(getRetryWaitTime()));
