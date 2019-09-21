@@ -106,12 +106,12 @@ public class TrustHostKeyActionTest {
         }
 
         SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManuallyTrustedKeyVerificationStrategy(true));
-        DumbSlave slave = new DumbSlave("test-slave", "SSH Test slave",
+        DumbSlave slave = new DumbSlave("test-agent", "SSH Test agent",
                 temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.emptyList());
         
         jenkins.getInstance().addNode(slave);
-        SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-slave");
+        SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-agent");
 
         try {
             computer.connect(false).get();
