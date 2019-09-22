@@ -117,7 +117,7 @@ public class SSHLauncher extends ComputerLauncher {
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
     public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
     public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
-    public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = DEFAULT_MAX_NUM_RETRIES * DEFAULT_RETRY_WAIT_TIME + 60;
+    public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = 60;
     public static final String AGENT_JAR = "remoting.jar";
     public static final String SLASH_AGENT_JAR = "/" + AGENT_JAR;
     public static final String WORK_DIR_PARAM = " -workDir ";
@@ -305,7 +305,8 @@ public class SSHLauncher extends ComputerLauncher {
             tcpNoDelay = true;
         }
 
-        if(this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0){
+        //JENKINS-58589 we include 210 seconds because it was the default value before 1.30.3
+        if(this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 || launchTimeoutSeconds == 210){
             this.launchTimeoutSeconds = DEFAULT_LAUNCH_TIMEOUT_SECONDS;
         }
 
@@ -457,10 +458,12 @@ public class SSHLauncher extends ComputerLauncher {
 
                         PluginImpl.register(connection);
                         rval = Boolean.TRUE;
-                    } catch (RuntimeException e) {
-                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                    } catch (Error e) {
-                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    } catch (RuntimeException|Error e) {
+                        String msg = Messages.SSHLauncher_UnexpectedError();
+                        if(StringUtils.isNotBlank(e.getMessage())){
+                            msg = e.getMessage();
+                        }
+                        e.printStackTrace(listener.error(msg));
                     } catch (AbortException e) {
                         listener.getLogger().println(e.getMessage());
                     } catch (IOException e) {
@@ -1170,8 +1173,6 @@ public class SSHLauncher extends ComputerLauncher {
     @Extension
     @Symbol({"ssh", "sSHLauncher"})
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
-
-        // TODO move the authentication storage to descriptor... see SubversionSCM.java
 
         /**
          * {@inheritDoc}
