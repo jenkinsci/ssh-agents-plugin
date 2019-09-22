@@ -411,7 +411,7 @@ public class SSHLauncherTest {
                       credentials
               )
       );
-      final SSHLauncher launcher = new SSHLauncher("IdoNotExists", 22, "dummyCredentialId");
+      final SSHLauncher launcher = new SSHLauncher("HostNotExists", 22, "dummyCredentialId");
       launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
       launcher.setLaunchTimeoutSeconds(5);
       launcher.setRetryWaitTime(1);
@@ -419,8 +419,12 @@ public class SSHLauncherTest {
       DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
 
       j.jenkins.addNode(slave);
-      Thread.sleep(20000);
-      System.out.println(slave.getComputer().getLog());
+      Thread.sleep(25000);
+      String log = slave.getComputer().getLog();
+
+      assertTrue(log.contains("There are 3 more retries left."));
+      assertTrue(log.contains("There are 2 more retries left."));
+      assertTrue(log.contains("There are 1 more retries left."));
   }
 
 }
