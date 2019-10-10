@@ -1,0 +1,5 @@
+{
+  "upstream": "jenkinsci/ssh-slaves-plugin",
+  "branches": [{ "name": "1.30.x", "checked": true }, { "name": "ssh-slaves-2.0", "checked": true }],
+  "labels": ["backport"]
+}
