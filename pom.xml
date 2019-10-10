@@ -107,12 +107,12 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>2.2.0</version>
+      <version>2.3.0</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>ssh-credentials</artifactId>
-      <version>1.16</version>
+      <version>1.18</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.test</groupId>
