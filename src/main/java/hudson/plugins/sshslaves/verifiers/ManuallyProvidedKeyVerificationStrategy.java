@@ -26,19 +26,17 @@ package hudson.plugins.sshslaves.verifiers;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.StringTokenizer;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-
 import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.plugins.sshslaves.SSHLauncherConfig;
-import hudson.remoting.Base64;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 import java.util.Collections;
@@ -66,7 +64,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     }
     
     public String getKey() {
-        return key.getAlgorithm() + " " + Base64.encode(key.getKey());
+        return key.getAlgorithm() + " " + Base64.getEncoder().encodeToString(key.getKey());
     }
     
     public HostKey getParsedKey() {
@@ -101,7 +99,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
         }
         StringTokenizer tokenizer = new StringTokenizer(key, " ");
         String algorithm = tokenizer.nextToken();
-        byte[] keyValue = Base64.decode(tokenizer.nextToken());
+        byte[] keyValue = Base64.getDecoder().decode(tokenizer.nextToken());
         if (null == keyValue) {
             throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
         }
