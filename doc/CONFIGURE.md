@@ -52,13 +52,13 @@ You will use them to select it as agent for a build. Multiple labels must be sep
     To do so, you would restrict where the test jobs may run by giving them a label expression matching that machine. 
     Furthermore, if you set the # of executors value to 1, you can ensure that only one performance test will execute at 
     any given time on that machine; no other builds will interfere.
-* **Launch method:** Select *Launch agent agents via SSH* Starts a agent by sending commands over a secure SSH connection.
+* **Launch method:** Select *Launch agents via SSH* Starts a agent by sending commands over a secure SSH connection.
 
 ![](images/ssh-node-basic-config.png)
 
-## Configure Launch agent agents via SSH
+## Configure Launch agents via SSH
 
-Once you selected the **Launch method** to **Launch agent agents via SSH**, you can configure your SSH agent settings.
+Once you selected the **Launch method** to **Launch agents via SSH**, you can configure your SSH agent settings.
 
 ### Required settings
 
