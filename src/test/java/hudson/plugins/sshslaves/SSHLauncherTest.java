@@ -170,12 +170,12 @@ public class SSHLauncherTest {
         SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId");
         launcher.setSshHostKeyVerificationStrategy(new KnownHostsFileKeyVerificationStrategy());
         assertEquals(host.trim(), launcher.getHost());
-        DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
+        DumbSlave slave = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
         j.jenkins.addNode(slave);
 
         HtmlPage p = j.createWebClient().getPage(slave, "configure");
         j.submit(p.getFormByName("config"));
-        Slave n = (Slave) j.jenkins.getNode("slave");
+        Slave n = (Slave) j.jenkins.getNode("agent");
 
         assertNotSame(n,slave);
         assertNotSame(n.getLauncher(),launcher);
@@ -223,7 +223,7 @@ public class SSHLauncherTest {
           )
         );
         SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
-        DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
+        DumbSlave slave = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -248,7 +248,7 @@ public class SSHLauncherTest {
           )
         );
         SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
-        DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
+        DumbSlave slave = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -299,7 +299,7 @@ public class SSHLauncherTest {
         String javaHomeTool = "/java_home_tool";
 
         SSHLauncher sshLauncher = new SSHLauncher("Hostname", 22, "credentialID");
-        DumbSlave slave = new DumbSlave("slave" + j.jenkins.getNodes().size(), "/home/test/slave", sshLauncher);
+        DumbSlave slave = new DumbSlave("agent" + j.jenkins.getNodes().size(), "/home/test/agent", sshLauncher);
         j.jenkins.addNode(slave);
         SlaveComputer computer = slave.getComputer();
 
