@@ -89,7 +89,6 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -116,19 +115,9 @@ public class SSHLauncher extends ComputerLauncher {
      * The scheme requirement.
      */
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
-
-    // Some of the messages observed in the wild:
-    // "Connection refused (Connection refused)"
-    // "Connection reset"
-    // "Connection timed out", "Connection timed out (Connection timed out)"
-    // "No route to host", "No route to host (Host unreachable)"
-    // "Premature connection close"
-    private static final List<String> RECOVERABLE_FAILURES = Arrays.asList(
-            "Connection refused", "Connection reset", "Connection timed out", "No route to host", "Premature connection close"
-    );
     public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
     public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
-    public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = DEFAULT_MAX_NUM_RETRIES * DEFAULT_RETRY_WAIT_TIME + 60;
+    public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = 60;
     public static final String AGENT_JAR = "remoting.jar";
     public static final String SLASH_AGENT_JAR = "/" + AGENT_JAR;
     public static final String WORK_DIR_PARAM = " -workDir ";
@@ -233,6 +222,26 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private String workDir;
 
+
+    private class ServerHostKeyVerifierImpl implements ServerHostKeyVerifier {
+
+        private final SlaveComputer computer;
+        private final TaskListener listener;
+
+        public ServerHostKeyVerifierImpl(final SlaveComputer computer, final TaskListener listener) {
+            this.computer = computer;
+            this.listener = listener;
+        }
+
+        @Override
+        public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey) throws Exception {
+
+            final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
+
+            return getSshHostKeyVerificationStrategyDefaulted().verify(computer, key, listener);
+        }
+    }
+
     /**
      * Constructor SSHLauncher creates a new SSHLauncher instance.
      *
@@ -296,7 +305,8 @@ public class SSHLauncher extends ComputerLauncher {
             tcpNoDelay = true;
         }
 
-        if(this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0){
+        //JENKINS-58589 we include 210 seconds because it was the default value before 1.30.3
+        if(this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 || launchTimeoutSeconds == 210){
             this.launchTimeoutSeconds = DEFAULT_LAUNCH_TIMEOUT_SECONDS;
         }
 
@@ -448,10 +458,12 @@ public class SSHLauncher extends ComputerLauncher {
 
                         PluginImpl.register(connection);
                         rval = Boolean.TRUE;
-                    } catch (RuntimeException e) {
-                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
-                    } catch (Error e) {
-                        e.printStackTrace(listener.error(Messages.SSHLauncher_UnexpectedError()));
+                    } catch (RuntimeException|Error e) {
+                        String msg = Messages.SSHLauncher_UnexpectedError();
+                        if(StringUtils.isNotBlank(e.getMessage())){
+                            msg = e.getMessage();
+                        }
+                        e.printStackTrace(listener.error(msg));
                     } catch (AbortException e) {
                         listener.getLogger().println(e.getMessage());
                     } catch (IOException e) {
@@ -470,18 +482,15 @@ public class SSHLauncher extends ComputerLauncher {
                 if (srv == null) {
                     throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
                 }
-                if (this.getLaunchTimeoutMillis() > 0) {
-                    results = srv.invokeAll(callables, this.getLaunchTimeoutMillis(), TimeUnit.MILLISECONDS);
-                } else {
-                    results = srv.invokeAll(callables);
-                }
+
+                results = srv.invokeAll(callables);
                 long duration = System.currentTimeMillis() - time;
                 Boolean res;
                 try {
                     res = results.get(0).get();
                 } catch (CancellationException | ExecutionException e) {
                     res = Boolean.FALSE;
-                    e.printStackTrace(listener.error(e.getMessage()));
+                    listener.getLogger().println(Messages.SSHLauncher_launchCanceled());
                 }
                 if (!res) {
                     System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
@@ -816,39 +825,28 @@ public class SSHLauncher extends ComputerLauncher {
         int maxNumRetries = getMaxNumRetries();
         for (int i = 0; i <= maxNumRetries; i++) {
             try {
-                // We pass launch timeout so that the connection will be able to abort once it reaches the timeout
-                // It is a poor man's logic, but it should cause termination if the connection goes strongly beyond the timeout
-                //TODO: JENKINS-48617 and JENKINS-48618 need to be implemented to make it fully robust
                 int launchTimeoutMillis = (int)getLaunchTimeoutMillis();
-                connection.connect(new ServerHostKeyVerifier() {
-
-                    @Override
-                    public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey) throws Exception {
-
-                        final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
-
-                        return getSshHostKeyVerificationStrategyDefaulted().verify(computer, key, listener);
-                    }
-                }, launchTimeoutMillis, 0 /*read timeout - JENKINS-48618*/, launchTimeoutMillis);
+                connection.connect(new ServerHostKeyVerifierImpl(computer, listener),
+                        launchTimeoutMillis, 0 /*read timeout - JENKINS-48618*/,
+                        (int) (launchTimeoutMillis + TimeUnit.SECONDS.toMillis(5)));
                 break;
-            } catch (IOException ioexception) {
-                @CheckForNull String message = "";
-                Throwable cause = ioexception.getCause();
+            } catch (Exception ex) {
+                String message = "unknown error";
+                Throwable cause = ex.getCause();
                 if (cause != null) {
                     message = cause.getMessage();
                     logger.println(message);
+                } else if(ex.getMessage() != null){
+                    message = ex.getMessage();
+                    logger.println(message);
                 }
-                if (cause == null || !isRecoverable(message)) {
-                    throw ioexception;
-                }
+
+                connection.close();
+
                 if (maxNumRetries - i > 0) {
                     logger.println("SSH Connection failed with IOException: \"" + message
-                                                         + "\", retrying in " + getRetryWaitTime() + " seconds.  There "
-                                   + "are "
-                                                         + (maxNumRetries - i) + " more retries left.");
-                } else {
-                    logger.println("SSH Connection failed with IOException: \"" + message + "\".");
-                    throw ioexception;
+                            + "\", retrying in " + getRetryWaitTime() + " seconds." +
+                            " There are " + (maxNumRetries - i) + " more retries left.");
                 }
             }
             Thread.sleep(TimeUnit.SECONDS.toMillis(getRetryWaitTime()));
@@ -899,17 +897,6 @@ public class SSHLauncher extends ComputerLauncher {
         if(!isValid){
             throw new InterruptedException(message);
         }
-    }
-
-    private boolean isRecoverable(@CheckForNull String message) {
-        if (message == null) {
-            return false;
-        }
-
-        for (String s : RECOVERABLE_FAILURES) {
-            if (message.startsWith(s)) return true;
-        }
-        return false;
     }
 
     /**
@@ -1186,8 +1173,6 @@ public class SSHLauncher extends ComputerLauncher {
     @Extension
     @Symbol({"ssh", "sSHLauncher"})
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
-
-        // TODO move the authentication storage to descriptor... see SubversionSCM.java
 
         /**
          * {@inheritDoc}
