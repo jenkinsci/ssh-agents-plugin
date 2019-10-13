@@ -25,8 +25,13 @@ package hudson.plugins.sshslaves.verifiers;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import hudson.slaves.ComputerLauncher;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.trilead.ssh2.KnownHosts;
@@ -44,8 +49,11 @@ import hudson.slaves.SlaveComputer;
  * @since 1.13
  */
 public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
-	
-	private static final File KNOWN_HOSTS_FILE = new File(new File(new File(System.getProperty("user.home")), ".ssh"), "known_hosts");
+
+  public static final String KNOWN_HOSTS_DEFAULT = Paths.get(System.getProperty("user.home"), ".ssh", "known_hosts").toString();
+  public static final String KNOWN_HOSTS_PROPERTY = KnownHostsFileKeyVerificationStrategy.class.getName() + ".known_hosts_file";
+  private static final String KNOWN_HOSTS_FILE_PATH = StringUtils.defaultIfBlank(System.getProperty(KNOWN_HOSTS_PROPERTY), KNOWN_HOSTS_DEFAULT);
+  private static final File KNOWN_HOSTS_FILE = new File(KNOWN_HOSTS_FILE_PATH);
 
     @DataBoundConstructor
     public KnownHostsFileKeyVerificationStrategy() {
@@ -92,6 +100,10 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
         return knownHosts.getPreferredServerHostkeyAlgorithmOrder(((SSHLauncher) launcher).getHost());
     }
 
+    @Restricted(NoExternalUse.class)
+    public File getKnownHostsFile(){
+      return KNOWN_HOSTS_FILE;
+    }
     
     @Extension
     public static class KnownHostsFileKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {

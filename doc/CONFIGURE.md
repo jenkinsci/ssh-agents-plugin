@@ -101,7 +101,8 @@ Controls how Jenkins verifies the SSH key presented by the remote host whilst co
 ![](images/hkvs-known-hosts.png)
 
 Checks the known_hosts file (~/.ssh/known_hosts) for the user Jenkins is executing under 
-to see if an entry exists that matches the current connection.
+to see if an entry exists that matches the current connection. It is possibel to change the default file by setting
+the Java property `-Dhudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy.known_hosts_file=PATH_TO_FILE`
 
 This method does not make any updates to the Known Hosts file, instead using the file as a read-only source and expecting
 someone with suitable access to the appropriate user account on the Jenkins master to update the file as required,
