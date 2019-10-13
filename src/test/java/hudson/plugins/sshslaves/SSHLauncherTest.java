@@ -30,6 +30,7 @@ import hudson.model.Fingerprint;
 import hudson.model.JDK;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,9 +48,11 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
 import hudson.model.Slave;
+import hudson.slaves.ChannelPinger;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.NodeProperty;
+
 import java.util.List;
 
 import hudson.slaves.SlaveComputer;
@@ -72,10 +75,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assert.assertNotNull;
+
 import org.junit.ClassRule;
 import org.jvnet.hudson.test.BuildWatcher;
 import jenkins.model.Jenkins;
@@ -94,7 +99,7 @@ public class SSHLauncherTest {
     @Test
     public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
         VersionNumber java7 = new VersionNumber("7");
-        if(JavaProvider.getMinJavaLevel().equals(java7)) {
+        if (JavaProvider.getMinJavaLevel().equals(java7)) {
             assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
         } else {
             assertNotSupported("openjdk-7-netbsd.version");
@@ -103,7 +108,7 @@ public class SSHLauncherTest {
 
     @Test
     public void checkJavaVersionOpenJDK6Linux() {
-        assertNotSupported("openjdk-6-linux.version");   
+        assertNotSupported("openjdk-6-linux.version");
     }
 
     @Test
@@ -119,7 +124,7 @@ public class SSHLauncherTest {
     @Test
     public void testCheckJavaVersionOracle7Mac() throws Exception {
         VersionNumber java7 = new VersionNumber("7");
-        if(JavaProvider.getMinJavaLevel().equals(java7)) {
+        if (JavaProvider.getMinJavaLevel().equals(java7)) {
             Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
         } else {
             assertNotSupported("oracle-java-1.7-mac.version");
@@ -135,13 +140,12 @@ public class SSHLauncherTest {
     public void checkJavaVersionSun4Linux() {
         assertNotSupported("sun-java-1.4-linux.version");
     }
-    
+
     /**
      * Returns true if the version is supported.
      *
-     * @param testVersionOutput
-     *            the resource to find relative to this class that contains the
-     *            output of "java -version"
+     * @param testVersionOutput the resource to find relative to this class that contains the
+     *                          output of "java -version"
      */
     private static boolean checkSupported(final String testVersionOutput) throws IOException {
         final String javaCommand = "testing-java";
@@ -150,8 +154,8 @@ public class SSHLauncherTest {
         final BufferedReader r = new BufferedReader(new InputStreamReader(
                 versionStream));
         final StringWriter output = new StringWriter();
-        final String result = new JavaVersionChecker(null,null,null,null)
-                .checkJavaVersion(System.out,javaCommand, r, output);
+        final String result = new JavaVersionChecker(null, null, null, null)
+                .checkJavaVersion(System.out, javaCommand, r, output);
         return null != result;
     }
 
@@ -164,7 +168,7 @@ public class SSHLauncherTest {
         }
     }
 
-  private void checkRoundTrip(String host) throws Exception {
+    private void checkRoundTrip(String host) throws Exception {
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
                 Collections.singletonList(
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
@@ -180,9 +184,9 @@ public class SSHLauncherTest {
         j.submit(p.getFormByName("config"));
         Slave n = (Slave) j.jenkins.getNode("agent");
 
-        assertNotSame(n,slave);
-        assertNotSame(n.getLauncher(),launcher);
-        j.assertEqualDataBoundBeans(n.getLauncher(),launcher);
+        assertNotSame(n, slave);
+        assertNotSame(n.getLauncher(), launcher);
+        j.assertEqualDataBoundBeans(n.getLauncher(), launcher);
     }
 
     @Test
@@ -221,9 +225,9 @@ public class SSHLauncherTest {
     public void trackCredentialsWithUsernameAndPassword() throws Exception {
         UsernamePasswordCredentialsImpl credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass");
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-          Collections.singletonList(
-            credentials
-          )
+                Collections.singletonList(
+                        credentials
+                )
         );
         SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
         DumbSlave slave = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
@@ -246,9 +250,9 @@ public class SSHLauncherTest {
     public void trackCredentialsWithUsernameAndPrivateKey() throws Exception {
         BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-          Collections.singletonList(
-            credentials
-          )
+                Collections.singletonList(
+                        credentials
+                )
         );
         SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
         DumbSlave slave = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
@@ -273,14 +277,14 @@ public class SSHLauncherTest {
         String anotherWorkDir = "/another/workdir";
 
         SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                               "javaPath", "prefix" ,"suffix",
-                                               60,10, 15, new NonVerifyingKeyVerificationStrategy());
+                "javaPath", "prefix", "suffix",
+                60, 10, 15, new NonVerifyingKeyVerificationStrategy());
         //use rootFS
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + rootFS + JAR_CACHE_PARAM + rootFS + JAR_CACHE_DIR);
 
         launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                   "javaPath", "prefix" , "suffix" + WORK_DIR_PARAM + anotherWorkDir,
-                                   60, 10, 15, new NonVerifyingKeyVerificationStrategy());
+                "javaPath", "prefix", "suffix" + WORK_DIR_PARAM + anotherWorkDir,
+                60, 10, 15, new NonVerifyingKeyVerificationStrategy());
         //if worDir is in suffix return ""
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
         //if worDir is in suffix return "", even do you set workDir in configuration
@@ -288,8 +292,8 @@ public class SSHLauncherTest {
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
 
         launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                   "javaPath", "prefix" , "suffix",
-                                   60,10, 15, new NonVerifyingKeyVerificationStrategy());
+                "javaPath", "prefix", "suffix",
+                60, 10, 15, new NonVerifyingKeyVerificationStrategy());
         //user the workDir set in configuration
         launcher.setWorkDir(anotherWorkDir);
         Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir + JAR_CACHE_PARAM + anotherWorkDir + JAR_CACHE_DIR);
@@ -330,9 +334,9 @@ public class SSHLauncherTest {
     @Test
     public void timeoutAndRetrySettings() {
         final SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                                    "javaPath", "prefix" , "suffix",
-                                                    39, 18, 25,
-                                                    new NonVerifyingKeyVerificationStrategy());
+                "javaPath", "prefix", "suffix",
+                39, 18, 25,
+                new NonVerifyingKeyVerificationStrategy());
         assertEquals(39, launcher.getLaunchTimeoutSeconds().intValue());
         assertEquals(18, launcher.getMaxNumRetries().intValue());
         assertEquals(25, launcher.getRetryWaitTime().intValue());
@@ -342,9 +346,9 @@ public class SSHLauncherTest {
     @Test
     public void timeoutAndRetrySettingsAllowZero() {
         final SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                                    "javaPath", "prefix" , "suffix",
-                                                    0, 0, 0,
-                                                    new NonVerifyingKeyVerificationStrategy());
+                "javaPath", "prefix", "suffix",
+                0, 0, 0,
+                new NonVerifyingKeyVerificationStrategy());
         assertEquals(0, launcher.getMaxNumRetries().intValue());
         assertEquals(0, launcher.getRetryWaitTime().intValue());
     }
@@ -352,79 +356,83 @@ public class SSHLauncherTest {
     @Test
     public void timeoutAndRetrySettingsSetDefaultsIfOutOfRange() {
         final SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                                    "javaPath", "prefix" , "suffix",
-                                                    0, -1, -1,
-                                                    new NonVerifyingKeyVerificationStrategy());
+                "javaPath", "prefix", "suffix",
+                0, -1, -1,
+                new NonVerifyingKeyVerificationStrategy());
         assertEquals(SSHLauncher.DEFAULT_LAUNCH_TIMEOUT_SECONDS, launcher.getLaunchTimeoutSeconds());
         assertEquals(SSHLauncher.DEFAULT_MAX_NUM_RETRIES, launcher.getMaxNumRetries());
         assertEquals(SSHLauncher.DEFAULT_RETRY_WAIT_TIME, launcher.getRetryWaitTime());
 
         final SSHLauncher launcher2 = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
-                                                    "javaPath", "prefix" , "suffix",
-                                                    null, null, null,
-                                                    new NonVerifyingKeyVerificationStrategy());
+                "javaPath", "prefix", "suffix",
+                null, null, null,
+                new NonVerifyingKeyVerificationStrategy());
         assertEquals(SSHLauncher.DEFAULT_LAUNCH_TIMEOUT_SECONDS, launcher2.getLaunchTimeoutSeconds());
         assertEquals(SSHLauncher.DEFAULT_MAX_NUM_RETRIES, launcher2.getMaxNumRetries());
         assertEquals(SSHLauncher.DEFAULT_RETRY_WAIT_TIME, launcher2.getRetryWaitTime());
     }
 
-  @Test
-  public void getMd5Hash() {
+    @Test
+    public void getMd5Hash() {
 
-    try {
-      byte[] bytes = "Leave me alone!".getBytes();
-      String result = SSHLauncher.getMd5Hash(bytes);
-      assertTrue( "1EB226C8E950BAC1494BE197E84A264C".equals(result));
-    }catch(Exception e){
-      e.printStackTrace();
+        try {
+            byte[] bytes = "Leave me alone!".getBytes();
+            String result = SSHLauncher.getMd5Hash(bytes);
+            assertTrue("1EB226C8E950BAC1494BE197E84A264C".equals(result));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-  }
 
-  @Test
-  public void readInputStreamIntoByteArrayAndClose() {
+    @Test
+    public void readInputStreamIntoByteArrayAndClose() {
 
-    InputStream inputStream = null;
-    File testFile = null;
-    try {
+        InputStream inputStream = null;
+        File testFile = null;
+        try {
 
-      testFile = new File("target" + File.separator + "test-classes",
-        "readInputStreamIntoByteArrayTestFile.txt" );
-      assertTrue(testFile.exists());
-      inputStream = new FileInputStream(testFile);
-      byte[] bytes = SSHLauncher.readInputStreamIntoByteArrayAndClose(inputStream);
-      assertNotNull(bytes);
-      assertTrue(bytes.length > 0);
-      assertTrue( "Don't change me or add newlines!".equals(new String(bytes)) );
+            testFile = new File("target" + File.separator + "test-classes",
+                    "readInputStreamIntoByteArrayTestFile.txt");
+            assertTrue(testFile.exists());
+            inputStream = new FileInputStream(testFile);
+            byte[] bytes = SSHLauncher.readInputStreamIntoByteArrayAndClose(inputStream);
+            assertNotNull(bytes);
+            assertTrue(bytes.length > 0);
+            assertTrue("Don't change me or add newlines!".equals(new String(bytes)));
 
-    }catch(Exception e){
-      e.printStackTrace();
-    }finally {
-      IOUtils.closeQuietly(inputStream);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
     }
-  }
 
-  @Test
-  public void retryTest() throws IOException, InterruptedException, Descriptor.FormException {
-      BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
-      SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
-              Collections.singletonList(
-                      credentials
-              )
-      );
-      final SSHLauncher launcher = new SSHLauncher("HostNotExists", 22, "dummyCredentialId");
-      launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
-      launcher.setLaunchTimeoutSeconds(5);
-      launcher.setRetryWaitTime(1);
-      launcher.setMaxNumRetries(3);
-      DumbSlave slave = new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
+    @Test
+    public void retryTest() throws IOException, InterruptedException, Descriptor.FormException {
+        DumbSlave slave = getDumbSlaveHostNotExist();
+        j.jenkins.addNode(slave);
+        Thread.sleep(25000);
+        String log = slave.getComputer().getLog();
 
-      j.jenkins.addNode(slave);
-      Thread.sleep(25000);
-      String log = slave.getComputer().getLog();
+        assertTrue(log.contains("There are 3 more retries left."));
+        assertTrue(log.contains("There are 2 more retries left."));
+        assertTrue(log.contains("There are 1 more retries left."));
+        assertFalse(log.contains("There are 4 more retries left."));
+    }
 
-      assertTrue(log.contains("There are 3 more retries left."));
-      assertTrue(log.contains("There are 2 more retries left."));
-      assertTrue(log.contains("There are 1 more retries left."));
-  }
+    private DumbSlave getDumbSlaveHostNotExist() throws Descriptor.FormException, IOException {
+        BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
+        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
+                Collections.singletonList(
+                        credentials
+                )
+        );
+        final SSHLauncher launcher = new SSHLauncher("HostNotExists", 22, "dummyCredentialId");
+        launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
+        launcher.setLaunchTimeoutSeconds(5);
+        launcher.setRetryWaitTime(1);
+        launcher.setMaxNumRetries(3);
+        return new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
+    }
 
 }
