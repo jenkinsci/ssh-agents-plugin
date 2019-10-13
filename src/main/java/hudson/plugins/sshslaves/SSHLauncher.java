@@ -652,6 +652,9 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @throws IOException If something goes wrong.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
+      value="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
+      justification="there is a bug related with Java 11 bytecode see https://github.com/spotbugs/spotbugs/issues/756")
     private void copyAgentJar(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
         String fileName = workingDirectory + SLASH_AGENT_JAR;
 
