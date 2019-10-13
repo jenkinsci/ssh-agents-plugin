@@ -44,58 +44,58 @@ import hudson.plugins.sshslaves.SSHConnector;
 
 public class VerificationStrategyConfigurationTest {
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
-    
-    @Rule
-    public final JenkinsRule jenkins = new JenkinsRule();
-    
-    @Test
-    public void testConfigureRoundTripManualTrustedStrategy() throws Exception {
-        testConfigureRoundTrip(new ManuallyTrustedKeyVerificationStrategy(true));
-    }
-    
-    @Test
-    public void testConfigureRoundTripNonVerifyingStrategy() throws Exception {
-        testConfigureRoundTrip(new NonVerifyingKeyVerificationStrategy());
-    }
-    
-    @Test
-    public void testConfigureRoundTripManualProvidedVerifyingStrategy() throws Exception {
-        String key = "AAAAB3NzaC1yc2EAAAADAQABAAABAQC1oF3jpBkexmWgKh7kwMGFjb9L7+/mvY7TNMiobWC4JK8T" +
-                "7fv/gRNMSfY6Fg9INZosfxD+9oktnVl1/9Nc5Qqp3/ia7qtyccXzab6WuNbuos+Ggb14vqLe0SD+" +
-                "Edc1TpBRMg8w70L41uTlgrhHqwzt96BbPe9hG1cfgZ5Lx9JTMZUyXgGaJmShE9Fsa+CJV5bW/Nqc" +
-                "8G/Z8fLKBlUwiX7hQHkG4xVNQve60kDvDVJpozd+XAiZrQVgwCLTg3ik2aDdR9U+VCC7q1s3SgFF" +
-                "f8jh5Z5QAJ2MA+A6oq2rJJoCIfXJnBdXEgHggJf3d1tl1vBI1pOVxDa9BWBjr4KvwgwL";
-        testConfigureRoundTrip(new ManuallyProvidedKeyVerificationStrategy("ssh-rsa " + key));
-    }
-    
-    @Test
-    public void testConfigureRoundTripKnownHostsVerifyingStrategy() throws Exception {
-        testConfigureRoundTrip(new KnownHostsFileKeyVerificationStrategy());
-    }
-    
-    private void testConfigureRoundTrip(SshHostKeyVerificationStrategy strategy) throws Exception {
-        StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "dummyUser", "dummyPassword");
+  @Rule
+  public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-        List<Credentials> credentialsList = new ArrayList<>();
-        credentialsList.add(credentials);
-        SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(), credentialsList);
-        
-        SSHConnector connector = new SSHConnector(12, credentials.getId());
-        connector.setSshHostKeyVerificationStrategy(strategy);
-        connector.setJvmOptions("jvmOptions");
-        connector.setSuffixStartSlaveCmd("suffix");
-        connector.setPrefixStartSlaveCmd("prefix");
-        connector.setJavaPath("/path");
-        connector.setRetryWaitTime(10);
-        connector.setMaxNumRetries(10);
-        connector.setLaunchTimeoutSeconds(10);
+  @Rule
+  public final JenkinsRule jenkins = new JenkinsRule();
 
-        SSHConnector output = jenkins.configRoundtrip(connector);
+  @Test
+  public void testConfigureRoundTripManualTrustedStrategy() throws Exception {
+    testConfigureRoundTrip(new ManuallyTrustedKeyVerificationStrategy(true));
+  }
 
-        assertNotSame(connector, output);
-        jenkins.assertEqualDataBoundBeans(connector, output);
-    }
-    
+  @Test
+  public void testConfigureRoundTripNonVerifyingStrategy() throws Exception {
+    testConfigureRoundTrip(new NonVerifyingKeyVerificationStrategy());
+  }
+
+  @Test
+  public void testConfigureRoundTripManualProvidedVerifyingStrategy() throws Exception {
+    String key = "AAAAB3NzaC1yc2EAAAADAQABAAABAQC1oF3jpBkexmWgKh7kwMGFjb9L7+/mvY7TNMiobWC4JK8T" +
+      "7fv/gRNMSfY6Fg9INZosfxD+9oktnVl1/9Nc5Qqp3/ia7qtyccXzab6WuNbuos+Ggb14vqLe0SD+" +
+      "Edc1TpBRMg8w70L41uTlgrhHqwzt96BbPe9hG1cfgZ5Lx9JTMZUyXgGaJmShE9Fsa+CJV5bW/Nqc" +
+      "8G/Z8fLKBlUwiX7hQHkG4xVNQve60kDvDVJpozd+XAiZrQVgwCLTg3ik2aDdR9U+VCC7q1s3SgFF" +
+      "f8jh5Z5QAJ2MA+A6oq2rJJoCIfXJnBdXEgHggJf3d1tl1vBI1pOVxDa9BWBjr4KvwgwL";
+    testConfigureRoundTrip(new ManuallyProvidedKeyVerificationStrategy("ssh-rsa " + key));
+  }
+
+  @Test
+  public void testConfigureRoundTripKnownHostsVerifyingStrategy() throws Exception {
+    testConfigureRoundTrip(new KnownHostsFileKeyVerificationStrategy());
+  }
+
+  private void testConfigureRoundTrip(SshHostKeyVerificationStrategy strategy) throws Exception {
+    StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "dummyUser", "dummyPassword");
+
+    List<Credentials> credentialsList = new ArrayList<>();
+    credentialsList.add(credentials);
+    SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(), credentialsList);
+
+    SSHConnector connector = new SSHConnector(12, credentials.getId());
+    connector.setSshHostKeyVerificationStrategy(strategy);
+    connector.setJvmOptions("jvmOptions");
+    connector.setSuffixStartSlaveCmd("suffix");
+    connector.setPrefixStartSlaveCmd("prefix");
+    connector.setJavaPath("/path");
+    connector.setRetryWaitTime(10);
+    connector.setMaxNumRetries(10);
+    connector.setLaunchTimeoutSeconds(10);
+
+    SSHConnector output = jenkins.configRoundtrip(connector);
+
+    assertNotSame(connector, output);
+    jenkins.assertEqualDataBoundBeans(connector, output);
+  }
+
 }

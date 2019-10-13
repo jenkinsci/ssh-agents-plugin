@@ -39,90 +39,92 @@ import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
+
 import java.util.Collections;
 
 /**
  * Checks a key provided by a remote hosts matches a key specified as being required by the
  * user that configured this strategy. This would be equivalent of someone manually setting a
  * value in their known hosts file before attempting an SSH connection on a Unix/Linux machine.
+ *
  * @author Michael Clarke
  * @since 1.13
  */
 public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
-    private final HostKey key;
-    
-    @DataBoundConstructor
-    public ManuallyProvidedKeyVerificationStrategy(String key) {
-        super();
-        try {
-            this.key = parseKey(key);
-        } catch (KeyParseException e) {
-            throw new IllegalArgumentException("Invalid key: " + e.getMessage(), e);
-        }
+  private final HostKey key;
+
+  @DataBoundConstructor
+  public ManuallyProvidedKeyVerificationStrategy(String key) {
+    super();
+    try {
+      this.key = parseKey(key);
+    } catch (KeyParseException e) {
+      throw new IllegalArgumentException("Invalid key: " + e.getMessage(), e);
     }
-    
-    public String getKey() {
-        return key.getAlgorithm() + " " + Base64.getEncoder().encodeToString(key.getKey());
+  }
+
+  public String getKey() {
+    return key.getAlgorithm() + " " + Base64.getEncoder().encodeToString(key.getKey());
+  }
+
+  public HostKey getParsedKey() {
+    return key;
+  }
+
+  @Override
+  public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
+    if (key.equals(hostKey)) {
+      listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
+      return true;
+    } else {
+      listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
+      return false;
     }
-    
-    public HostKey getParsedKey() {
-        return key;
+  }
+
+  @Override
+  public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
+    String[] unsortedAlgorithms = super.getPreferredKeyAlgorithms(computer);
+    List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.emptyList());
+
+    sortedAlgorithms.remove(key.getAlgorithm());
+    sortedAlgorithms.add(0, key.getAlgorithm());
+
+    return sortedAlgorithms.toArray(new String[0]);
+  }
+
+  private static HostKey parseKey(String key) throws KeyParseException {
+    if (!key.contains(" ")) {
+      throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_TwoPartKey());
     }
-    
-    @Override
-    public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
-        if (key.equals(hostKey)) {
-            listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
-            return true;
-        } else {
-            listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
-            return false;
-        }
+    StringTokenizer tokenizer = new StringTokenizer(key, " ");
+    String algorithm = tokenizer.nextToken();
+    byte[] keyValue = Base64.getDecoder().decode(tokenizer.nextToken());
+    if (null == keyValue) {
+      throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
     }
+
+    return TrileadVersionSupportManager.getTrileadSupport().parseKey(algorithm, keyValue);
+  }
+
+  @Extension
+  public static class ManuallyProvidedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
     @Override
-    public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
-        String[] unsortedAlgorithms = super.getPreferredKeyAlgorithms(computer);
-        List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.emptyList());
-
-        sortedAlgorithms.remove(key.getAlgorithm());
-        sortedAlgorithms.add(0, key.getAlgorithm());
-
-        return sortedAlgorithms.toArray(new String[0]);
+    public String getDisplayName() {
+      return Messages.ManualKeyProvidedHostKeyVerifier_DisplayName();
     }
-    
-    private static HostKey parseKey(String key) throws KeyParseException {
-        if (!key.contains(" ")) {
-            throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_TwoPartKey());
-        }
-        StringTokenizer tokenizer = new StringTokenizer(key, " ");
-        String algorithm = tokenizer.nextToken();
-        byte[] keyValue = Base64.getDecoder().decode(tokenizer.nextToken());
-        if (null == keyValue) {
-            throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
-        }
-        
-        return TrileadVersionSupportManager.getTrileadSupport().parseKey(algorithm, keyValue);
-    }
-    
-    @Extension
-    public static class ManuallyProvidedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
-        @Override
-        public String getDisplayName() {
-            return Messages.ManualKeyProvidedHostKeyVerifier_DisplayName();
-        }
-        
-        public FormValidation doCheckKey(@QueryParameter String key) {
-            try {
-                ManuallyProvidedKeyVerificationStrategy.parseKey(key);
-                return FormValidation.ok();
-            } catch (KeyParseException|IllegalArgumentException ex) {
-                return FormValidation.error(ex.getMessage());
-            }
-        }
-        
+    public FormValidation doCheckKey(@QueryParameter String key) {
+      try {
+        ManuallyProvidedKeyVerificationStrategy.parseKey(key);
+        return FormValidation.ok();
+      } catch (KeyParseException | IllegalArgumentException ex) {
+        return FormValidation.error(ex.getMessage());
+      }
     }
+
+  }
 
 }

@@ -9,29 +9,29 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class SSHLauncherCasCRoundTripTest extends RoundTripAbstractTest {
-    @Override
-    protected void assertConfiguredAsExpected(RestartableJenkinsRule restartableJenkinsRule, String s) {
-        final Node node = r.j.jenkins.getNode("this-ssh-agent");
-        assertNotNull(node);
+  @Override
+  protected void assertConfiguredAsExpected(RestartableJenkinsRule restartableJenkinsRule, String s) {
+    final Node node = r.j.jenkins.getNode("this-ssh-agent");
+    assertNotNull(node);
 
-        SlaveComputer computer = (SlaveComputer) node.toComputer();
-        assertNotNull(computer);
+    SlaveComputer computer = (SlaveComputer) node.toComputer();
+    assertNotNull(computer);
 
-        SSHLauncher launcher = (SSHLauncher) computer.getLauncher();
-        assertNotNull(launcher);
+    SSHLauncher launcher = (SSHLauncher) computer.getLauncher();
+    assertNotNull(launcher);
 
-        assertEquals("ssh-host", launcher.getHost());
-        assertEquals(2222, launcher.getPort());
-        assertEquals("-DuberImportantParam=uberImportantValue", launcher.getJvmOptions());
-    }
+    assertEquals("ssh-host", launcher.getHost());
+    assertEquals(2222, launcher.getPort());
+    assertEquals("-DuberImportantParam=uberImportantValue", launcher.getJvmOptions());
+  }
 
-    @Override
-    protected String stringInLogExpected() {
-        return "Setting class hudson.plugins.sshslaves.SSHLauncher.host = ssh-host";
-    }
+  @Override
+  protected String stringInLogExpected() {
+    return "Setting class hudson.plugins.sshslaves.SSHLauncher.host = ssh-host";
+  }
 
-    @Override
-    protected String configResource() {
-        return "SSHCasCConfig.yml";
-    }
+  @Override
+  protected String configResource() {
+    return "SSHCasCConfig.yml";
+  }
 }

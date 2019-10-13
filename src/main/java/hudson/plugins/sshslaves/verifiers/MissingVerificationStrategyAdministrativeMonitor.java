@@ -35,29 +35,30 @@ import jenkins.model.Jenkins;
 /**
  * An administrative warning that checks all SSH slaves have a {@link SshHostKeyVerificationStrategy}
  * set against them and prompts the admin to update the settings as needed.
+ *
  * @author Michael Clarke
  * @since 1.13
  */
 @Extension
 public class MissingVerificationStrategyAdministrativeMonitor extends AdministrativeMonitor {
 
-    @Override
-    public boolean isActivated() {
-        for (Computer computer : Jenkins.get().getComputers()) {
-            if (computer instanceof SlaveComputer) {
-                ComputerLauncher launcher = ((SlaveComputer) computer).getLauncher();
+  @Override
+  public boolean isActivated() {
+    for (Computer computer : Jenkins.get().getComputers()) {
+      if (computer instanceof SlaveComputer) {
+        ComputerLauncher launcher = ((SlaveComputer) computer).getLauncher();
 
-                if (launcher instanceof SSHLauncher && null == ((SSHLauncher) launcher).getSshHostKeyVerificationStrategy()) {
-                    return true;
-                }
-            }
+        if (launcher instanceof SSHLauncher && null == ((SSHLauncher) launcher).getSshHostKeyVerificationStrategy()) {
+          return true;
         }
-
-        return false;
+      }
     }
 
-    @Override
-    public String getDisplayName() {
-        return Messages.MissingVerificationStrategyAdministrativeMonitor_DisplayName();
-    }
+    return false;
+  }
+
+  @Override
+  public String getDisplayName() {
+    return Messages.MissingVerificationStrategyAdministrativeMonitor_DisplayName();
+  }
 }

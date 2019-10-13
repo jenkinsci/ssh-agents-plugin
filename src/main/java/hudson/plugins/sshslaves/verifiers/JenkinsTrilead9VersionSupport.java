@@ -16,27 +16,27 @@ import java.util.List;
 @Restricted(NoExternalUse.class)
 class JenkinsTrilead9VersionSupport extends TrileadVersionSupportManager.TrileadVersionSupport {
 
-    @Override
-    public String[] getSupportedAlgorithms() {
-        List<String> algorithms = new ArrayList<>();
-        for (KeyAlgorithm<?, ?> algorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
-            algorithms.add(algorithm.getKeyFormat());
-        }
-        return algorithms.toArray(new String[0]);
+  @Override
+  public String[] getSupportedAlgorithms() {
+    List<String> algorithms = new ArrayList<>();
+    for (KeyAlgorithm<?, ?> algorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
+      algorithms.add(algorithm.getKeyFormat());
     }
+    return algorithms.toArray(new String[0]);
+  }
 
-    @Override
-    public HostKey parseKey(String algorithm, byte[] keyValue) throws KeyParseException {
-        for (KeyAlgorithm<?, ?> keyAlgorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
-            try {
-                if (keyAlgorithm.getKeyFormat().equals(algorithm)) {
-                    keyAlgorithm.decodePublicKey(keyValue);
-                    return new HostKey(algorithm, keyValue);
-                }
-            } catch (IOException ex) {
-                throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
-            }
+  @Override
+  public HostKey parseKey(String algorithm, byte[] keyValue) throws KeyParseException {
+    for (KeyAlgorithm<?, ?> keyAlgorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
+      try {
+        if (keyAlgorithm.getKeyFormat().equals(algorithm)) {
+          keyAlgorithm.decodePublicKey(keyValue);
+          return new HostKey(algorithm, keyValue);
         }
-        throw new KeyParseException("Unexpected key algorithm: " + algorithm);
+      } catch (IOException ex) {
+        throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
+      }
     }
+    throw new KeyParseException("Unexpected key algorithm: " + algorithm);
+  }
 }

@@ -36,30 +36,31 @@ import hudson.slaves.SlaveComputer;
  * make it clear that no verification is being performed, a message is printed to connection
  * logs to indicate the key is not being checked and a man-in-the-middle attach may therefore
  * be possible against this connection.
+ *
  * @author Michael Clarke
  * @since 1.13
  */
 public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
-    @DataBoundConstructor
-    public NonVerifyingKeyVerificationStrategy() {
-        super();
-    }
-    
-    @Override
-    public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
-        listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
-        return true;
-    }
-    
-    @Extension
-    public static class NonVerifyingKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
+  @DataBoundConstructor
+  public NonVerifyingKeyVerificationStrategy() {
+    super();
+  }
 
-        @Override
-        public String getDisplayName() {
-            return Messages.NonVerifyingHostKeyVerifier_DescriptorDisplayName();
-        }
-        
+  @Override
+  public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
+    listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
+    return true;
+  }
+
+  @Extension
+  public static class NonVerifyingKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
+
+    @Override
+    public String getDisplayName() {
+      return Messages.NonVerifyingHostKeyVerifier_DescriptorDisplayName();
     }
-    
+
+  }
+
 }

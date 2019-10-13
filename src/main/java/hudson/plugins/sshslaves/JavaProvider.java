@@ -38,43 +38,40 @@ import javax.annotation.Nonnull;
  * Guess where Java is.
  */
 public abstract class JavaProvider implements ExtensionPoint {
-    
-    private static final VersionNumber JAVA_LEVEL_8 = new VersionNumber("8");
 
-    /**
-     * @deprecated
-     *      Override {@link #getJavas(SlaveComputer, TaskListener, Connection)} instead.
-     */
-    public List<String> getJavas(TaskListener listener, Connection connection) {
-        return Collections.emptyList();
-    }
+  private static final VersionNumber JAVA_LEVEL_8 = new VersionNumber("8");
 
-    /**
-     * Returns the list of possible places where java executable might exist.
-     *
-     * @return
-     *      Can be empty but never null. Absolute path to the possible locations of Java.
-     */
-    public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
-        return getJavas(listener,connection);
-    }
+  /**
+   * @deprecated Override {@link #getJavas(SlaveComputer, TaskListener, Connection)} instead.
+   */
+  public List<String> getJavas(TaskListener listener, Connection connection) {
+    return Collections.emptyList();
+  }
 
-    /**
-     * All regsitered instances.
-     */
-    public static ExtensionList<JavaProvider> all() {
-        return ExtensionList.lookup(JavaProvider.class);
-    }
+  /**
+   * Returns the list of possible places where java executable might exist.
+   *
+   * @return Can be empty but never null. Absolute path to the possible locations of Java.
+   */
+  public List<String> getJavas(SlaveComputer computer, TaskListener listener, Connection connection) {
+    return getJavas(listener, connection);
+  }
 
-    /**
-     * Gets minimal required Java version.
-     * 
-     * @return Minimal Java version required on the master and agent side.
-     * @since TODO
-     * 
-     */
-    @Nonnull
-    public static VersionNumber getMinJavaLevel() {
-        return JAVA_LEVEL_8;
-    }
+  /**
+   * All regsitered instances.
+   */
+  public static ExtensionList<JavaProvider> all() {
+    return ExtensionList.lookup(JavaProvider.class);
+  }
+
+  /**
+   * Gets minimal required Java version.
+   *
+   * @return Minimal Java version required on the master and agent side.
+   * @since TODO
+   */
+  @Nonnull
+  public static VersionNumber getMinJavaLevel() {
+    return JAVA_LEVEL_8;
+  }
 }

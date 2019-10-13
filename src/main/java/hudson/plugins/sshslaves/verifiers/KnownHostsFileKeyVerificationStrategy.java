@@ -44,63 +44,63 @@ import hudson.slaves.SlaveComputer;
  * @since 1.13
  */
 public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
-	
-	private static final File KNOWN_HOSTS_FILE = new File(new File(new File(System.getProperty("user.home")), ".ssh"), "known_hosts");
 
-    @DataBoundConstructor
-    public KnownHostsFileKeyVerificationStrategy() {
-        super();
+  private static final File KNOWN_HOSTS_FILE = new File(new File(new File(System.getProperty("user.home")), ".ssh"), "known_hosts");
+
+  @DataBoundConstructor
+  public KnownHostsFileKeyVerificationStrategy() {
+    super();
+  }
+
+  @Override
+  public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
+    ComputerLauncher launcher = computer.getLauncher();
+    if (!(launcher instanceof SSHLauncher)) {
+      return false;
     }
-    
+
+    if (!KNOWN_HOSTS_FILE.exists()) {
+      listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NoKnownHostsFile(KNOWN_HOSTS_FILE.getAbsolutePath()));
+      return false;
+    }
+
+    KnownHosts knownHosts = new KnownHosts(KNOWN_HOSTS_FILE);
+    int result = knownHosts.verifyHostkey(((SSHLauncher) launcher).getHost(), hostKey.getAlgorithm(), hostKey.getKey());
+
+    if (KnownHosts.HOSTKEY_IS_OK == result) {
+      listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
+      return true;
+    } else if (KnownHosts.HOSTKEY_IS_NEW == result) {
+      listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NewKeyNotTrusted(SSHLauncher.getTimestamp()));
+      return false;
+    } else {
+      listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_ChangedKeyNotTrusted(SSHLauncher.getTimestamp()));
+      return false;
+    }
+
+  }
+
+  @Override
+  public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
+    ComputerLauncher launcher = computer.getLauncher();
+
+    if (!(launcher instanceof SSHLauncher) || !KNOWN_HOSTS_FILE.exists()) {
+      return super.getPreferredKeyAlgorithms(computer);
+    }
+
+    KnownHosts knownHosts = new KnownHosts(KNOWN_HOSTS_FILE);
+    return knownHosts.getPreferredServerHostkeyAlgorithmOrder(((SSHLauncher) launcher).getHost());
+  }
+
+
+  @Extension
+  public static class KnownHostsFileKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
+
     @Override
-    public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
-        ComputerLauncher launcher = computer.getLauncher();
-        if (!(launcher instanceof SSHLauncher)) {
-            return false;
-        }
-
-        if (!KNOWN_HOSTS_FILE.exists()) {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NoKnownHostsFile(KNOWN_HOSTS_FILE.getAbsolutePath()));
-            return false;
-        }
-        
-        KnownHosts knownHosts = new KnownHosts(KNOWN_HOSTS_FILE);
-        int result = knownHosts.verifyHostkey(((SSHLauncher)launcher).getHost(), hostKey.getAlgorithm(), hostKey.getKey());
-        
-        if (KnownHosts.HOSTKEY_IS_OK == result) {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
-            return true;
-        } else if (KnownHosts.HOSTKEY_IS_NEW == result) {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_NewKeyNotTrusted(SSHLauncher.getTimestamp()));
-            return false;
-        } else {
-            listener.getLogger().println(Messages.KnownHostsFileHostKeyVerifier_ChangedKeyNotTrusted(SSHLauncher.getTimestamp()));
-            return false;
-        }
-        
+    public String getDisplayName() {
+      return Messages.KnownHostsFileHostKeyVerifier_DisplayName();
     }
 
-    @Override
-    public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
-        ComputerLauncher launcher = computer.getLauncher();
-
-        if (!(launcher instanceof SSHLauncher) || !KNOWN_HOSTS_FILE.exists()) {
-            return super.getPreferredKeyAlgorithms(computer);
-        }
-
-        KnownHosts knownHosts = new KnownHosts(KNOWN_HOSTS_FILE);
-        return knownHosts.getPreferredServerHostkeyAlgorithmOrder(((SSHLauncher) launcher).getHost());
-    }
-
-    
-    @Extension
-    public static class KnownHostsFileKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
-
-        @Override
-        public String getDisplayName() {
-            return Messages.KnownHostsFileHostKeyVerifier_DisplayName();
-        }
-        
-    }
+  }
 
 }

@@ -36,42 +36,43 @@ import java.io.IOException;
 /**
  * A method for verifying the host key provided by the remote host during the
  * initiation of each connection.
- * 
+ *
  * @author Michael Clarke
  * @since 1.13
  */
 public abstract class SshHostKeyVerificationStrategy implements Describable<SshHostKeyVerificationStrategy> {
 
-    @Override
-    public SshHostKeyVerificationStrategyDescriptor getDescriptor() {
-        return (SshHostKeyVerificationStrategyDescriptor)Jenkins.get().getDescriptorOrDie(getClass());
-    }
+  @Override
+  public SshHostKeyVerificationStrategyDescriptor getDescriptor() {
+    return (SshHostKeyVerificationStrategyDescriptor) Jenkins.get().getDescriptorOrDie(getClass());
+  }
 
-    /**
-     * Check if the given key is valid for the host identifier.
-     * @param computer the computer this connection is being initiated for
-     * @param hostKey the key that was transmitted by the remote host for the current connection. This is the key
-     *                that should be checked to see if we trust it by the current verifier.
-     * @param listener the connection listener to write any output log to
-     * @return whether the provided HostKey is trusted and the current connection can therefore continue.
-     * @since 1.12
-     */
-    public abstract boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception;
+  /**
+   * Check if the given key is valid for the host identifier.
+   *
+   * @param computer the computer this connection is being initiated for
+   * @param hostKey  the key that was transmitted by the remote host for the current connection. This is the key
+   *                 that should be checked to see if we trust it by the current verifier.
+   * @param listener the connection listener to write any output log to
+   * @return whether the provided HostKey is trusted and the current connection can therefore continue.
+   * @since 1.12
+   */
+  public abstract boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception;
 
-    /**
-     * Provides a list of preferred key algorithms for this strategy and computer.
-     * @return a list of algorithms; empty or null lists will be ignored
-     * @see Connection#setServerHostKeyAlgorithms
-     */
-    @CheckForNull
-    public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
-        return TrileadVersionSupportManager.getTrileadSupport().getSupportedAlgorithms();
-    }
-    
-    public static abstract class SshHostKeyVerificationStrategyDescriptor extends Descriptor<SshHostKeyVerificationStrategy> {
-        
-    }
-    
+  /**
+   * Provides a list of preferred key algorithms for this strategy and computer.
+   *
+   * @return a list of algorithms; empty or null lists will be ignored
+   * @see Connection#setServerHostKeyAlgorithms
+   */
+  @CheckForNull
+  public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
+    return TrileadVersionSupportManager.getTrileadSupport().getSupportedAlgorithms();
+  }
 
-    
+  public static abstract class SshHostKeyVerificationStrategyDescriptor extends Descriptor<SshHostKeyVerificationStrategy> {
+
+  }
+
+
 }

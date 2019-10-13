@@ -31,67 +31,70 @@ import com.trilead.ssh2.KnownHosts;
 /**
  * A representation of the SSH key provided by a remote host to verify itself
  * and secure the initial setup of the SSH connection.
+ *
  * @author Michael Clarke
  * @since 1.13
  */
 public final class HostKey implements Serializable {
 
-    private static final long serialVersionUID = -5131839381842616910L;
+  private static final long serialVersionUID = -5131839381842616910L;
 
-    private final String algorithm;
-    private final byte[] key;
+  private final String algorithm;
+  private final byte[] key;
 
-    public HostKey(String algorithm, byte[] key) {
-        super();
-        this.algorithm = algorithm;
-        this.key = key.clone();
-    }
+  public HostKey(String algorithm, byte[] key) {
+    super();
+    this.algorithm = algorithm;
+    this.key = key.clone();
+  }
 
-    /**
-     * Get the algorithm used during key generation.
-     * @return the algorithm used to generate the key, such as ssh-rsa.
-     */
-    public String getAlgorithm() {
-        return algorithm;
-    }
+  /**
+   * Get the algorithm used during key generation.
+   *
+   * @return the algorithm used to generate the key, such as ssh-rsa.
+   */
+  public String getAlgorithm() {
+    return algorithm;
+  }
 
-    /**
-     * Get the unencoded content of the key, without any algorithm prefix.
-     * @return a byte representation of the raw key value.
-     */
-    public byte[] getKey() {
-        return key.clone();
-    }
+  /**
+   * Get the unencoded content of the key, without any algorithm prefix.
+   *
+   * @return a byte representation of the raw key value.
+   */
+  public byte[] getKey() {
+    return key.clone();
+  }
 
-    public String getFingerprint() {
-        return KnownHosts.createHexFingerprint(getAlgorithm(), getKey());
-    }
+  public String getFingerprint() {
+    return KnownHosts.createHexFingerprint(getAlgorithm(), getKey());
+  }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((algorithm == null) ? 0 : algorithm.hashCode());
-        result = prime * result + Arrays.hashCode(key);
-        return result;
-    }
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((algorithm == null) ? 0 : algorithm.hashCode());
+    result = prime * result + Arrays.hashCode(key);
+    return result;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        HostKey other = (HostKey) obj;
-        if (algorithm == null) {
-            if (other.algorithm != null)
-                return false;
-        } else if (!algorithm.equals(other.algorithm))
-            return false;
-        if (!Arrays.equals(key, other.key))
-            return false;
-        return true;
-    }
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    HostKey other = (HostKey) obj;
+    if (algorithm == null) {
+      if (other.algorithm != null)
+        return false;
+    } else if (!algorithm.equals(other.algorithm))
+      return false;
+    if (!Arrays.equals(key, other.key))
+      return false;
+    return true;
+  }
 }

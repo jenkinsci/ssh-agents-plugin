@@ -6,11 +6,11 @@ package hudson.plugins.sshslaves.verifiers;
  */
 public class KeyParseException extends Exception {
 
-    public KeyParseException(String message) {
-        super(message);
-    }
+  public KeyParseException(String message) {
+    super(message);
+  }
 
-    public KeyParseException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public KeyParseException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

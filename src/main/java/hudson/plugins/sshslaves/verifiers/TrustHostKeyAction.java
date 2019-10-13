@@ -43,92 +43,93 @@ import hudson.security.Permission;
  * issued by a remote SSH host. If a key is already known for this host then the user will
  * be prompted to replace the existing key, otherwise they will be prompted to add a new
  * key.
+ *
  * @author Michael Clarke
  * @since 1.13
  */
-public class TrustHostKeyAction extends TaskAction  {
+public class TrustHostKeyAction extends TaskAction {
 
-    private static int keyNumber = 0;
-    private final HostKey hostKey;
-    private final Computer computer;
-    private final String actionPath;
+  private static int keyNumber = 0;
+  private final HostKey hostKey;
+  private final Computer computer;
+  private final String actionPath;
 
-    private boolean complete;
+  private boolean complete;
 
-    @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD",
-            justification = "Need a static counter of all instances that have been created")
-    TrustHostKeyAction(Computer computer, HostKey hostKey) {
-        super();
-        this.hostKey = hostKey;
-        this.computer = computer;
-        this.actionPath = "saveHostKey-" + keyNumber++;
+  @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD",
+    justification = "Need a static counter of all instances that have been created")
+  TrustHostKeyAction(Computer computer, HostKey hostKey) {
+    super();
+    this.hostKey = hostKey;
+    this.computer = computer;
+    this.actionPath = "saveHostKey-" + keyNumber++;
+  }
+
+  public HostKey getHostKey() {
+    return hostKey;
+  }
+
+  public HostKey getExistingHostKey() throws IOException {
+    return HostKeyHelper.getInstance().getHostKey(getComputer());
+  }
+
+  public Computer getComputer() {
+    return computer;
+  }
+
+  @RequirePOST
+  public void doSubmit(StaplerRequest request, StaplerResponse response) throws IOException, ServletException {
+    getACL().checkPermission(getPermission());
+
+    if (null != request.getParameter("Yes")) {
+      HostKeyHelper.getInstance().saveHostKey(getComputer(), getHostKey());
+    } else if (null == request.getParameter("No")) {
+      throw new IOException("Invalid action");
     }
 
-    public HostKey getHostKey() {
-        return hostKey;
+    complete = true;
+    response.sendRedirect("../");
+  }
+
+  public void doIndex(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
+    req.getView(this, "trustHostKey").forward(req, rsp);
+  }
+
+  public boolean isComplete() {
+    return complete;
+  }
+
+  @Override
+  public String getIconFileName() {
+    if (complete || !getACL().hasPermission(getPermission())) {
+      return null;
     }
+    return "save.gif";
+  }
 
-    public HostKey getExistingHostKey() throws IOException {
-        return HostKeyHelper.getInstance().getHostKey(getComputer());
+  @Override
+  public String getDisplayName() {
+    if (complete || !getACL().hasPermission(getPermission())) {
+      return null;
     }
+    return Messages.TrustHostKeyAction_DisplayName();
+  }
 
-    public Computer getComputer() {
-        return computer;
+  @Override
+  protected Permission getPermission() {
+    return Computer.CONFIGURE;
+  }
+
+  @Override
+  protected ACL getACL() {
+    return computer.getACL();
+  }
+
+  @Override
+  public String getUrlName() {
+    if (complete || !getACL().hasPermission(getPermission())) {
+      return null;
     }
-
-    @RequirePOST
-    public void doSubmit(StaplerRequest request, StaplerResponse response) throws IOException, ServletException {
-        getACL().checkPermission(getPermission());
-
-        if (null != request.getParameter("Yes")) {
-            HostKeyHelper.getInstance().saveHostKey(getComputer(), getHostKey());
-        } else if (null == request.getParameter("No")) {
-            throw new IOException("Invalid action");
-        }
-
-        complete = true;
-        response.sendRedirect("../");
-    }
-
-    public void doIndex(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
-        req.getView(this, "trustHostKey").forward(req, rsp);
-    }
-
-    public boolean isComplete() {
-        return complete;
-    }
-
-    @Override
-    public String getIconFileName() {
-        if (complete || !getACL().hasPermission(getPermission())) {
-            return null;
-        }
-        return "save.gif";
-    }
-
-    @Override
-    public String getDisplayName() {
-        if (complete || !getACL().hasPermission(getPermission())) {
-            return null;
-        }
-        return Messages.TrustHostKeyAction_DisplayName();
-    }
-
-    @Override
-    protected Permission getPermission() {
-        return Computer.CONFIGURE;
-    }
-
-    @Override
-    protected ACL getACL() {
-        return computer.getACL();
-    }
-
-    @Override
-    public String getUrlName() {
-        if (complete || !getACL().hasPermission(getPermission())) {
-            return null;
-        }
-        return actionPath;
-    }
+    return actionPath;
+  }
 }
