@@ -38,6 +38,7 @@ import hudson.remoting.ChannelBuilder;
 import hudson.util.StreamCopyThread;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -140,4 +141,9 @@ final class RemoteLauncher extends Launcher {
     public void kill(Map<String, String> modelEnvVars) throws IOException, InterruptedException {
         // no way to do this
     }
+
+  @Override
+  public boolean isUnix() {
+    return File.pathSeparatorChar == ':';
+  }
 }
