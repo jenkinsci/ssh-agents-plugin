@@ -27,6 +27,7 @@ import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 import hudson.FilePath;
+import hudson.Functions;
 import hudson.Launcher;
 import hudson.Proc;
 import hudson.Util;
@@ -38,7 +39,6 @@ import hudson.remoting.ChannelBuilder;
 import hudson.util.StreamCopyThread;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -144,6 +144,6 @@ final class RemoteLauncher extends Launcher {
 
   @Override
   public boolean isUnix() {
-    return File.pathSeparatorChar == ':';
+    return !Functions.isWindows();
   }
 }
