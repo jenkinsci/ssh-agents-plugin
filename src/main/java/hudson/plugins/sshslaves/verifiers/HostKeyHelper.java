@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.XmlFile;
 import hudson.model.Computer;
 import hudson.model.Node;
@@ -96,7 +97,8 @@ public final class HostKeyHelper {
     private File getSshHostKeyFile(Node node) throws IOException {
         return new File(getNodeDirectory(node), "ssh-host-key.xml");
     }
-    
+
+    @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "Path is built from configuration values.")
     private File getNodeDirectory(Node node) throws IOException {
         if (null == node) {
             throw new IOException("Could not load key for the requested node");

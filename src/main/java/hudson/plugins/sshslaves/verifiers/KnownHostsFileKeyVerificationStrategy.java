@@ -24,6 +24,7 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import com.trilead.ssh2.KnownHosts;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
@@ -45,6 +46,7 @@ import java.nio.file.Paths;
  * @author Michael Clarke
  * @since 1.13
  */
+@SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "Path is built from configuration values.")
 public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
   public static final String KNOWN_HOSTS_DEFAULT = Paths.get(System.getProperty("user.home"), ".ssh", "known_hosts").toString();

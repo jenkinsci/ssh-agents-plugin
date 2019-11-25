@@ -679,8 +679,8 @@ public class SSHLauncher extends ComputerLauncher {
                 // If the agent jar already exists see if it needs to be updated
                 boolean overwrite = true;
                 if (sftpClient.exists(fileName)) {
-                    String sourceAgentHash = getMd5Hash(agentJar);
-                    String existingAgentHash = getMd5Hash(readInputStreamIntoByteArrayAndClose(sftpClient.read(fileName)));
+                    String sourceAgentHash = computeHash(agentJar);
+                    String existingAgentHash = computeHash(readInputStreamIntoByteArrayAndClose(sftpClient.read(fileName)));
                     listener.getLogger().println(MessageFormat.format( "Source agent hash is {0}. "
                       + "Installed agent hash is {1}", sourceAgentHash, existingAgentHash));
 
@@ -735,11 +735,11 @@ public class SSHLauncher extends ComputerLauncher {
      * @return
      * @throws NoSuchAlgorithmException
      */
-    static String getMd5Hash(byte[] bytes) throws NoSuchAlgorithmException {
+    static String computeHash(byte[] bytes) throws NoSuchAlgorithmException {
 
         String hash;
         try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(bytes);
             byte[] digest = md.digest();
 

@@ -372,8 +372,8 @@ public class SSHLauncherTest {
 
     try {
       byte[] bytes = "Leave me alone!".getBytes();
-      String result = SSHLauncher.getMd5Hash(bytes);
-      assertTrue("1EB226C8E950BAC1494BE197E84A264C".equals(result));
+      String result = SSHLauncher.computeHash(bytes);
+      assertTrue("84F44B884A53CD4BA631539EB0538A48ECD7A8F666DC5584B7644F8ACE9BF086".equals(result));
     } catch (Exception e) {
       e.printStackTrace();
     }

@@ -90,6 +90,7 @@ public class TrustHostKeyAction extends TaskAction  {
         response.sendRedirect("../");
     }
 
+    @SuppressFBWarnings(value = "REQUESTDISPATCHER_FILE_DISCLOSURE", justification = "This forwards to a fixed path for approving the host key.")
     public void doIndex(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
         req.getView(this, "trustHostKey").forward(req, rsp);
     }
