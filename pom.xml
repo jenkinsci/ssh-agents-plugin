@@ -12,7 +12,7 @@
   <version>${revision}${changelist}</version>
   <packaging>hpi</packaging>
 
-  <name>Jenkins SSH Slaves plugin</name>
+  <name>SSH Build Agents plugin</name>
   <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
   <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
 
