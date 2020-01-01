@@ -27,6 +27,7 @@ import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 import hudson.FilePath;
+import hudson.Functions;
 import hudson.Launcher;
 import hudson.Proc;
 import hudson.Util;
@@ -140,4 +141,9 @@ final class RemoteLauncher extends Launcher {
     public void kill(Map<String, String> modelEnvVars) throws IOException, InterruptedException {
         // no way to do this
     }
+
+  @Override
+  public boolean isUnix() {
+    return !Functions.isWindows();
+  }
 }
