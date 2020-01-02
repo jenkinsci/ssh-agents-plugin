@@ -172,14 +172,14 @@ public class SSHLauncherTest {
     SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId");
     launcher.setSshHostKeyVerificationStrategy(new KnownHostsFileKeyVerificationStrategy());
     assertEquals(host.trim(), launcher.getHost());
-    DumbSlave slave = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
-    j.jenkins.addNode(slave);
+    DumbSlave agent = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
+    j.jenkins.addNode(agent);
 
-    HtmlPage p = j.createWebClient().getPage(slave, "configure");
+    HtmlPage p = j.createWebClient().getPage(agent, "configure");
     j.submit(p.getFormByName("config"));
     Slave n = (Slave) j.jenkins.getNode("agent");
 
-    assertNotSame(n, slave);
+    assertNotSame(n, agent);
     assertNotSame(n.getLauncher(), launcher);
     j.assertEqualDataBoundBeans(n.getLauncher(), launcher);
   }
@@ -225,13 +225,13 @@ public class SSHLauncherTest {
       )
     );
     SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
-    DumbSlave slave = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
+    DumbSlave agent = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
 
     Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
     assertThat("No fingerprint created until use", fingerprint, nullValue());
 
-    j.jenkins.addNode(slave);
-    while (slave.toComputer().isConnecting()) {
+    j.jenkins.addNode(agent);
+    while (agent.toComputer().isConnecting()) {
       // Make sure verification takes place after launch is complete
       Thread.sleep(100);
     }
@@ -250,13 +250,13 @@ public class SSHLauncherTest {
       )
     );
     SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
-    DumbSlave slave = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
+    DumbSlave agent = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
 
     Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
     assertThat("No fingerprint created until use", fingerprint, nullValue());
 
-    j.jenkins.addNode(slave);
-    while (slave.toComputer().isConnecting()) {
+    j.jenkins.addNode(agent);
+    while (agent.toComputer().isConnecting()) {
       // Make sure verification takes place after launch is complete
       Thread.sleep(100);
     }
@@ -301,9 +301,9 @@ public class SSHLauncherTest {
     String javaHomeTool = "/java_home_tool";
 
     SSHLauncher sshLauncher = new SSHLauncher("Hostname", 22, "credentialID");
-    DumbSlave slave = new DumbSlave("agent" + j.jenkins.getNodes().size(), "/home/test/agent", sshLauncher);
-    j.jenkins.addNode(slave);
-    SlaveComputer computer = slave.getComputer();
+    DumbSlave agent = new DumbSlave("agent" + j.jenkins.getNodes().size(), "/home/test/agent", sshLauncher);
+    j.jenkins.addNode(agent);
+    SlaveComputer computer = agent.getComputer();
 
     List<EnvironmentVariablesNodeProperty.Entry> env = new ArrayList<>();
     EnvironmentVariablesNodeProperty.Entry entry = new EnvironmentVariablesNodeProperty.Entry(DefaultJavaProvider.JAVA_HOME, javaHome);
@@ -404,10 +404,10 @@ public class SSHLauncherTest {
 
   @Test
   public void retryTest() throws IOException, InterruptedException, Descriptor.FormException {
-    DumbSlave slave = getDumbSlaveHostNotExist();
-    j.jenkins.addNode(slave);
+    DumbSlave agent = getPermanentAgentHostNotExist();
+    j.jenkins.addNode(agent);
     Thread.sleep(25000);
-    String log = slave.getComputer().getLog();
+    String log = agent.getComputer().getLog();
 
     assertTrue(log.contains("There are 3 more retries left."));
     assertTrue(log.contains("There are 2 more retries left."));
@@ -415,14 +415,14 @@ public class SSHLauncherTest {
     assertFalse(log.contains("There are 4 more retries left."));
   }
 
-  private DumbSlave getDumbSlaveHostNotExist() throws Descriptor.FormException, IOException {
+  private DumbSlave getPermanentAgentHostNotExist() throws Descriptor.FormException, IOException {
     fakeCredentials("dummyCredentialId");
     final SSHLauncher launcher = new SSHLauncher("HostNotExists", 22, "dummyCredentialId");
     launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
     launcher.setLaunchTimeoutSeconds(5);
     launcher.setRetryWaitTime(1);
     launcher.setMaxNumRetries(3);
-    return new DumbSlave("slave", j.createTmpDir().getPath(), launcher);
+    return new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
   }
 
   private void fakeCredentials(String id) {
