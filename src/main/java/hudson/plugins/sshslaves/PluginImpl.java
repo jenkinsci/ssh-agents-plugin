@@ -32,7 +32,7 @@ import com.trilead.ssh2.Connection;
 import hudson.Plugin;
 
 /**
- * Entry point of ssh-slaves plugin.
+ * Entry point of the plugin.
  *
  * @author Stephen Connolly
  */
@@ -48,7 +48,7 @@ public class PluginImpl extends Plugin {
      */
     @Override
     public void start() throws Exception {
-        LOGGER.log(Level.FINE, "Starting SSH Slaves plugin");
+        LOGGER.log(Level.FINE, "Starting the SSH Build Agents plugin");
     }
 
     /**
@@ -56,9 +56,9 @@ public class PluginImpl extends Plugin {
      */
     @Override
     public void stop() throws Exception {
-        LOGGER.log(Level.FINE, "Stopping SSH Slaves plugin.");
+        LOGGER.log(Level.FINE, "Stopping the SSH Build Agents plugin.");
         closeRegisteredConnections();
-        LOGGER.log(Level.FINE, "SSH Slaves plugin stopped.");
+        LOGGER.log(Level.FINE, "SSH Build Agents plugin stopped.");
     }
 
     /**
