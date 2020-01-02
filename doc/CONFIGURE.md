@@ -1,4 +1,5 @@
-# SSH Slaves plugin
+# Configuring the SSH Build Agents plugin
+
 This plugin allows you to manage an agent running on \*nix machines over SSH. It adds a new type of agent launch method.
 This launch method will
 
@@ -7,8 +8,8 @@ This launch method will
 * Copy the latest remoting.jar via SFTP (falling back to scp if SFTP is not available)
 * Start the remoting process.
 
-# Prerequisites
-Before you start to use the **SSH Slaves Plugin** with your agents, you need to prepare your agents to run the remoting process.
+## Prerequisites
+Before you start to use the the plugin with your agents, you need to prepare your agents to run the remoting process.
 This means that **you have to install a JDK/JRE 8 on your agent** in order to run the *remoting.jar* process.
 
 The agent should have **enough memory** to run the remoting process and the builds. 
@@ -20,9 +21,9 @@ You will have to supply an account that can log in on the target machine. No roo
 Finally the agent should have **permissions to read and write on the work directory**, and **enough disk space** to store *remoting.jar* (~1MB),
 logs (~10MB should be enough), and your build workspaces (it depends on your builds, probably a few GB).
 
-# Configure a Node to use SSH Slaves plugin
+## Configure a Node to use the SSH Build Agents plugin
 
-## Create a Node
+### Create a Node
 First of all, we have to create a node. Go to `Manage Jenkins/Manage Nodes`. 
 
 ![](images/new-node-button.png)
@@ -56,11 +57,11 @@ You will use them to select it as agent for a build. Multiple labels must be sep
 
 ![](images/ssh-node-basic-config.png)
 
-## Configure Launch agents via SSH
+### Configure Launch agents via SSH
 
 Once you selected the **Launch method** to **Launch agents via SSH**, you can configure your SSH agent settings.
 
-### Required settings
+#### Required settings
 
 * **Host:** Hostname or IP of the agent, it should be resolvable and reachable from the Jenkins instance. 
 * **Credentials:** Select the credentials to be used for logging in to the remote host. See [Integration with SSH Credentials Plugin](#integration-with-ssh-credentials-plugin)
@@ -68,9 +69,9 @@ Once you selected the **Launch method** to **Launch agents via SSH**, you can co
 
 ![](images/ssh-node-launcher-config.png)
 
-### Advanced settings
+#### Advanced settings
 
-* **Port:** The TCP port on which the slave's SSH daemon is listening, usually 22.
+* **Port:** The TCP port on which the agent's SSH daemon is listening, usually 22.
 * **JavaPath** This Java path will be used to start the JVM. (/mycustomjdkpath/bin/java) If empty Jenkins will search Java command in the agent.
 * **JVM Options** Additional arguments for the JVM such as min and max heap size, garbage collector options, and other tuning settings.
 * **Prefix Start Agent Command** What you enter here will be prepended to the launch command.
@@ -92,11 +93,11 @@ If empty, the **Remote root directory** is used as **Remoting Work directory**
 
 ![](images/ssh-node-advanced-config.png)
 
-## Host Key Verification Strategy
+### Host Key Verification Strategy
 
 Controls how Jenkins verifies the SSH key presented by the remote host whilst connecting.
 
-### Known hosts file Verification Strategy
+#### Known hosts file Verification Strategy
 
 ![](images/hkvs-known-hosts.png)
 
@@ -108,7 +109,7 @@ This method does not make any updates to the Known Hosts file, instead using the
 someone with suitable access to the appropriate user account on the Jenkins master to update the file as required,
 potentially using the ssh hostname command to initiate a connection and update the file appropriately.
 
-### Manually provided key Verification Strategy
+#### Manually provided key Verification Strategy
 
 ![](images/hkvs-manual-key.png)
 
@@ -117,7 +118,7 @@ Checks the key provided by the remote host matches the key set by the user who c
 The SSH key expected for this connection. This key should be in the form `algorithm value`
 where algorithm is one of ssh-rsa or ssh-dss, and value is the Base 64 encoded content of the key. The keys should be placed in /etc/ssh/<key_name>.pub
 
-### Manually trusted key Verification Strategy
+#### Manually trusted key Verification Strategy
 
 ![](images/hkvs-trusted-key.png)
 
@@ -133,21 +134,21 @@ this host before the connection will be allowed to be established.
 If this option is not enabled then the key presented on first connection for this host will be automatically trusted
 and allowed for all subsequent connections without any manual intervention.
 
-### Non verifying Verification Strategy
+#### Non verifying Verification Strategy
 
 ![](images/hkvs-no-verify.png)
 
 Does not perform any verification of the SSH key presented by the remote host, allowing all connections regardless of the key they present.
 
-## Availability
+### Availability
 
-### Keep this agent online as much as possible
+#### Keep this agent online as much as possible
 In this mode, Jenkins will keep this agent online as much as possible.
 If the agent goes offline, e.g. due to a temporary network failure, Jenkins will periodically attempt to restart it.
 
 ![](images/availability-as-much.png)
 
-### Take this agent online and offline at specific times
+#### Take this agent online and offline at specific times
 In this mode, Jenkins will bring this agent online at the scheduled time(s), remaining online for a specified amount of time.
 If the agent goes offline while it is scheduled to be online, Jenkins will periodically attempt to restart it.
 
@@ -157,7 +158,7 @@ Jenkins will wait for any any builds that may be in progress to complete.
 
 ![](images/availability-schedule.png)
 
-### Take this agent online when in demand, and offline when idle
+#### Take this agent online when in demand, and offline when idle
 In this mode, Jenkins will bring this agent online if there is demand, i.e. there are queued builds which meet the following criteria:
 * They have been in the queue for at least the specified *In demand delay time period*
 * They can be executed by this agent (e.g. have a matching label expression)
@@ -168,9 +169,9 @@ This agent will be taken offline if:
 
 ![](images/availability-on-demand.png)
 
-## Integration with SSH Credentials Plugin
+### Integration with SSH Credentials Plugin
 This plugin is now integrated with the [SSH Credentials Plugin](https://plugins.jenkins.io/ssh-credentials). 
-This changes how slaves are configured.
+This changes how agents are configured.
 The Node configuration is simplified, e.g. you now just have a Credentials drop down listing all the "Global" and 
 "System" scoped credentials.
  
@@ -179,11 +180,11 @@ If you are upgrading from a previous 0.23 version, the plugin should try to inje
 
 ![](images/ssh-credentials-select.png)
 
-To define credentials to use when connecting slaves you need to go to the `Jenkins/Manage Jenkins/Manage Credentials` screen 
+To define credentials to use when connecting agents you need to go to the `Jenkins/Manage Jenkins/Manage Credentials` screen.
 
 ![](images/ssh-credentials-manage.png)
 
-Once on this screen you can add **SSH credentials**, either using a *Username & Password* or using a *Username & Private Key* 
+Once on this screen you can add **SSH credentials**, either using a *Username & Password* or using a *Username & Private Key*.
 
 ![](images/ssh-credentials-manage-detail.png)
 
@@ -200,12 +201,12 @@ and the specified hostname and port, so where you have created the appropriate c
 will be restricted to those outside of any credential domain and those from matching credential domains.
 This can help differentiate between multiple keys/password associated with the same username.
 
-## Using Cygwin
-See [SSH slaves and Cygwin](https://wiki.jenkins.io/display/JENKINS/SSH+slaves+and+Cygwin) for the discussion of how to use this plugin to talk to Cygwin SSHD server.
+### Using Cygwin
+See [SSH Build Agents and Cygwin](https://wiki.jenkins.io/display/JENKINS/SSH+slaves+and+Cygwin) for the discussion of how to use this plugin to talk to Cygwin SSHD server.
 
 [Remoting documentation](https://github.com/jenkinsci/remoting/tree/master/docs)
 
-## launch Windows slaves using Microsoft OpenSSH
+### Launch Windows agents using Microsoft OpenSSH
 
 The current version of the plugin does not run directly on PowerShell, you have to use prefix and suffix settings to trick the command and make it works, Windows 10 machines can run as SSH agents with the Microsoft OpenSSH server by using:
 
