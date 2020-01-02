@@ -379,7 +379,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Returns the remote root workspace (without trailing slash).
      *
-     * @param computer The slave computer to get the root workspace of.
+     * @param computer The computer to get the root workspace of.
      *
      * @return the remote root workspace (without trailing slash).
      *
@@ -979,16 +979,16 @@ public class SSHLauncher extends ComputerLauncher {
 
         Integer exitCode = session.getExitStatus();
         if (exitCode != null)
-            return "Slave JVM has terminated. Exit code=" + exitCode;
+            return "Agent JVM has terminated. Exit code=" + exitCode;
 
         String sig = session.getExitSignal();
         if (sig != null)
-            return "Slave JVM has terminated. Exit signal=" + sig;
+            return "Agent JVM has terminated. Exit signal=" + sig;
 
         if (isConnectionLost)
-            return "Slave JVM has not reported exit code before the socket was lost";
+            return "Agent JVM has not reported exit code before the socket was lost";
 
-        return "Slave JVM has not reported exit code. Is it still running?";
+        return "Agent JVM has not reported exit code. Is it still running?";
     }
 
     public String getCredentialsId() {
