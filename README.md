@@ -7,11 +7,11 @@ SSH Build Agents Plugin for Jenkins
 
 Provides a means to launch agents via SSH.
 
-See the [plugin page](https://plugins.jenkins.io/ssh-slaves) for more information.
+## Documentation
 
-[Configure guide](doc/CONFIGURE.md)
-
-[Troubleshooting guide](doc/TROUBLESHOOTING.md)
+* [Configure guide](doc/CONFIGURE.md)
+* [Troubleshooting guide](doc/TROUBLESHOOTING.md)
+* [Using the plugin with Cygwin on Windows](doc/CYGWIN.md)
 
 ## Changelog
 
