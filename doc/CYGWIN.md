@@ -1,5 +1,8 @@
 # SSH Build Agents Plugin and Cygwin
 
+| WARNING: This documentation was moved from Jenkins Wiki, and it might be obsolete. Any contributions are welcome, just submit a pull request! |
+| --- |
+
 ## Overview
 
 Cygwin is a Unix emulation library for Windows.
