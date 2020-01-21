@@ -33,22 +33,21 @@ This is one of the recommended way of controlling Windows agents from Jenkins, i
 5.  Java must be available from your SSH client: for example, add a symbolic link, e.g :  
 `cd /usr/local/bin && ln -s /cygdrive/c/Program\\ Files\\(x86\\)/Java/jre1.8.0\_211/bin/java.exe java`
 
-When you use SSH launcher to launch a slave on Cygwin-enabled Windows,
+When you use SSH launcher to launch an agent on Cygwin-enabled Windows,
 you should still specify Windows style path as the remote FS root (such as `c:\jenkins`).
-This is because the slave JVM that eventually gets launched doesn't receive the Cygwin path translation.
+This is because the agent JVM that eventually gets launched doesn't receive the Cygwin path translation.
 If you specify Unix style path (such as `/cygdrive/c/jenkins`),
-then Jenkins will end up trying to create both `c:\jenkins` (when it copies over `slave.jar` via SFTP) and `c:\cygdrive\c\jenkins` (when slave JVM actually starts and copy more files.)
+then Jenkins will end up trying to create both `c:\jenkins` (when it copies over `agent.jar` via SFTP) and `c:\cygdrive\c\jenkins` (when agent JVM actually starts and copy more files.)
 
 If you run Jenkins on behalf of other users,
 you'll discover that some of your users will not understand when and where the path translation happens,
 and will inevitably write build scripts that break.
-You can explain to them what's going on, or you can surrender and use [mklink](http://technet.microsoft.com/en-us/library/cc753194.aspx) to create a symlink or junction point that maps `c:\cygdrive\c\jenkins` to
-`c:\jenkins`.
+You can explain to them what's going on, or you can surrender and use [mklink](http://technet.microsoft.com/en-us/library/cc753194.aspx) to create a symlink or junction point that maps `c:\cygdrive\c\jenkins` to `c:\jenkins`.
 This will make those broken scripts work happily.
 
-## Treating Cygwin slaves like Unix slaves
+## Treating Cygwin agents like Unix agents
 
-Sometimes you want to treat Cygwin slaves like real Unix slaves, such as running shell scripts.
+Sometimes you want to treat Cygwin agents like real Unix agents, such as running shell scripts.
 When you do it, you often see error messages like this:
 
     java.io.IOException: Cannot run program "/bin/bash" (in directory "c:\test\workspace\foo"):
@@ -58,12 +57,11 @@ This is because Jenkins is trying to call Windows API and execute "/bin/bash" wi
 Windows interprets `/bin/bash` as `c:\bin\bash.exe`, and unless that path exists, it will fail.
 
 In this case, what's needed is to have Jenkins perform the Cygwin path translation without relying on Cygwin DLL.
-This is what [Cygpath
-Plugin](https://wiki.jenkins.io/display/JENKINS/Cygpath+Plugin) does;
-it checks if a Windows slave have Cygwin, and if you try to run executable that looks like Unix path name, it'll use Cygwin to translate that into its Windows path before calling Windows API.
+This is what [Cygpath Plugin](https://plugins.jenkins.io/cygpath) does;
+it checks if a Windows agent have Cygwin, and if you try to run executable that looks like Unix path name, it'll use Cygwin to translate that into its Windows path before calling Windows API.
 
 ## Further Reading
 
-Jenkins slaves running on Cygwin-enabled Windows is still susceptible to all the other problems Windows slaves face. 
+Jenkins agents running on Cygwin-enabled Windows are still susceptible to all the other problems Windows agents face. 
 See [My software builds on my computer but not on Jenkins](https://wiki.jenkins.io/display/JENKINS/My+software+builds+on+my+computer+but+not+on+Jenkins)
 for the discussion of those, including desktop and network drive access.
