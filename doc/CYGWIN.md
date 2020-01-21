@@ -24,7 +24,7 @@ To make this further confusing, native Windows APIs recognizes '\\' as the direc
 Simiarly, Cygwin-emulated POSIX APIs accept Windows paths, in addition to the Unix paths.
 This helpful "smart" behaviour sometimes makes it difficult for users to understand where the path translation is really happening.
 
-# SSH Build Agents Plguin and Cygwin SSHD.
+## SSH Build Agents Plguin and Cygwin SSH Daemon
 
 Cygwin comes with OpenSSH server, which works well with the SSH Build Agents.
 This is one of the recommended way of controlling Windows agents from Jenkins, if you don't mind the added effort of [sshd](http://www.noah.org/ssh/cygwin-sshd.html) :
@@ -62,6 +62,29 @@ Windows interprets `/bin/bash` as `c:\bin\bash.exe`, and unless that path exists
 In this case, what's needed is to have Jenkins perform the Cygwin path translation without relying on Cygwin DLL.
 This is what [Cygpath Plugin](https://plugins.jenkins.io/cygpath) does;
 it checks if a Windows agent have Cygwin, and if you try to run executable that looks like Unix path name, it'll use Cygwin to translate that into its Windows path before calling Windows API.
+
+## Using network drives
+
+Windows UNC does not work, e.g. the following command line fails with "Permission denied" (though it works from a normal ssh login).
+
+```bat
+cd //a-remote-host
+```
+
+A workaround is to map the network resource to a drive letter
+
+```bat
+net use Z: '\\a-remote-host' 'password' '/user:domain\username'
+cd Z:/
+```
+
+## Caveats
+
+1. Public key auth can cause issues with Microsoft Visual Studio compilation. See [here](https://cygwin.com/cygwin-ug-net/ntsec.html#ntsec-nopasswd3) and 
+[here](http://stackoverflow.com/questions/12325096/notorious-visual-studio-error-c1902-vs-configuration#comment37501198_12325096)
+for solutions
+2. Cygwin SSHD does not set all environment variables. 
+Users are expected to ensure that all required variables are set when running in Jenkins
 
 ## Further Reading
 
