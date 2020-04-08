@@ -31,10 +31,11 @@ import hudson.Launcher;
 import hudson.Proc;
 import hudson.Util;
 import static hudson.Functions.defaulted;
-import hudson.util.StreamCopyThread;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
+import hudson.remoting.ChannelBuilder;
+import hudson.util.StreamCopyThread;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -126,8 +127,9 @@ final class RemoteLauncher extends Launcher {
         final Session session = connection.openSession();
         session.execCommand(makeCommandLine(Arrays.asList(cmd), _workDir));
 
-        return new Channel("channel over ssh on "+connection.getHostname()+":"+connection.getPort(),
-            Computer.threadPoolForRemoting, session.getStdout(), new BufferedOutputStream(session.getStdin()));
+        return new ChannelBuilder("channel over ssh on " + connection.getHostname() + ":" + connection.getPort(), Computer.threadPoolForRemoting)
+                .withMode(Channel.Mode.BINARY)
+                .build(session.getStdout(), new BufferedOutputStream(session.getStdin()));
     }
 
     private String makeCommandLine(List<String> cmd, FilePath _workDir) {

@@ -8,7 +8,7 @@
 * See [GitHub Releases](https://github.com/jenkinsci/ssh-slaves-plugin/releases)
 
 ### 1.30.1 (Jul 21, 2019)
-* [JENKINS-58340](https://issues.jenkins-ci.org/browse/JENKINS-58340) docker-plugin-1.1.6 docker cloud does not work with >=ssh-slaves-plugin-1.30.0
+* [JENKINS-58340](https://issues.jenkins-ci.org/browse/JENKINS-58340) docker-plugin-1.1.6 Docker cloud does not work with 1.30.0
 
 #### Breaking changes
 * see 1.30.0
@@ -66,7 +66,7 @@
 
 ### 1.28.1 (Sep 5, 2018)
 
-* [JENKINS-53254](https://issues.jenkins-ci.org/browse/JENKINS-53254) SSH connection fails in vSphere cloud plugin with a new version of SSH slaves plugin (1.27)
+* [JENKINS-53254](https://issues.jenkins-ci.org/browse/JENKINS-53254) SSH connection fails in vSphere cloud plugin with a new version of the plugin (1.27)
 
 #### Breaking changes
 
@@ -84,8 +84,8 @@
 
 * [JENKINS-51876](https://issues.jenkins-ci.org/browse/JENKINS-51876) Update Core and Java version, remove deprecated code
 * [JENKINS-52660](https://issues.jenkins-ci.org/browse/JENKINS-52660) Allow to disable TCP_NODELAY
-* [JENKINS-42840](https://issues.jenkins-ci.org/browse/JENKINS-42840) Slave to agent Renaming: SSH Slaves Plugin
-* [JENKINS-44111](https://issues.jenkins-ci.org/browse/JENKINS-44111) Enable Remoting work dir by default in SSH Slaves Plugin
+* [JENKINS-42840](https://issues.jenkins-ci.org/browse/JENKINS-42840) Replace "slave" term to agent in the built-in documentation
+* [JENKINS-44111](https://issues.jenkins-ci.org/browse/JENKINS-44111) Enable Remoting work dir by default in the Plugin
 * [JENKINS-52613](https://issues.jenkins-ci.org/browse/JENKINS-52613), [JENKINS-52739](https://issues.jenkins-ci.org/browse/JENKINS-52739) configure 10 retries, 15 seconds between retries, and a timeout of about 210 seconds to connect to the agent.
 * [JENKINS-47586](https://issues.jenkins-ci.org/browse/JENKINS-47586) Removes JDK installer
 * [JENKINS-37152](https://issues.jenkins-ci.org/browse/JENKINS-37152) Support Win32-OpenSSH
@@ -104,7 +104,7 @@
 * [PR #82](https://github.com/jenkinsci/ssh-slaves-plugin/pull/82) - Do not lookup for credentials in SSHLauncher constructor so that the launcher can be initialized before the Credentials store is fully loaded (for Configuration-as-Code plugin)
 
 ### 1.25.1 (Jan 26, 2018)
-* [JENKINS-49032](https://issues.jenkins-ci.org/browse/JENKINS-49032) - Revert usage of "exec" command so that SSH Slaves can connect to Windows agents (regression in 1.25)
+* [JENKINS-49032](https://issues.jenkins-ci.org/browse/JENKINS-49032) - Revert usage of "exec" command so that SSH Node Launcher can connect to Windows agents (regression in 1.25)
 
 ### 1.25 (Jan 05, 2018)
 * [JENKINS-48616](https://issues.jenkins-ci.org/browse/JENKINS-48616) - Pass connection timeouts to socket connection logic if launch timeout is defined in agent settings
@@ -190,16 +190,16 @@
 * Enforce timeout for connection cleanup (possible fix for [JENKINS-14332](https://issues.jenkins-ci.org/browse/JENKINS-14332))
 
 ### 1.6 (Feb 5, 2014)
-* Add initial connection timeout to prevent stalled connections from preventing slave connection.
+* Add initial connection timeout to prevent stalled connections from preventing agent connection.
 * Update credentials plugin to 1.9.4 and ssh-credentials to 1.6.1 to ensure the in-place addition of credentials is available.
 * Change the hard-coded JDK from 1.6.0_16 to 1.6.0_45
 
 ### 1.5 (Oct 16, 2013)
 * Fix to how credentials are sourced for the drop-down list
-* Use credentials plugin's *c:select/* so that when credentials plugin adds the ability for in-place credential addition this can be picked up without modifying ssh-slaves
+* Use credentials plugin's *c:select/* so that when credentials plugin adds the ability for in-place credential addition this can be picked up without modifying the agents
 
 ### 1.4 (Oct 8, 2013)
-* Fixed issue with Slave log on Jenkins 1.521+ ([JENKINS-19758](https://issues.jenkins-ci.org/browse/JENKINS-19758))
+* Fixed issue with agent log on Jenkins 1.521+ ([JENKINS-19758](https://issues.jenkins-ci.org/browse/JENKINS-19758))
 
 ### 1.3 (Oct 4, 2013)
 * Reworked the upgrading of credentials logic. Should be much improved and result in a true minimal initial set
@@ -232,14 +232,14 @@
 * Performance improvement on bulk data transfer when used in a large latency/high bandwidth network ([JENKINS-7813](https://issues.jenkins-ci.org/browse/JENKINS-7813))
 
 ### 0.22 (Dec 07, 2012)
-* Find slave.jar even when running from hudson-dev:run.
+* Find `slave.jar` even when running from hudson-dev:run.
 * Allow environment variables to be declared in the java path, that are then expanded according to environment variables declared on the node or globally.
 
 ### 0.21 (Oct 26, 2011)
-* Slave is slow copying maven artifacts to master ([JENKINS-3922](https://issues.jenkins-ci.org/browse/JENKINS-3922)).
+* Agent is slow copying maven artifacts to master ([JENKINS-3922](https://issues.jenkins-ci.org/browse/JENKINS-3922)).
 
 ### 0.20 (Sep 28, 2011)
-* JDK installation on SSH slaves with newer Jenkins was broken ([JENKINS-10641](https://issues.jenkins-ci.org/browse/JENKINS-10641))
+* On-demand JDK installation on agents with newer Jenkins was broken ([JENKINS-10641](https://issues.jenkins-ci.org/browse/JENKINS-10641))
 
 ### 0.19 (Aug 25, 2011)
 * Fixed possible NPE during error recovery
@@ -255,7 +255,7 @@
 * Improved error diagnostics for unreadable SSH private key file.
 
 ### 0.15 (Mar 26, 2011)
-* New field to be able to configure the java command to use to start the slave
+* New field to be able to configure the java command to use to start the agent
 
 ### 0.14 (Nov 2, 2010)
 * Delete file via ssh if SFTP is not available ([JENKINS-7006](https://issues.jenkins-ci.org/browse/JENKINS-7006))
@@ -267,7 +267,7 @@
 ### 0.12 (June 1, 2010)
 * Avoid "password argument is null" error ([JENKINS-6620](https://issues.jenkins-ci.org/browse/JENKINS-6620))
 * Version check of JDKs was broken in locales that don't use '.' as the floating point separator ([JENKINS-6441](https://issues.jenkins-ci.org/browse/JENKINS-6441))
-* If SFTP is not available on the slave, use SCP ([JENKINS-6239](https://issues.jenkins-ci.org/browse/JENKINS-6239))
+* If SFTP is not available on the node, use SCP ([JENKINS-6239](https://issues.jenkins-ci.org/browse/JENKINS-6239))
 * Hudson fails to detect JVM versions when loading older data ([JENKINS-4856](https://issues.jenkins-ci.org/browse/JENKINS-4856))
 
 ### 0.10 (May 2, 2010)
@@ -291,7 +291,7 @@
 * User name can be now omitted, which defaults to the user that's running the Hudson master.
 
 ### 0.5 (April 28, 2009)
-* Added support for specifying the Slave JVM options
+* Added support for specifying the agent JVM options
 
 ### 0.4 (February 2, 2009)
 * Unknown
