@@ -522,8 +522,9 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void cleanupConnection(TaskListener listener) {
         // we might be called multiple times from multiple finally/catch block, 
-        if (connection!=null) {
-            connection.close();
+        Connection _connection = connection;
+        if (_connection != null) {
+            Computer.threadPoolForRemoting.submit(_connection::close);
             connection = null;
             listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
         }
