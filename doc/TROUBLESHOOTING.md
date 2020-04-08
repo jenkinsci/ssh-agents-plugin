@@ -3,7 +3,7 @@
 
 ### Common Pitfalls
 #### Login profile files
-When the SSH slaves plugin connects to a agent, it does not run an interactive shell. 
+When the _SSH Build Agents_ plugin connects to a agent, it does not run an interactive shell.
 Instead it does the equivalent of running `ssh agenthost command...` a few times, 
 eventually running `ssh agenthost java -jar ...`. Exactly what happens on the agent as a result of this depends on the SSHD implementation, OpenSSH runs this with `bash -c command ...` (or whatever your login shell is.)
 
@@ -78,7 +78,7 @@ System.setProperty("hudson.plugins.sshslaves.SSHLauncher.trackCredentials","fals
 
 ### 1.29.0 Breaks compatibility with Cloud plugins that do not use trilead-api plugin as dependency
 
-ssh-slaves-plugins not longer uses trilead-ssh2 module from the Jenkins core so plugins that depends on ssh-slaves-plugin must include trilead-api plugin as dependency until every the plugins change to this dependency. If you find this issue with one of your cloud plugins please report it and downgrade ssh-slaves-plugin to <1.28.1 until the dependency is added to your cloud plugin.
+SSH Build Agents Plugin not longer uses trilead-ssh2 module from the Jenkins core so plugins that depends on SSH Build Agents Plugin it must include trilead-api plugin as dependency until every the plugins change to this dependency. If you find this issue with one of your cloud plugins please report it and downgrade SSH Build Agents Plugin to <1.28.1 until the dependency is added to your cloud plugin.
 
 ```
 SSHLauncher{host='192.168.1.100', port=22, credentialsId='b6a4fe2c-9ba5-4052-b91c-XXXXXXXXX', jvmOptions='-Xmx256m', javaPath='', prefixStartSlaveCmd='', suffixStartSlaveCmd='', launchTimeoutSeconds=210, maxNumRetries=10, retryWaitTime=15, sshHostKeyVerificationStrategy=hudson.plugins.sshslaves.verifiers.ManuallyTrustedKeyVerificationStrategy, tcpNoDelay=true, trackCredentials=false}
@@ -103,7 +103,7 @@ java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
 
 ### After upgrade to ssh-slaves 1.28+ Failed to connect using SSH key credentials from files
 
-The ssh-slaves version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins master ~/.ssh", and "From a file on Jenkins master" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it fails or it is not possible. 
+The SSH Build Agents Plugin version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins master ~/.ssh", and "From a file on Jenkins master" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it fails or it is not possible.
 
 The issue is related to ssh-credentials and a deprecated type of credentials, the workaround it is to recreate the credential with the same ID using "Enter directly" for the key, probably if you only save again the credential it will be migrated.
 
@@ -161,7 +161,7 @@ If you experience a immmediate disconnection without any clear trace it could be
 
 ```
 Apr 17, 2019 2:16:23 PM INFO hudson.remoting.SynchronousCommandTransport$ReaderThread run
-When attempting to connect a slave using "Launch Agent via SSH" getting the following error.
+When attempting to connect an agent using "Launch Agent via SSH" getting the following error.
 
 [04/17/19 16:27:27] [SSH] Checking java version of /home/jenkins/jdk/bin/java
 [04/17/19 16:27:28] [SSH] /home/jenkins/jdk/bin/java -version returned 1.8.0_191.
@@ -177,7 +177,7 @@ Both error and output logs will be printed to /home/jenkins/remoting
 Remoting version: 3.27
 This is a Unix agent
 Evacuated stdout
-Slave JVM has not reported exit code. Is it still running?
+Agent JVM has not reported exit code. Is it still running?
 [04/17/19 16:27:33] Launch failed - cleaning up connection
 [04/17/19 16:27:33] [SSH] Connection closed.
 ERROR: Connection terminated
@@ -195,7 +195,7 @@ Caused: java.io.IOException: Unexpected termination of the channel
  at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:77)
 ```
 
-Try to connect the slave via "command on the master", if you see the following error, you would wipe out the workdir and the issue would be resolved.
+Try to connect the agent via "command on the master", if you see the following error, you would wipe out the workdir and the issue would be resolved.
 
 ```
 Unable to launch the agent for *************

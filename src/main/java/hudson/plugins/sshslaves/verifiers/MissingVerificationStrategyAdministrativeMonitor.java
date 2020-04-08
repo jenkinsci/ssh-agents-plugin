@@ -33,7 +33,7 @@ import hudson.slaves.SlaveComputer;
 import jenkins.model.Jenkins;
 
 /**
- * An administrative warning that checks all SSH slaves have a {@link SshHostKeyVerificationStrategy}
+ * An administrative warning that checks all SSH build agents have a {@link SshHostKeyVerificationStrategy}
  * set against them and prompts the admin to update the settings as needed.
  * @author Michael Clarke
  * @since 1.13
