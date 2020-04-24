@@ -188,6 +188,13 @@ Once on this screen you can add **SSH credentials**, either using a *Username & 
 
 ![](images/ssh-credentials-manage-detail.png)
 
+**NOTE** Not all PEM formats are supported, compare the header of your key with the following supported formats:
+* `-----BEGIN OPENSSH PRIVATE KEY-----`
+* `-----BEGIN RSA PRIVATE KEY-----`
+* `-----BEGIN EC PRIVATE KEY-----`
+* `-----BEGIN DSA PRIVATE KEY-----`
+In case your key format is not supported you can use `openssl` to convert it.
+
 Credential scope controls where the credentials can be used:
 
 * System scope is only available for the root Jenkins instance (in other words Jenkins can use it to connect build nodes, but the credentials are not available to build jobs)
