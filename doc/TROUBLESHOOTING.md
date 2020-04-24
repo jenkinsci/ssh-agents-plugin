@@ -4,7 +4,7 @@
 ### Common Pitfalls
 #### Login profile files
 When the _SSH Build Agents_ plugin connects to a agent, it does not run an interactive shell.
-Instead it does the equivalent of running `ssh agenthost command...` a few times, 
+Instead it does the equivalent of running `ssh agenthost command...` a few times,
 eventually running `ssh agenthost java -jar ...`. Exactly what happens on the agent as a result of this depends on the SSHD implementation, OpenSSH runs this with `bash -c command ...` (or whatever your login shell is.)
 
 This means some of your login profiles that set up your environment are not read by your shell. See [this post](http://stackoverflow.com/questions/216202/why-does-an-ssh-remote-command-get-fewer-environment-variables-then-when-run-man) for more details.
@@ -36,7 +36,7 @@ In order to try to replicate an issue reported in Jira, we need the following in
 * OpenSSH version you have installed on your SSH agents?
 * Did you check the SSHD service logs on your agent? try to increase the verbosity by setting `LogLevel VERBOSE` or `LogLevel DEBUG1` on your /etc/ssh/sshd_config file and see [Logging_and_Troubleshooting](https://en.wikibooks.org/wiki/OpenSSH/Logging_and_Troubleshooting)
 * Attach the agent connection log (http://jenkins.example.com/computer/NODENAME/log)
-* Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )? 
+* Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )?
 * Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
 * Attach the exception on Jenkins logs associated with the fail
 * Attach the exception on build logs associated with the fail
@@ -98,7 +98,7 @@ java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
 	at java.lang.Thread.run(Thread.java:748)
 [11/20/18 00:29:57] Launch failed - cleaning up connection
-[11/20/18 00:29:57] [SSH] Connection closed. 
+[11/20/18 00:29:57] [SSH] Connection closed.
 ```
 
 ### After upgrade to ssh-slaves 1.28+ Failed to connect using SSH key credentials from files
@@ -121,7 +121,7 @@ Authentication failed.
 [11/21/18 09:40:05] [SSH] Connection closed.
 ```
 
-Manage old data 
+Manage old data
 
 ```
 ConversionException: Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission ---- Debugging information ---- message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission cause-exception : com.thoughtworks.xstream.converters.reflection.ObjectAccessException cause-message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission class : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource required-type : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource converter-type : hudson.util.RobustReflectionConverter path : /com.cloudbees.plugins.credentials.SystemCredentialsProvider/domainCredentialsMap/entry/java.util.concurrent.CopyOnWriteArrayList/com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey/privateKeySource line number : 21 -------------------------------
@@ -205,3 +205,39 @@ java.io.IOException: Invalid encoded sequence encountered: 3D 3D 5B 4A 45 4E 4B 
 ### Use Remote root directory in a no C: drive
 
 The default configuration assumes the Remote root directory in `C:` drive, so the agent command launch will fail if the Remote root directory is in another drive. You can change the Remote root directory drive by using `Prefix Start Agent Command`, if you set `Prefix Start Agent Command` to `cd /d D:\ &&` you would change to the drive `D:` before to enter in the Remote root directory.
+
+
+### PEM problem: it is of unknown type
+
+When the Key format imported in credentials is not supported bu trilead-ssh2 library, you see the following error
+
+```
+ERROR: Server rejected the 1 private key(s) for jenkins  (credentialId:jenkins-test-ssh-key/method:publickey)
+ERROR: Failed to authenticate as jenkins  with credential=jenkins-test-ssh-key
+java.io.IOException: Publickey authentication failed.
+	at com.trilead.ssh2.auth.AuthenticationManager.authenticatePublicKey(AuthenticationManager.java:358)
+	at com.trilead.ssh2.Connection.authenticateWithPublicKey(Connection.java:472)
+	at com.cloudbees.jenkins.plugins.sshcredentials.impl.TrileadSSHPublicKeyAuthenticator.doAuthenticate(TrileadSSHPublicKeyAuthenticator.java:109)
+	at com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator.authenticate(SSHAuthenticator.java:436)
+	at com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator.authenticate(SSHAuthenticator.java:473)
+	at hudson.plugins.sshslaves.SSHLauncher.openConnection(SSHLauncher.java:863)
+	at hudson.plugins.sshslaves.SSHLauncher$1.call(SSHLauncher.java:435)
+	at hudson.plugins.sshslaves.SSHLauncher$1.call(SSHLauncher.java:422)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.io.IOException: PEM problem: it is of unknown type
+	at com.trilead.ssh2.crypto.PEMDecoder.decodeKeyPair(PEMDecoder.java:500)
+	at com.trilead.ssh2.auth.AuthenticationManager.authenticatePublicKey(AuthenticationManager.java:292)
+	... 11 more
+```
+
+Not all PEM formats are supported, compare the header of your key with the following supported formats:
+* `-----BEGIN OPENSSH PRIVATE KEY-----`
+* `-----BEGIN RSA PRIVATE KEY-----`
+* `-----BEGIN EC PRIVATE KEY-----`
+* `-----BEGIN DSA PRIVATE KEY-----`
+In case your key format is not supported you can use `openssl` to convert it.
+for example for an RSA key you can use `openssl rsa -in no_supported_key -out supported_key`
+then you can import `supported_key` file into credentials.
