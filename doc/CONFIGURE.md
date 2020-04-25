@@ -195,6 +195,17 @@ Once on this screen you can add **SSH credentials**, either using a *Username & 
 * `-----BEGIN DSA PRIVATE KEY-----`
 In case your key format is not supported you can use `openssl` or `ssh-keygen` to convert it to the SSH protocol version 2 format (RFC4716).
 
+These are examples of commands that generated supported keys.
+
+* `ssh-keygen -f pemkey -m PEM -t rsa -b 4096`
+* `ssh-keygen -f pemkey -m PEM -t ed25519`
+* `ssh-keygen -f pemkey -m PEM -t dsa -b 1024`
+* `ssh-keygen -f pemkey -m PEM -t ecdsa -b 521`
+* `ssh-keygen -f ssh2key -m RFC4716 -t rsa -b 4096`
+* `ssh-keygen -f pemkey -m RFC4716 -t ed25519`
+* `ssh-keygen -f pemkey -m RFC4716 -t dsa -b 1024`
+* `ssh-keygen -f pemkey -m RFC4716 -t ecdsa -b 521`
+
 Credential scope controls where the credentials can be used:
 
 * System scope is only available for the root Jenkins instance (in other words Jenkins can use it to connect build nodes, but the credentials are not available to build jobs)
