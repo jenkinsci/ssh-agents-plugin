@@ -193,7 +193,7 @@ Once on this screen you can add **SSH credentials**, either using a *Username & 
 * `-----BEGIN RSA PRIVATE KEY-----`
 * `-----BEGIN EC PRIVATE KEY-----`
 * `-----BEGIN DSA PRIVATE KEY-----`
-In case your key format is not supported you can use `openssl` to convert it.
+In case your key format is not supported you can use `openssl` or `ssh-keygen` to convert it to the SSH protocol version 2 format (RFC4716).
 
 Credential scope controls where the credentials can be used:
 
