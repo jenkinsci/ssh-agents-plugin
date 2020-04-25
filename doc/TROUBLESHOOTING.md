@@ -238,6 +238,6 @@ Not all PEM formats are supported, compare the header of your key with the follo
 * `-----BEGIN RSA PRIVATE KEY-----`
 * `-----BEGIN EC PRIVATE KEY-----`
 * `-----BEGIN DSA PRIVATE KEY-----`
-In case your key format is not supported you can use `openssl` to convert it.
+In case your key format is not supported you can use `openssl` or `ssh-keygen` to convert it to the SSH protocol version 2 format (RFC4716).
 for example for an RSA key you can use `openssl rsa -in no_supported_key -out supported_key`
 then you can import `supported_key` file into credentials.
