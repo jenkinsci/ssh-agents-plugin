@@ -202,9 +202,9 @@ These are examples of commands that generated supported keys.
 * `ssh-keygen -f pemkey -m PEM -t dsa -b 1024`
 * `ssh-keygen -f pemkey -m PEM -t ecdsa -b 521`
 * `ssh-keygen -f ssh2key -m RFC4716 -t rsa -b 4096`
-* `ssh-keygen -f pemkey -m RFC4716 -t ed25519`
-* `ssh-keygen -f pemkey -m RFC4716 -t dsa -b 1024`
-* `ssh-keygen -f pemkey -m RFC4716 -t ecdsa -b 521`
+* `ssh-keygen -f ssh2key -m RFC4716 -t ed25519`
+* `ssh-keygen -f ssh2key -m RFC4716 -t dsa -b 1024`
+* `ssh-keygen -f ssh2key -m RFC4716 -t ecdsa -b 521`
 
 Credential scope controls where the credentials can be used:
 
