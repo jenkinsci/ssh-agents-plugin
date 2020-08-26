@@ -88,6 +88,10 @@ public class JavaVersionChecker {
         StringWriter output = new StringWriter();   // record output from Java
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // if the command has a space, we need to quote it
+        if(javaCommand.contains(" ")) {
+            javaCommand = "\"" + javaCommand + "\"";
+        }
         connection.exec(javaCommand + " "+ jvmOptions + " -version",out);
         //TODO: Seems we need to retrieve the encoding from the connection destination
         BufferedReader r = new BufferedReader(new InputStreamReader(
