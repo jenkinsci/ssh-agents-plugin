@@ -24,7 +24,7 @@ To make this further confusing, native Windows APIs recognizes '\\' as the direc
 Simiarly, Cygwin-emulated POSIX APIs accept Windows paths, in addition to the Unix paths.
 This helpful "smart" behaviour sometimes makes it difficult for users to understand where the path translation is really happening.
 
-## SSH Build Agents Plguin and Cygwin SSH Daemon
+## SSH Build Agents Plugin and Cygwin SSH Daemon
 
 Cygwin comes with OpenSSH server, which works well with the SSH Build Agents.
 This is one of the recommended way of controlling Windows agents from Jenkins, if you don't mind the added effort of [sshd](http://www.noah.org/ssh/cygwin-sshd.html) :
