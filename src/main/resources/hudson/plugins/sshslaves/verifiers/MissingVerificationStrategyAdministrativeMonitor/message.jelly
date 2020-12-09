@@ -25,7 +25,10 @@ THE SOFTWARE.
 <j:jelly xmlns:j="jelly:core">
 
 <div class="alert alert-warning">
-    SSH Host Key Verifiers are not configured for all SSH agents on this Jenkins instance. This could leave these agents open to man-in-the-middle attacks. <a href="${rootURL}/computer/">Update your agent configuration</a> to resolve this.
+  <p>SSH Host Key Verifiers are not configured for all SSH agents on this Jenkins instance. This could leave these agents open to man-in-the-middle attacks. <a href="${rootURL}/computer/">Update your agent configuration</a> to resolve this.</p>
+  <p>Agents without SSH Host Key Verifiers:
+  ${it.getAgentNames()}
+  </p>
 </div>
 
 </j:jelly>

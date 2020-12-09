@@ -23,6 +23,8 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import java.util.ArrayList;
+import java.util.List;
 import hudson.Extension;
 import hudson.model.AdministrativeMonitor;
 import hudson.model.Computer;
@@ -40,24 +42,29 @@ import jenkins.model.Jenkins;
  */
 @Extension
 public class MissingVerificationStrategyAdministrativeMonitor extends AdministrativeMonitor {
+    private List<String> agentNames;
 
     @Override
     public boolean isActivated() {
+        agentNames = new ArrayList<>();
         for (Computer computer : Jenkins.get().getComputers()) {
             if (computer instanceof SlaveComputer) {
                 ComputerLauncher launcher = ((SlaveComputer) computer).getLauncher();
 
                 if (launcher instanceof SSHLauncher && null == ((SSHLauncher) launcher).getSshHostKeyVerificationStrategy()) {
-                    return true;
+                    agentNames.add(computer.getDisplayName());
                 }
             }
         }
-
-        return false;
+        return agentNames.size() > 0;
     }
 
     @Override
     public String getDisplayName() {
         return Messages.MissingVerificationStrategyAdministrativeMonitor_DisplayName();
+    }
+
+    public String getAgentNames() {
+      return agentNames != null ? agentNames.toString() : "";
     }
 }
