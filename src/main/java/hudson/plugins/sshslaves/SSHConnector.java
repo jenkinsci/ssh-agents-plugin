@@ -52,6 +52,7 @@ import hudson.model.Computer;
 import hudson.security.AccessControlled;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * {@link ComputerConnector} for {@link SSHLauncher}.
@@ -275,7 +276,7 @@ public class SSHConnector extends ComputerConnector {
     public String getWorkDir() {
         return workDir;
     }
-  
+
     public Boolean getTcpNoDelay() {
         return tcpNoDelay != null ? tcpNoDelay : true;
     }
@@ -287,6 +288,7 @@ public class SSHConnector extends ComputerConnector {
             return Messages.SSHLauncher_DescriptorDisplayName();
         }
 
+        @RequirePOST
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String credentialsId) {
             AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.get());
             if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
@@ -304,6 +306,7 @@ public class SSHConnector extends ComputerConnector {
                     .includeCurrentValue(credentialsId);
         }
 
+        @RequirePOST
         public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
                                                    @QueryParameter String value) {
             AccessControlled _context =
@@ -321,6 +324,7 @@ public class SSHConnector extends ComputerConnector {
             return FormValidation.error(Messages.SSHLauncher_SelectedCredentialsMissing());
         }
 
+        @RequirePOST
         public FormValidation doCheckLaunchTimeoutSeconds(String value) {
             if (StringUtils.isBlank(value)) return FormValidation.ok();
             try {

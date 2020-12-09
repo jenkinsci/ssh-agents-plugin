@@ -77,6 +77,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -327,7 +328,7 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             // only ever want from the system
             // lookup every time so that we always have the latest
-            StandardUsernameCredentials credentials = credentialsId != null ? 
+            StandardUsernameCredentials credentials = credentialsId != null ?
                     SSHLauncher.lookupSystemCredentials(credentialsId) : null;
             if (credentials != null) {
                 this.credentials = credentials;
@@ -521,7 +522,7 @@ public class SSHLauncher extends ComputerLauncher {
      * Called to terminate the SSH connection. Used liberally when we back out from an error.
      */
     private void cleanupConnection(TaskListener listener) {
-        // we might be called multiple times from multiple finally/catch block, 
+        // we might be called multiple times from multiple finally/catch block,
         Connection _connection = connection;
         if (_connection != null) {
             Computer.threadPoolForRemoting.submit(_connection::close);
@@ -537,7 +538,7 @@ public class SSHLauncher extends ComputerLauncher {
     private EnvVars getEnvVars(SlaveComputer computer) {
         final EnvVars global = getEnvVars(Jenkins.get());
 
-        final Node node = computer.getNode();    
+        final Node node = computer.getNode();
         final EnvVars local = node != null ? getEnvVars(node) : null;
 
         if (global != null) {
@@ -586,7 +587,7 @@ public class SSHLauncher extends ComputerLauncher {
         } catch (UnsupportedEncodingException ex) { // Should not happen
             throw new IOException("Default encoding is unsupported", ex);
         }
-        
+
         if (s.length()!=0) {
             listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
             listener.getLogger().println(s);
@@ -1200,6 +1201,7 @@ public class SSHLauncher extends ComputerLauncher {
             return n;
         }
 
+        @RequirePOST
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context,
                                                      @QueryParameter String host,
                                                      @QueryParameter String port,
@@ -1227,6 +1229,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
 
+        @RequirePOST
         public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
                                                    @AncestorInPath AccessControlled _context,
                                                    @QueryParameter String host,
@@ -1254,6 +1257,7 @@ public class SSHLauncher extends ComputerLauncher {
             return FormValidation.error(Messages.SSHLauncher_SelectedCredentialsMissing());
         }
 
+        @RequirePOST
         public FormValidation doCheckPort(@QueryParameter String value) {
             if (StringUtils.isEmpty(value)) {
                 return FormValidation.error(Messages.SSHLauncher_PortNotSpecified());
@@ -1272,6 +1276,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
         }
 
+        @RequirePOST
         public FormValidation doCheckHost(@QueryParameter String value) {
             FormValidation ret = FormValidation.ok();
             if (StringUtils.isEmpty(value)) {
