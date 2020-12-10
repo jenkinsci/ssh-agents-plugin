@@ -88,7 +88,7 @@ public class JavaVersionChecker {
         StringWriter output = new StringWriter();   // record output from Java
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        connection.exec("\"" + javaCommand + "\" "+ jvmOptions + " -version",out);
+        connection.exec( javaCommand + " "+ jvmOptions + " -version",out);
         //TODO: Seems we need to retrieve the encoding from the connection destination
         BufferedReader r = new BufferedReader(new InputStreamReader(
                 new ByteArrayInputStream(out.toByteArray()), Charset.defaultCharset()));
