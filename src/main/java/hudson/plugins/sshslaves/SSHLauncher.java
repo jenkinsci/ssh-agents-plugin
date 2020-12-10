@@ -1284,6 +1284,18 @@ public class SSHLauncher extends ComputerLauncher {
             }
             return ret;
         }
+
+        @RequirePOST
+        public FormValidation doCheckJavaPath(@QueryParameter String value) {
+            FormValidation ret = FormValidation.ok();
+            if (value != null && value.contains(" ")
+                && !(value.startsWith("\"") && value.endsWith("\""))
+                && !(value.startsWith("'") && value.endsWith("'"))
+            ) {
+                return FormValidation.warning(Messages.SSHLauncher_JavaPathHasWhiteSpaces());
+            }
+            return ret;
+        }
     }
 
     private static final Logger LOGGER = Logger.getLogger(SSHLauncher.class.getName());
