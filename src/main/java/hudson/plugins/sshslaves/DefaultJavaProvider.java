@@ -57,6 +57,7 @@ import jenkins.model.Jenkins;
  *
  */
 @Extension
+@Deprecated
 public class DefaultJavaProvider extends JavaProvider {
 
     public static final String JAVA_HOME = "JAVA_HOME";
