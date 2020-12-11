@@ -17,6 +17,7 @@ import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Base class to test connections to a remote SSH Agent
@@ -45,7 +46,7 @@ public class AgentConnectionBase {
   protected boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
     boolean ret = false;
     int count = 0;
-    while (count < 10) {
+    while (count < 30) {
       Thread.sleep(1000);
       String log = node.toComputer().getLog();
       ret = log.contains("Agent successfully connected and online");
@@ -56,10 +57,11 @@ public class AgentConnectionBase {
 
   protected void waitForAgentConnected(Node node) throws InterruptedException {
     int count = 0;
-    while (!node.toComputer().isOnline() && count < 120) {
+    while (!node.toComputer().isOnline() && count < 150) {
       Thread.sleep(1000);
       count++;
     }
+    assertTrue(node.toComputer().isOnline());
   }
 
   protected Node createPermanentAgent(String name, String host, int sshPort, String keyResourcePath, String passphrase)
