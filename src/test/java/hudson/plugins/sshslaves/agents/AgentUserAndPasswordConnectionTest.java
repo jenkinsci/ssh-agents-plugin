@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
  */
 @Category({ AgentSSHTest.class })
 public class AgentUserAndPasswordConnectionTest extends AgentConnectionBase {
-  public static final String SSH_AGENT_NAME = "ssh-agent-AgentUbuntu2004RSAConnectionTestdsa";
+  public static final String SSH_AGENT_NAME = "ssh-agent-dsa";
   public static final String SSH_KEY_PATH = "ssh/dsakey";
   public static final String SSH_KEY_PUB_PATH = "ssh/dsakey.pub";
 
