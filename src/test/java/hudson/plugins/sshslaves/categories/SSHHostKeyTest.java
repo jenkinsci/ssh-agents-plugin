@@ -1,10 +1,10 @@
-package hudson.plugins.sshslaves.agents;
+package hudson.plugins.sshslaves.categories;
 
 /**
  * Category for the SSH Agent tests
  *
  * @author Kuisathaverat
  */
-public interface AgentSSHTest {
+public interface SSHHostKeyTest {
   /* category marker */
 }

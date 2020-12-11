@@ -8,6 +8,8 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import hudson.model.Descriptor;
 import hudson.model.Node;
+import hudson.plugins.sshslaves.categories.AgentSSHTest;
+import hudson.plugins.sshslaves.categories.SSHKexTest;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -15,7 +17,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Kuisathaverat
  */
-@Category({ AgentSSHTest.class,SSHKexTest.class})
+@Category({ AgentSSHTest.class, SSHKexTest.class})
 public class AgentECDHSha2Nistp256ConnectionTest extends AgentConnectionBase {
   public static final String SSH_AGENT_NAME = "ssh-agent-ecdh-sha2-nistp256";
   public static final String SSH_KEY_PATH = "ssh/rsa-key";

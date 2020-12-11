@@ -9,6 +9,8 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import hudson.model.Descriptor;
 import hudson.model.Node;
+import hudson.plugins.sshslaves.categories.AgentSSHTest;
+import hudson.plugins.sshslaves.categories.SSHKeyAuthenticationTest;
 import static org.junit.Assert.assertTrue;
 
 /**

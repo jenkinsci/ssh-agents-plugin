@@ -4,14 +4,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.SystemUtils;
-import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Rule;
 import org.jvnet.hudson.test.JenkinsRule;
 import hudson.model.Descriptor;
 import hudson.model.Node;
 import hudson.plugins.sshslaves.SSHLauncher;
+import hudson.plugins.sshslaves.rules.CheckIsDockerAvailable;
+import hudson.plugins.sshslaves.rules.CheckIsLinuxOrMac;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import hudson.slaves.DumbSlave;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
@@ -35,12 +34,13 @@ public class AgentConnectionBase {
   public static final String AGENTS_RESOURCES_PATH = "/hudson/plugins/sshslaves/agents/";
 
   @Rule
-  public JenkinsRule j = new JenkinsRule();
+  public CheckIsLinuxOrMac isLinuxOrMac = new CheckIsLinuxOrMac();
 
-  @Before
-  public void isLinuxOrMac(){
-    Assume.assumeTrue(SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC);
-  }
+  @Rule
+  public CheckIsDockerAvailable isDockerAvailable = new CheckIsDockerAvailable();
+
+  @Rule
+  public JenkinsRule j = new JenkinsRule();
 
   protected boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
     boolean ret = false;
