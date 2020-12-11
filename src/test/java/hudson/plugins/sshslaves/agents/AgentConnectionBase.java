@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Rule;
 import org.jvnet.hudson.test.JenkinsRule;
 import hudson.model.Descriptor;
@@ -33,6 +36,11 @@ public class AgentConnectionBase {
 
   @Rule
   public JenkinsRule j = new JenkinsRule();
+
+  @Before
+  public void isLinuxOrMac(){
+    Assume.assumeTrue(SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC);
+  }
 
   protected boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
     boolean ret = false;
