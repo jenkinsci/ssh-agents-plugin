@@ -406,9 +406,14 @@ public class SSHLauncherTest {
   public void retryTest() throws IOException, InterruptedException, Descriptor.FormException {
     DumbSlave agent = getPermanentAgentHostNotExist();
     j.jenkins.addNode(agent);
-    Thread.sleep(25000);
-    String log = agent.getComputer().getLog();
-
+    String log = "";
+    for(int i=0; i<60; i++){
+      Thread.sleep(1000);
+      log = agent.getComputer().getLog();
+      if(log.contains("There are 1 more retries left.")){
+        break;
+      }
+    }
     assertTrue(log.contains("There are 3 more retries left."));
     assertTrue(log.contains("There are 2 more retries left."));
     assertTrue(log.contains("There are 1 more retries left."));
