@@ -4,7 +4,7 @@
 ### Common Pitfalls
 #### Login profile files
 When the _SSH Build Agents_ plugin connects to a agent, it does not run an interactive shell.
-Instead it does the equivalent of running `ssh agenthost command...` a few times, 
+Instead it does the equivalent of running `ssh agenthost command...` a few times,
 eventually running `ssh agenthost java -jar ...`. Exactly what happens on the agent as a result of this depends on the SSHD implementation, OpenSSH runs this with `bash -c command ...` (or whatever your login shell is.)
 
 This means some of your login profiles that set up your environment are not read by your shell. See [this post](http://stackoverflow.com/questions/216202/why-does-an-ssh-remote-command-get-fewer-environment-variables-then-when-run-man) for more details.
@@ -34,9 +34,9 @@ In order to try to replicate an issue reported in Jira, we need the following in
 * Jenkins core version
 * OS you use on your SSH agents
 * OpenSSH version you have installed on your SSH agents?
-* Did you check the SSHD service logs on your agent? try to increase the verbosity by setting `LogLevel VERBOSE` or `LogLevel DEBUG1` on your /etc/ssh/sshd_config file and see [Logging_and_Troubleshooting](https://en.wikibooks.org/wiki/OpenSSH/Logging_and_Troubleshooting)
+* Did you check the SSHD service logs on your agent? see [Enable verbose SSH Server log output](#enable-verbose-ssh-server-log-output)
 * Attach the agent connection log (http://jenkins.example.com/computer/NODENAME/log)
-* Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )? 
+* Attach the logs inside the remoting folder (see [remoting work directory](https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory) )?
 * Could you attach the agent configuration (http://jenkins.example.com/computer/NODENAME/config.xml) file?
 * Attach the exception on Jenkins logs associated with the fail
 * Attach the exception on build logs associated with the fail
@@ -50,6 +50,43 @@ In order to try to replicate an issue reported in Jira, we need the following in
 
 In some cases the agent appears as connected but is not, and the disconnect button is not present, in those cases you
 can force the disconnection of the agent by using an URL like this one `http://jenkins.example.com/jenkins/computer/NODE_NAME/doDisconnect`
+
+### Enable SSH keepAlive traffic
+
+One common issue is that agents disconnect after an inactivity period of time, if that disconnections happens because there is no traffic
+between the Jenkins instance and the Agents, you can fix the issue by enabling the keepAlive setting in the SSH service or in the stack of your OS.
+
+To configure keepAlive traffic in the SSH service in the Agent you have to options:
+ * Change the SSH Server config by setting ClientAliveInterval or TCPKeepAlive on the SSH server (/etc/ssh/sshd_config) [see sshd_config](https://www.freebsd.org/cgi/man.cgi?sshd_config)
+ * Change the SSH client config by setting ServerAliveInterval or TCPKeepAlive options for the user connection (/etc/ssh/ssh_config or ~/.ssh/ssh_config) [see ssh_config](https://www.freebsd.org/cgi/man.cgi?ssh_config)
+
+To tune your TCP stack to sent a keepAlive package every 2 minutes or so:
+ * Linux see [Using TCP keepalive under Linux](https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html)
+ ```
+    sysctl -w net.ipv4.tcp_keepalive_time=120
+    sysctl -w net.ipv4.tcp_keepalive_intvl=30
+    sysctl -w net.ipv4.tcp_keepalive_probes=8
+    sysctl -w net.ipv4.tcp_fin_timeout=30
+ ```
+ * Windows see [TCP/IP and NetBT configuration parameters for Windows 2000 or Windows NT](https://web.archive.org/web/20140904162603/http://support.microsoft.com/kb/120642/EN-US)
+ ```
+    KeepAliveInterval = 30
+    KeepAliveTime = 120
+    TcpMaxDataRetransmissions = 8
+    TcpTimedWaitDelay=30
+ ```
+ * macOS see [how-to-configure-tcp-keepalive-under-mac-os-x](https://stackoverflow.com/questions/15860127/how-to-configure-tcp-keepalive-under-mac-os-x/23900051)
+ ```
+    net.inet.tcp.keepidle=120000
+    net.inet.tcp.keepintvl=30000
+    net.inet.tcp.keepcnt=8
+ ```
+
+### Enable verbose SSH Server log output
+
+Many times the only way to know what it is really happening in the SSH connection is to enable verbose logs in the SSH Server.
+to increase the verbosity by setting `LogLevel VERBOSE` or `LogLevel DEBUG1` on your /etc/ssh/sshd_config file
+and see [Logging_and_Troubleshooting](https://en.wikibooks.org/wiki/OpenSSH/Logging_and_Troubleshooting)
 
 ### Threads stuck at CredentialsProvider.trackAll
 
@@ -98,7 +135,7 @@ java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
 	at java.lang.Thread.run(Thread.java:748)
 [11/20/18 00:29:57] Launch failed - cleaning up connection
-[11/20/18 00:29:57] [SSH] Connection closed. 
+[11/20/18 00:29:57] [SSH] Connection closed.
 ```
 
 ### After upgrade to ssh-slaves 1.28+ Failed to connect using SSH key credentials from files
@@ -121,7 +158,7 @@ Authentication failed.
 [11/21/18 09:40:05] [SSH] Connection closed.
 ```
 
-Manage old data 
+Manage old data
 
 ```
 ConversionException: Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission ---- Debugging information ---- message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission cause-exception : com.thoughtworks.xstream.converters.reflection.ObjectAccessException cause-message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission class : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource required-type : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource converter-type : hudson.util.RobustReflectionConverter path : /com.cloudbees.plugins.credentials.SystemCredentialsProvider/domainCredentialsMap/entry/java.util.concurrent.CopyOnWriteArrayList/com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey/privateKeySource line number : 21 -------------------------------
