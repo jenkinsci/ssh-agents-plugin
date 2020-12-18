@@ -45,8 +45,8 @@ public class AgentConnectionBase {
   @Rule
   public JenkinsRule j = new JenkinsRule();
 
-  @Rule
-  public Retry retry = new Retry(3);
+//  @Rule
+//  public Retry retry = new Retry(3);
 
   protected boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
     boolean ret = false;
