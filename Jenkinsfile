@@ -3,7 +3,10 @@
 def buildConfiguration = [
 //  [platform: 'linux',   jdk: '8'],
 //  [platform: 'windows', jdk: '8'],
-  [platform: 'linux',   jdk: '11'],
+  [platform: 'linux',   jdk: '11',
+    checkstyle: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]],
+    pmd: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
+  ],
 ]
 
 buildPlugin(configurations: buildConfiguration, timeout: 90)
