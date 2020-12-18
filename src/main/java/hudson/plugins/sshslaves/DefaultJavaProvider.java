@@ -91,7 +91,7 @@ public class DefaultJavaProvider extends JavaProvider {
                 if(property instanceof EnvironmentVariablesNodeProperty){
                     EnvVars env = ((EnvironmentVariablesNodeProperty) property).getEnvVars();
                     if (env != null && env.containsKey(JAVA_HOME)) {
-                        ret.add(env.get(JAVA_HOME) + BIN_JAVA);
+                        ret.add(quoteIfHasWhiteSpaces(env.get(JAVA_HOME) + BIN_JAVA));
                     }
                 }
             }
@@ -107,12 +107,16 @@ public class DefaultJavaProvider extends JavaProvider {
                 if (property instanceof ToolLocationNodeProperty) {
                     for (ToolLocation tool : ((ToolLocationNodeProperty) property).getLocations()) {
                         if (tool.getType() == jdk) {
-                            ret.add(tool.getHome() + BIN_JAVA);
+                            ret.add(quoteIfHasWhiteSpaces(tool.getHome() + BIN_JAVA));
                         }
                     }
                 }
             }
         }
         return ret;
+    }
+
+    private String quoteIfHasWhiteSpaces(String path){
+      return path.contains(" ") ? "\"" + path + "\"" : path;
     }
 }
