@@ -23,38 +23,6 @@
  */
 package hudson.plugins.sshslaves;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
-import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
-import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import hudson.model.Descriptor;
-import hudson.model.Fingerprint;
-import hudson.model.JDK;
-import hudson.model.Slave;
-import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
-import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
-import hudson.slaves.DumbSlave;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
-import hudson.slaves.NodeProperty;
-import hudson.slaves.SlaveComputer;
-import hudson.tools.ToolLocationNodeProperty;
-import hudson.util.VersionNumber;
-import jenkins.model.Jenkins;
-import org.apache.commons.io.IOUtils;
-import org.jenkinsci.test.acceptance.docker.DockerRule;
-import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.BuildWatcher;
-import org.jvnet.hudson.test.Issue;
-import org.jvnet.hudson.test.JenkinsRule;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -66,7 +34,38 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import org.apache.commons.io.IOUtils;
+import org.jenkinsci.test.acceptance.docker.DockerRule;
+import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.BuildWatcher;
+import org.jvnet.hudson.test.Issue;
+import org.jvnet.hudson.test.JenkinsRule;
+import hudson.model.Descriptor;
+import hudson.model.Fingerprint;
+import hudson.model.JDK;
+import hudson.model.Slave;
+import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
+import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
+import hudson.slaves.DumbSlave;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.NodeProperty;
+import hudson.slaves.SlaveComputer;
+import hudson.tools.ToolLocationNodeProperty;
+import hudson.util.FormValidation;
+import hudson.util.VersionNumber;
+import jenkins.model.Jenkins;
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import static hudson.plugins.sshslaves.SSHLauncher.JAR_CACHE_DIR;
 import static hudson.plugins.sshslaves.SSHLauncher.JAR_CACHE_PARAM;
 import static hudson.plugins.sshslaves.SSHLauncher.WORK_DIR_PARAM;
@@ -189,7 +188,6 @@ public class SSHLauncherTest {
     checkRoundTrip("localhost");
   }
 
-
   @Test
   public void fillCredentials() {
     SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(
@@ -206,6 +204,35 @@ public class SSHLauncherTest {
     assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "22", "dummyCredentialId").size());
     assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "forty two", "does-not-exist").size());
     assertEquals(1, desc.doFillCredentialsIdItems(j.jenkins, "", "", "does-not-exist").size());
+  }
+
+  @Test
+  public void checkJavaPathWhiteSpaces() {
+    SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
+    assertEquals(FormValidation.ok(), desc.doCheckJavaPath("/usr/lib/jdk/bin/java"));
+    assertEquals(FormValidation.ok(), desc.doCheckJavaPath("\"/usr/lib/jdk/bin/java\""));
+    assertEquals(FormValidation.ok(), desc.doCheckJavaPath("'/usr/lib/jdk/bin/java'"));
+    assertEquals(FormValidation.ok(), desc.doCheckJavaPath("\"/usr/lib/jdk 11/bin/java\""));
+    assertEquals(FormValidation.ok(), desc.doCheckJavaPath("'/usr/lib/jdk 11/bin/java'"));
+    assertEquals(FormValidation.Kind.WARNING, desc.doCheckJavaPath("/usr/lib/jdk 11/bin/java").kind);
+  }
+
+  @Test
+  public void checkHost() {
+    SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
+    assertEquals(FormValidation.ok(), desc.doCheckHost("hostname"));
+    assertEquals(FormValidation.Kind.ERROR, desc.doCheckHost("").kind);
+    assertEquals(FormValidation.Kind.ERROR, desc.doCheckHost(null).kind);
+  }
+
+  @Test
+  public void checkPort() {
+    SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
+    assertEquals(FormValidation.ok(), desc.doCheckPort("22"));
+    assertEquals(FormValidation.Kind.ERROR, desc.doCheckPort("").kind);
+    assertEquals(FormValidation.Kind.ERROR, desc.doCheckPort(null).kind);
+    assertEquals(FormValidation.Kind.ERROR, desc.doCheckPort("-1").kind);
+    assertEquals(FormValidation.Kind.ERROR, desc.doCheckPort("65536").kind);
   }
 
   @Test
