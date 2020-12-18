@@ -44,10 +44,12 @@ import hudson.model.TaskListener;
 import hudson.slaves.SlaveComputer;
 import hudson.util.VersionNumber;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.WARNING;
 
 /**
  * class to check if the version of java installed on the agent is a supported one.
  */
+@Deprecated
 public class JavaVersionChecker {
     private static final Logger LOGGER = Logger.getLogger(JavaVersionChecker.class.getName());
 
@@ -74,6 +76,11 @@ public class JavaVersionChecker {
                 try {
                     return checkJavaVersion(listener, javaCommand);
                 } catch (IOException e) {
+                    if(!"java".equalsIgnoreCase(javaCommand)){
+                      LOGGER.log(WARNING, "Java is not in the PATH nor configured with the javaPath setting,"
+                                          + " Jenkins will try to guess where is Java,"
+                                          + "this guess will be remove in the future.");
+                    }
                     LOGGER.log(FINE, "Failed to check the Java version",e);
                     // try the next one
                 }
