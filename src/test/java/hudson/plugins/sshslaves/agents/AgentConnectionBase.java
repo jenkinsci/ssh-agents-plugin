@@ -3,10 +3,12 @@ package hudson.plugins.sshslaves.agents;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import hudson.plugins.sshslaves.rules.Retry;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 import hudson.model.Descriptor;
 import hudson.model.Node;
@@ -45,8 +47,11 @@ public class AgentConnectionBase {
   @Rule
   public JenkinsRule j = new JenkinsRule();
 
-//  @Rule
-//  public Retry retry = new Retry(3);
+  @Rule
+  public Retry retry = new Retry(3);
+
+  @Rule
+  public Timeout globalTimeout= new Timeout(4, TimeUnit.MINUTES);
 
   protected boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
     boolean ret = false;
