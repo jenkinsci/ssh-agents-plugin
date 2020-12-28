@@ -82,7 +82,7 @@ public class DefaultJavaProvider extends JavaProvider {
                                    "/usr/java/latest/bin/java",
                                    "/usr/local/bin/java",
                                    "/usr/local/java/bin/java",
-                                   "/opt/java/openjdk"));
+                                   "/opt/java/openjdk/bin/java"));
         return javas;
     }
 
