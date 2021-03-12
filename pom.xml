@@ -27,9 +27,9 @@
   <properties>
     <revision>1.31.6</revision>
     <changelist>-SNAPSHOT</changelist>
-    <jenkins.version>2.222.4</jenkins.version>
+    <jenkins.version>2.282</jenkins.version>
     <java.level>8</java.level>
-    <configuration-as-code.version>1.46</configuration-as-code.version>
+    <hpi.compatibleSinceVersion>1.31.0</hpi.compatibleSinceVersion>
   </properties>
 
   <developers>
@@ -102,8 +102,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.204.x</artifactId>
-        <version>18</version>
+        <artifactId>bom-2.277.x</artifactId>
+        <version>26</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -118,17 +118,20 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>trilead-api</artifactId>
-      <version>1.0.13</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>2.3.14</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>ssh-credentials</artifactId>
-      <version>1.18.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.modules</groupId>
+      <artifactId>sshd</artifactId>
+      <version>3.0.3</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.test</groupId>
@@ -145,27 +148,12 @@
     <dependency>
       <groupId>io.jenkins</groupId>
       <artifactId>configuration-as-code</artifactId>
-      <version>${configuration-as-code.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.jenkins.configuration-as-code</groupId>
       <artifactId>test-harness</artifactId>
-      <version>${configuration-as-code.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.jenkins-ci.tools</groupId>
-        <artifactId>maven-hpi-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <minimumJavaVersion>1.8</minimumJavaVersion>
-          <compatibleSinceVersion>1.31.0</compatibleSinceVersion>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>
