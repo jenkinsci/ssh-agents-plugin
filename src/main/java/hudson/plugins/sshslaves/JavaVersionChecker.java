@@ -79,7 +79,7 @@ public class JavaVersionChecker {
                     if(!"java".equalsIgnoreCase(javaCommand)){
                       LOGGER.log(WARNING, "Java is not in the PATH nor configured with the javaPath setting,"
                                           + " Jenkins will try to guess where is Java,"
-                                          + "this guess will be remove in the future.");
+                                          + " this guess will be removed in the future.");
                     }
                     LOGGER.log(FINE, "Failed to check the Java version",e);
                     // try the next one
