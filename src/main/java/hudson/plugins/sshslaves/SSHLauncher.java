@@ -34,7 +34,6 @@ import com.google.common.io.ByteStreams;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
-import com.trilead.ssh2.SFTPv3Client;
 import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import com.trilead.ssh2.Session;
@@ -101,11 +100,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static hudson.Util.fixEmpty;
+import static java.util.logging.Level.WARNING;
 
 /**
  * A computer launcher that tries to start a linux agent by opening an SSH connection and trying to find java.
@@ -448,6 +447,7 @@ public class SSHLauncher extends ComputerLauncher {
                         if (StringUtils.isNotBlank(javaPath)) {
                             java = expandExpression(computer, javaPath);
                         } else {
+                          checkJavaIsInPath(listener);
                           //FIXME deprecated on 2020-12-10, it will removed after 2021-09-01
                             JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
                                     connection);
@@ -519,7 +519,29 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-    /**
+  /**
+   * try to run the Java command in the PATH ad report its version.
+   * @param listener lister to print the output of the java command.
+   */
+  private void checkJavaIsInPath(TaskListener listener) {
+    String msg = "Java is not in the PATH nor configured with the javaPath setting,"
+                 + " Jenkins will try to guess where is Java,"
+                 + "this guess will be remove in the future. :"
+                 + getDescriptor().getDisplayName();
+    int ret = 0;
+    try {
+      listener.getLogger().println("Checking Java version in the PATH");
+      ret = connection.exec("java -version", listener.getLogger());
+    } catch (Exception e){
+      ret = -1;
+    }
+    if(ret != 0){
+      LOGGER.log(WARNING, msg);
+      listener.getLogger().println(msg);
+    }
+  }
+
+  /**
      * Called to terminate the SSH connection. Used liberally when we back out from an error.
      */
     private void cleanupConnection(TaskListener listener) {
