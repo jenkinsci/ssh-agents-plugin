@@ -6,4 +6,4 @@ def buildConfiguration = [
   [platform: 'linux',   jdk: '11'],
 ]
 
-buildPlugin(configurations: buildConfiguration)
+buildPlugin(configurations: buildConfiguration, timeout: 90)

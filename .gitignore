@@ -8,3 +8,4 @@ target
 .settings
 work
 bin
+.DS_Store
