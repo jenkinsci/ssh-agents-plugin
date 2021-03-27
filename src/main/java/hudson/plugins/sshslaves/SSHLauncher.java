@@ -525,7 +525,7 @@ public class SSHLauncher extends ComputerLauncher {
    */
   private void checkJavaIsInPath(TaskListener listener) {
     String msg = "Java is not in the PATH nor configured with the javaPath setting,"
-                 + " Jenkins will try to guess where is Java,"
+                 + " Jenkins will try to guess where is Java, "
                  + "this guess will be removed in the future. :"
                  + getDescriptor().getDisplayName();
     int ret = 0;
