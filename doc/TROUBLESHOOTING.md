@@ -140,7 +140,7 @@ java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
 
 ### After upgrade to ssh-slaves 1.28+ Failed to connect using SSH key credentials from files
 
-The SSH Build Agents Plugin version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins master ~/.ssh", and "From a file on Jenkins master" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it fails or it is not possible.
+The SSH Build Agents Plugin version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins controller ~/.ssh", and "From a file on Jenkins controller" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it fails or it is not possible.
 
 The issue is related to ssh-credentials and a deprecated type of credentials, the workaround it is to recreate the credential with the same ID using "Enter directly" for the key, probably if you only save again the credential it will be migrated.
 
@@ -166,7 +166,7 @@ ConversionException: Could not call com.cloudbees.jenkins.plugins.sshcredentials
 
 ### Selenium Grid agents failed to connect
 
-On recent versions of Jenkins Core, [Agent - Master Access Control](https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control) was introduced it seems causes an issue with Selenium Grid Agents, to fix this problem you have to disable: "Manage Jenkins" > "Configure Global Security", and check "Enable Agent → Master Access Control" (as it's said in Jenkin documentation)
+On recent versions of Jenkins Core, [Agent - Controller Access Control](https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control) was introduced it seems causes an issue with Selenium Grid Agents, to fix this problem you have to disable: "Manage Jenkins" > "Configure Global Security", and check "Enable Agent → Controller Access Control" (as it's said in Jenkin documentation)
 https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control
 
 "On the other hand, if all your agents are trusted to the same degree as your master, then it is safe to leave this subsystem off"
