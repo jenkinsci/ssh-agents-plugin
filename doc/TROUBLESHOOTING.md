@@ -164,34 +164,6 @@ Manage old data
 ConversionException: Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission ---- Debugging information ---- message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission cause-exception : com.thoughtworks.xstream.converters.reflection.ObjectAccessException cause-message : Could not call com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource.readResolve() : anonymous is missing the Overall/RunScripts permission class : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource required-type : com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource converter-type : hudson.util.RobustReflectionConverter path : /com.cloudbees.plugins.credentials.SystemCredentialsProvider/domainCredentialsMap/entry/java.util.concurrent.CopyOnWriteArrayList/com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey/privateKeySource line number : 21 -------------------------------
 ```
 
-### Selenium Grid agents failed to connect
-
-On recent versions of Jenkins Core, [Agent - Controller Access Control](https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control) was introduced it seems causes an issue with Selenium Grid Agents, to fix this problem you have to disable: "Manage Jenkins" > "Configure Global Security", and check "Enable Agent → Controller Access Control" (as it's said in Jenkin documentation)
-https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control
-
-"On the other hand, if all your agents are trusted to the same degree as your master, then it is safe to leave this subsystem off"
-
-```
-Apr 03, 2019 9:46:01 AM org.jenkinsci.remoting.util.AnonymousClassWarnings warn
-
-WARNING: Attempt to (de-)serialize anonymous class hudson.plugins.selenium.configuration.DirectJsonInputConfiguration$1; see: https://jenkins.io/redirect/serialization-of-anonymous-classes/
-Apr 03, 2019 9:46:06 AM hudson.remoting.SynchronousCommandTransport$ReaderThread run
-INFO: I/O error in channel channel
-
-java.io.IOException: Unexpected termination of the channel
-        at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:77)
-Caused by: java.io.EOFException
-        at java.io.ObjectInputStream$PeekInputStream.readFully(ObjectInputStream.java:2681)
-        at java.io.ObjectInputStream$BlockDataInputStream.readShort(ObjectInputStream.java:3156)
-        at java.io.ObjectInputStream.readStreamHeader(ObjectInputStream.java:862)
-        at java.io.ObjectInputStream.<init>(ObjectInputStream.java:358)
-        at hudson.remoting.ObjectInputStreamEx.<init>(ObjectInputStreamEx.java:49)
-        at hudson.remoting.Command.readFrom(Command.java:140)
-        at hudson.remoting.Command.readFrom(Command.java:126)
-        at hudson.remoting.AbstractSynchronousByteArrayCommandTransport.read(AbstractSynchronousByteArrayCommandTransport.java:36)
-        at hudson.remoting.SynchronousCommandTransport$ReaderThread.run(SynchronousCommandTransport.java:63)
-```
-
 ### Corrupt agent workdir folder
 
 If you experience a immmediate disconnection without any clear trace it could be related with a corrupt file in the agent workdir folder.
