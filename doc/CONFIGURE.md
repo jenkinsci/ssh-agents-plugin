@@ -14,7 +14,7 @@ This means that **you have to install a JDK/JRE 8 on your agent** in order to ru
 
 The agent should have **enough memory** to run the remoting process and the builds. 
 
-**The agent needs to be reachable from the controller**,
+**The agent needs to be reachable from the Jenkins controller**,
 You have to be ensure that your Jenkins instance can connect through SSH port to your agent; you can check it from the command line.
 You will have to supply an account that can log in on the target machine. No root privileges are required.
 
