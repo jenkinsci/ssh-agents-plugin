@@ -81,7 +81,7 @@ public class JavaVersionChecker {
                 }
             }
         }
-        throw new IOException("Java not found on " + computer + ". Install a Java 8 version on the Agent.");
+        throw new IOException("Java not found on " + computer + ". Install Java 8 or Java 11 on the Agent.");
     }
 
     @NonNull
