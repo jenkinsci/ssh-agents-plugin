@@ -44,10 +44,12 @@ import hudson.model.TaskListener;
 import hudson.slaves.SlaveComputer;
 import hudson.util.VersionNumber;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.WARNING;
 
 /**
  * class to check if the version of java installed on the agent is a supported one.
  */
+@Deprecated
 public class JavaVersionChecker {
     private static final Logger LOGGER = Logger.getLogger(JavaVersionChecker.class.getName());
 
@@ -79,7 +81,7 @@ public class JavaVersionChecker {
                 }
             }
         }
-        throw new IOException("Java not found on " + computer + ". Install a Java 8 version on the Agent.");
+        throw new IOException("Java not found on " + computer + ". Install Java 8 or Java 11 on the Agent.");
     }
 
     @NonNull

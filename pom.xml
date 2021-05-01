@@ -5,15 +5,15 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.19</version>
+    <version>4.18</version>
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
-  <version>1.29.5-SNAPSHOT</version>
+  <version>${revision}${changelist}</version>
   <packaging>hpi</packaging>
 
-  <name>Jenkins SSH Slaves plugin</name>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin</url>
+  <name>SSH Build Agents plugin</name>
+  <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
   <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
 
   <licenses>
@@ -25,8 +25,11 @@
   </licenses>
 
   <properties>
-    <jenkins.version>2.89.4</jenkins.version>
+    <revision>1.31.8</revision>
+    <changelist>-SNAPSHOT</changelist>
+    <jenkins.version>2.282</jenkins.version>
     <java.level>8</java.level>
+    <hpi.compatibleSinceVersion>1.31.0</hpi.compatibleSinceVersion>
   </properties>
 
   <developers>
@@ -78,61 +81,89 @@
     <connection>scm:git:git://github.com/jenkinsci/ssh-slaves-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/ssh-slaves-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
-    <tag>HEAD</tag>
+    <tag>${scmTag}</tag>
   </scm>
 
   <repositories>
     <repository>
       <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
+      <url>https://repo.jenkins-ci.org/public/</url>
     </repository>
   </repositories>
+
   <pluginRepositories>
     <pluginRepository>
       <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
+      <url>https://repo.jenkins-ci.org/public/</url>
     </pluginRepository>
   </pluginRepositories>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.jenkins.tools.bom</groupId>
+        <artifactId>bom-2.277.x</artifactId>
+        <version>28</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>jackson2-api</artifactId>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
-    <!-- plugin dependencies -->
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>trilead-api</artifactId>
-      <version>1.0.1</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>2.1.18</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>ssh-credentials</artifactId>
-      <version>1.14</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.modules</groupId>
+      <artifactId>sshd</artifactId>
+      <version>3.0.3</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.test</groupId>
       <artifactId>docker-fixtures</artifactId>
-      <version>1.8</version>
+      <version>1.11</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins</groupId>
+      <artifactId>configuration-as-code</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.configuration-as-code</groupId>
+      <artifactId>test-harness</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>1.15.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.jenkins-ci.tools</groupId>
-        <artifactId>maven-hpi-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <!--
-            * [JENKINS-51876] Updated core, Java version, and dependencies
-            * [JENKINS-47586] Remove old JDK installer from the plugin
-          -->
-          <compatibleSinceVersion>1.27</compatibleSinceVersion>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>

@@ -106,16 +106,17 @@ public class TrustHostKeyActionTest {
         }
 
         SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManuallyTrustedKeyVerificationStrategy(true));
-        DumbSlave slave = new DumbSlave("test-slave", "SSH Test slave",
+        DumbSlave agent = new DumbSlave("test-agent", "SSH Test agent",
                 temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.emptyList());
         
-        jenkins.getInstance().addNode(slave);
-        SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-slave");
+        jenkins.getInstance().addNode(agent);
+        SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-agent");
 
         try {
             computer.connect(false).get();
         } catch (ExecutionException ex){
+            //TODO(oleg_nenashev): "Slave" check is still needed for PCT purposes, but it should be eventually cleaned up 
             if (!ex.getMessage().startsWith("java.io.IOException: Slave failed") && !ex.getMessage().startsWith("java.io.IOException: Agent failed")) {
                 throw ex;
             }
@@ -125,7 +126,7 @@ public class TrustHostKeyActionTest {
         assertEquals(computer.getLog(), 1, actions.size());
         assertNull(actions.get(0).getExistingHostKey());
         
-        HtmlPage p = jenkins.createWebClient().getPage(slave, actions.get(0).getUrlName());
+        HtmlPage p = jenkins.createWebClient().getPage(agent, actions.get(0).getUrlName());
         p.getElementByName("Yes").click();
         
         assertTrue(actions.get(0).isComplete());

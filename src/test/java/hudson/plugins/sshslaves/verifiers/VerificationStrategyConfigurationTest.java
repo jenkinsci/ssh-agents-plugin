@@ -82,14 +82,20 @@ public class VerificationStrategyConfigurationTest {
         credentialsList.add(credentials);
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(), credentialsList);
         
-        SSHConnector connector = new SSHConnector(12, credentials, null, null, null, "", "xyz", null, "", "", 30, 1, 1, strategy);
-        
+        SSHConnector connector = new SSHConnector(12, credentials.getId());
+        connector.setSshHostKeyVerificationStrategy(strategy);
+        connector.setJvmOptions("jvmOptions");
+        connector.setSuffixStartSlaveCmd("suffix");
+        connector.setPrefixStartSlaveCmd("prefix");
+        connector.setJavaPath("/path");
+        connector.setRetryWaitTime(10);
+        connector.setMaxNumRetries(10);
+        connector.setLaunchTimeoutSeconds(10);
+
         SSHConnector output = jenkins.configRoundtrip(connector);
 
         assertNotSame(connector, output);
         jenkins.assertEqualDataBoundBeans(connector, output);
-        
-        
     }
     
 }

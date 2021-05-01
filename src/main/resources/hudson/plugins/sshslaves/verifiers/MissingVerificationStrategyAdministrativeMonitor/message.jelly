@@ -24,16 +24,11 @@ THE SOFTWARE.
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core">
 
-<j:if test="${!it.isTheNewDesignAvailable}">
-<div class="warning">
-  <p>SSH Host Key Verifiers are not configured for all SSH slaves on this Jenkins instance. This could leave these slaves open to man-in-the-middle attacks. <a href="${rootURL}/computer/">Update your slave configuration</a> to resolve this.</p>
-</div>
-</j:if>
-
-<j:if test="${it.isTheNewDesignAvailable}">
 <div class="alert alert-warning">
-    SSH Host Key Verifiers are not configured for all SSH slaves on this Jenkins instance. This could leave these slaves open to man-in-the-middle attacks. <a href="${rootURL}/computer/">Update your slave configuration</a> to resolve this.
+  <p>SSH Host Key Verifiers are not configured for all SSH agents on this Jenkins instance. This could leave these agents open to man-in-the-middle attacks. <a href="${rootURL}/computer/">Update your agent configuration</a> to resolve this.</p>
+  <p>Agents without SSH Host Key Verifiers:
+  ${it.getAgentNames()}
+  </p>
 </div>
-</j:if>
 
 </j:jelly>
