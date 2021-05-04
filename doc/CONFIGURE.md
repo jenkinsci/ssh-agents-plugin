@@ -14,7 +14,7 @@ This means that **you have to install a JDK/JRE 8 on your agent** in order to ru
 
 The agent should have **enough memory** to run the remoting process and the builds. 
 
-**The agent needs to be reachable from the master**,
+**The agent needs to be reachable from the Jenkins controller**,
 You have to be ensure that your Jenkins instance can connect through SSH port to your agent; you can check it from the command line.
 You will have to supply an account that can log in on the target machine. No root privileges are required.
 
@@ -106,7 +106,7 @@ to see if an entry exists that matches the current connection. It is possible to
 the Java property `-Dhudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy.known_hosts_file=PATH_TO_FILE`
 
 This method does not make any updates to the Known Hosts file, instead using the file as a read-only source and expecting
-someone with suitable access to the appropriate user account on the Jenkins master to update the file as required,
+someone with suitable access to the appropriate user account on the Jenkins controller to update the file as required,
 potentially using the ssh hostname command to initiate a connection and update the file appropriately.
 
 #### Manually provided key Verification Strategy

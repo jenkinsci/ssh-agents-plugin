@@ -661,7 +661,7 @@ public class SSHLauncher extends ComputerLauncher {
 
     private void expandChannelBufferSize(Session session, TaskListener listener) {
             // see hudson.remoting.Channel.PIPE_WINDOW_SIZE for the discussion of why 1MB is in the right ball park
-            // but this particular session is where all the master/agent communication will happen, so
+            // but this particular session is where all the controller/agent communication will happen, so
             // it's worth using a bigger buffer to really better utilize bandwidth even when the latency is even larger
             // (and since we are draining this pipe very rapidly, it's unlikely that we'll actually accumulate this much data)
             int sz = 4;

@@ -69,7 +69,7 @@ public abstract class JavaProvider implements ExtensionPoint {
     /**
      * Gets minimal required Java version.
      * 
-     * @return Minimal Java version required on the master and agent side.
+     * @return Minimal Java version required on the controller and agent side.
      * @since TODO
      * 
      */
