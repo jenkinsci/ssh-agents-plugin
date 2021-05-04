@@ -166,7 +166,8 @@ ConversionException: Could not call com.cloudbees.jenkins.plugins.sshcredentials
 
 ### Selenium Grid agents failed to connect
 
-On recent versions of Jenkins Core, [Agent - Controller Access Control](https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control) was introduced it seems causes an issue with Selenium Grid Agents, to fix this problem you have to disable: "Manage Jenkins" > "Configure Global Security", and check "Enable Agent → Controller Access Control" (as it's said in Jenkins documentation)
+On Jenkins Core 2.89.3, [Agent - Controller Access Control](https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control) was introduced it can causes an issue with Selenium Grid Agents, to fix this problem you have to disable: "Manage Jenkins" > "Configure Global Security", and check "Enable Agent → Controller Access Control" (as it's said in Jenkins documentation) 
+you can see more details at [JENKINS-49118](https://issues.jenkins.io/browse/JENKINS-49118)
 https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control
 
 "On the other hand, if all your agents are trusted to the same degree as your master, then it is safe to leave this subsystem off"
