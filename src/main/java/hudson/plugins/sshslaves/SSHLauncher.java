@@ -30,7 +30,6 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
-import com.google.common.io.ByteStreams;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
@@ -794,7 +793,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         byte[] bytes = null;
         try{
-            bytes = ByteStreams.toByteArray(inputStream);
+            bytes = IOUtils.toByteArray(inputStream);
         }catch(IOException e){
             throw e;
         } finally {
