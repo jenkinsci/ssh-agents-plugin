@@ -41,7 +41,7 @@ public class AgentConnectionBase {
   @Rule
   public CheckIsLinuxOrMac isLinuxOrMac = new CheckIsLinuxOrMac();
 
-  @Rule
+  @Rule(order = -2) // Before JenkinsRule
   public CheckIsDockerAvailable isDockerAvailable = new CheckIsDockerAvailable();
 
   @Rule

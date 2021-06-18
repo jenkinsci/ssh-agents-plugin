@@ -18,13 +18,13 @@ public class CheckIsDockerAvailable extends ExternalResource {
   }
 
   boolean isDockerAvailable() {
-    int exitCode = 0;
+    int exitCode;
     try {
       ProcessBuilder builder = new ProcessBuilder();
       if (SystemUtils.IS_OS_WINDOWS) {
-        builder.command("cmd.exe", "/c", "docker --version");
+        builder.command("cmd.exe", "/c", "docker ps");
       } else {
-        builder.command("sh", "-c", "docker --version");
+        builder.command("sh", "-c", "docker ps");
       }
       Process process = builder.start();
       exitCode = process.waitFor();
