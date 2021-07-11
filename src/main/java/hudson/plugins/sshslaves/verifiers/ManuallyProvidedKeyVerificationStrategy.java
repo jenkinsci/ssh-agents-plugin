@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithm;
+import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithmManager;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.QueryParameter;
@@ -107,7 +109,21 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
         }
 
-        return TrileadVersionSupportManager.getTrileadSupport().parseKey(algorithm, keyValue);
+        return parseKey(algorithm, keyValue);
+    }
+
+    private static HostKey parseKey(String algorithm, byte[] keyValue) throws KeyParseException {
+      for (KeyAlgorithm<?, ?> keyAlgorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
+        try {
+          if (keyAlgorithm.getKeyFormat().equals(algorithm)) {
+            keyAlgorithm.decodePublicKey(keyValue);
+            return new HostKey(algorithm, keyValue);
+          }
+        } catch (IOException ex) {
+          throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
+        }
+      }
+      throw new KeyParseException("Unexpected key algorithm: " + algorithm);
     }
 
     @Extension

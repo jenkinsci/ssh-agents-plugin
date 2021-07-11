@@ -23,7 +23,9 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import com.trilead.ssh2.Connection;
+import io.jenkins.plugins.sshbuildagents.ssh.Connection;
+import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithm;
+import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithmManager;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -32,11 +34,13 @@ import hudson.slaves.SlaveComputer;
 import jenkins.model.Jenkins;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A method for verifying the host key provided by the remote host during the
  * initiation of each connection.
- * 
+ *
  * @author Michael Clarke
  * @since 1.13
  */
@@ -65,13 +69,21 @@ public abstract class SshHostKeyVerificationStrategy implements Describable<SshH
      */
     @CheckForNull
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
-        return TrileadVersionSupportManager.getTrileadSupport().getSupportedAlgorithms();
+        return getSupportedAlgorithms();
     }
-    
-    public static abstract class SshHostKeyVerificationStrategyDescriptor extends Descriptor<SshHostKeyVerificationStrategy> {
-        
-    }
-    
 
-    
+    public static abstract class SshHostKeyVerificationStrategyDescriptor extends Descriptor<SshHostKeyVerificationStrategy> {
+
+    }
+
+    private String[] getSupportedAlgorithms() {
+      List<String> algorithms = new ArrayList<>();
+      for (KeyAlgorithm<?, ?> algorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
+        algorithms.add(algorithm.getKeyFormat());
+      }
+      return algorithms.toArray(new String[0]);
+    }
+
+
+
 }
