@@ -53,10 +53,10 @@ import hudson.slaves.RetentionStrategy;
 import hudson.slaves.SlaveComputer;
 
 public class TrustHostKeyActionTest {
-    
+
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
-    
+
     @Rule
     public final JenkinsRule jenkins = new JenkinsRule();
 
@@ -66,7 +66,7 @@ public class TrustHostKeyActionTest {
             return socket.getLocalPort();
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Test
     public void testSubmitNotAuthorised() throws Exception {
@@ -76,7 +76,7 @@ public class TrustHostKeyActionTest {
                         new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass")
                 )
         );
-        
+
         final int port = findPort();
 
         try {
@@ -109,30 +109,30 @@ public class TrustHostKeyActionTest {
         DumbSlave agent = new DumbSlave("test-agent", "SSH Test agent",
                 temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
                 launcher, RetentionStrategy.NOOP, Collections.emptyList());
-        
+
         jenkins.getInstance().addNode(agent);
         SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-agent");
 
         try {
             computer.connect(false).get();
         } catch (ExecutionException ex){
-            //TODO(oleg_nenashev): "Slave" check is still needed for PCT purposes, but it should be eventually cleaned up 
+            //TODO(oleg_nenashev): "Slave" check is still needed for PCT purposes, but it should be eventually cleaned up
             if (!ex.getMessage().startsWith("java.io.IOException: Slave failed") && !ex.getMessage().startsWith("java.io.IOException: Agent failed")) {
                 throw ex;
             }
         }
-        
+
         List<TrustHostKeyAction> actions = computer.getActions(TrustHostKeyAction.class);
         assertEquals(computer.getLog(), 1, actions.size());
         assertNull(actions.get(0).getExistingHostKey());
-        
+
         HtmlPage p = jenkins.createWebClient().getPage(agent, actions.get(0).getUrlName());
         p.getElementByName("Yes").click();
-        
+
         assertTrue(actions.get(0).isComplete());
         assertEquals(actions.get(0).getExistingHostKey(), actions.get(0).getHostKey());
-        
-        
+
+
     }
 
     private Object newSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -180,7 +180,7 @@ public class TrustHostKeyActionTest {
     }
 
     private Class newCommandFactoryClass() throws ClassNotFoundException {
-        return Class.forName("org.apache.sshd.server.CommandFactory");
+        return Class.forName("org.apache.sshd.server.command.CommandFactory");
     }
 
     private Object newCommandFactory(Class commandFactoryClass) throws ClassNotFoundException, IllegalArgumentException {
