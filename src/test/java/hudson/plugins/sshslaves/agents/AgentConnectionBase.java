@@ -20,7 +20,9 @@ import hudson.slaves.DumbSlave;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -77,7 +79,7 @@ public class AgentConnectionBase {
   protected Node createPermanentAgent(String name, String host, int sshPort, String keyResourcePath, String passphrase)
     throws Descriptor.FormException, IOException {
     String credId = "sshCredentialsId";
-    createSshCredentials(credId, keyResourcePath, passphrase);
+    createSshKeyCredentials(credId, keyResourcePath, passphrase);
     final SSHLauncher launcher = new SSHLauncher(host , sshPort, credId);
     launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
     DumbSlave agent = new DumbSlave(name, AGENT_WORK_DIR, launcher);
@@ -85,12 +87,30 @@ public class AgentConnectionBase {
     return j.jenkins.getNode(agent.getNodeName());
   }
 
-  private void createSshCredentials(String id, String keyResourcePath, String passphrase) throws IOException {
+  protected Node createPermanentAgent(String name, String host, int sshPort)
+        throws Descriptor.FormException, IOException {
+      String credId = "sshCredentialsId";
+      createSshCredentials(credId);
+      final SSHLauncher launcher = new SSHLauncher(host , sshPort, credId);
+      launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
+      DumbSlave agent = new DumbSlave(name, AGENT_WORK_DIR, launcher);
+      j.jenkins.addNode(agent);
+      return j.jenkins.getNode(agent.getNodeName());
+  }
+
+  private void createSshKeyCredentials(String id, String keyResourcePath, String passphrase) throws IOException {
     String privateKey = IOUtils.toString(getClass().getResourceAsStream(keyResourcePath), StandardCharsets.UTF_8);
     BasicSSHUserPrivateKey.DirectEntryPrivateKeySource privateKeySource = new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(
       privateKey);
     BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, id, USER, privateKeySource,
                                                                     passphrase, "Private Key ssh credentials");
+    SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
+                                                                          Collections.singletonList(credentials));
+  }
+
+  private void createSshCredentials(String id) throws IOException {
+    StandardUsernameCredentials credentials =
+      new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, id, "", USER, PASSWORD);
     SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
                                                                           Collections.singletonList(credentials));
   }
