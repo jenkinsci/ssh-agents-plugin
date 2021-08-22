@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<FindBugsFilter>
+  <Match>
+    <Or>
+      <Class name="~.*JavaVersionChecker.*$" />
+      <Class name="~.*SSHLauncher.*$" />
+    </Or>
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+</FindBugsFilter>
