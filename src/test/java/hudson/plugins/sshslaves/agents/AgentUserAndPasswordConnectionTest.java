@@ -34,8 +34,7 @@ public class AgentUserAndPasswordConnectionTest extends AgentConnectionBase {
 
   @Test
   public void connectionTests() throws IOException, InterruptedException, Descriptor.FormException {
-    Node node = createPermanentAgent(SSH_AGENT_NAME, agentContainer.getHost(), agentContainer.getMappedPort(SSH_PORT),
-    SSH_AGENT_NAME + "/" + SSH_KEY_PATH, "");
+    Node node = createPermanentAgent(SSH_AGENT_NAME, agentContainer.getHost(), agentContainer.getMappedPort(SSH_PORT));
     waitForAgentConnected(node);
     assertTrue(isSuccessfullyConnected(node));
   }
