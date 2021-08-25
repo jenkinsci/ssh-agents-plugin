@@ -25,10 +25,10 @@ package hudson.plugins.sshslaves.verifiers;
 
 import java.util.ArrayList;
 import java.util.List;
+import io.jenkins.plugins.sshbuildagents.Messages;
 import hudson.Extension;
 import hudson.model.AdministrativeMonitor;
 import hudson.model.Computer;
-import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;

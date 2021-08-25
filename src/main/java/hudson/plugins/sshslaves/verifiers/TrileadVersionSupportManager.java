@@ -1,14 +1,13 @@
 package hudson.plugins.sshslaves.verifiers;
 
-import com.trilead.ssh2.signature.DSASHA1Verify;
-import com.trilead.ssh2.signature.RSASHA1Verify;
-import hudson.plugins.sshslaves.Messages;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.trilead.ssh2.signature.DSASHA1Verify;
+import com.trilead.ssh2.signature.RSASHA1Verify;
+import io.jenkins.plugins.sshbuildagents.Messages;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * An abstraction layer to allow handling of feature changes (e.g. new key types) between different Trilead versions.

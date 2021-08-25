@@ -30,11 +30,12 @@ import jakarta.servlet.ServletException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
+import io.jenkins.plugins.sshbuildagents.Messages;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.interceptor.RequirePOST;
-
 import hudson.model.Computer;
 import hudson.model.TaskAction;
-import hudson.plugins.sshslaves.Messages;
 import hudson.security.ACL;
 import hudson.security.Permission;
 

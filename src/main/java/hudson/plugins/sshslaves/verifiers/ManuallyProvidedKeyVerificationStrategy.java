@@ -27,20 +27,20 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithm;
 import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithmManager;
+import io.jenkins.plugins.sshbuildagents.Messages;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.QueryParameter;
-
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;

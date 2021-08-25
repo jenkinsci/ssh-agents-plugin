@@ -24,11 +24,10 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import io.jenkins.plugins.sshbuildagents.Messages;
 import org.kohsuke.stapler.DataBoundConstructor;
-
 import hudson.Extension;
 import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 
