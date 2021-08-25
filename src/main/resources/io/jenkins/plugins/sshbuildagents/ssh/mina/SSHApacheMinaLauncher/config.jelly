@@ -1,11 +1,15 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+  <f:entry title="${%Host}" field="host" help="/io/jenkins/plugins/sshbuildagents/help/help-host.html">
+    <f:textbox checkMethod="post"/>
+  </f:entry>
+
   <f:entry title="${%Credentials}" field="credentialsId" help="/io/jenkins/plugins/sshbuildagents/help/help-credentialsId.html">
       <c:select checkMethod="post"/>
   </f:entry>
 
-  <f:dropdownDescriptorSelector field="sshHostKeyVerificationStrategy" title="${%Host Key Verification Strategy}"/>
+  <f:dropdownDescriptorSelector title="${%Host Key Verification Strategy}" field="sshHostKeyVerificationStrategy" help="/io/jenkins/plugins/sshbuildagents/help/help-sshHostKeyVerificationStrategy.html"/>
 
   <f:advanced>
       <f:entry title="${%Port}" field="port" help="/io/jenkins/plugins/sshbuildagents/help/help-port.html">
@@ -16,7 +20,7 @@
           <f:textbox checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%JVM Options}" field="jvmOptions" help="/io/jenkins/plugins/sshbuildagents/help/help-jvnOptions.html">
+      <f:entry title="${%JVM Options}" field="jvmOptions" help="/io/jenkins/plugins/sshbuildagents/help/help-jvmOptions.html">
           <f:textbox checkMethod="post"/>
       </f:entry>
 
