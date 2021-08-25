@@ -1,7 +1,7 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:entry title="${%Host}" field="host" help="/io/jenkins/plugins/sshbuildagents/help/help-host.html">
+  <f:entry title="${%Host}" field="host" help="/plugin/ssh-slaves/help/help-host.html">
     <f:textbox checkMethod="post"/>
   </f:entry>
 

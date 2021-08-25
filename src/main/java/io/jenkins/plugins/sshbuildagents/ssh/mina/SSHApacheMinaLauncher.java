@@ -985,7 +985,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      * {@inheritDoc}
      */
     public String getDisplayName() {
-      return Messages.SSHLauncher_DescriptorDisplayName();
+      return Messages.SSHApacheMinaLauncher_DescriptorDisplayName();
     }
 
     public Class getSshConnectorClass() {

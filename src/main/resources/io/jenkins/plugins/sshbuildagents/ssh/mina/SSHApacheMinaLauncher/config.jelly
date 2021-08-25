@@ -1,54 +1,54 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-  <f:entry title="${%Host}" field="host" help="/io/jenkins/plugins/sshbuildagents/help/help-host.html">
+  <f:entry title="${%Host}" field="host" help="/plugin/ssh-slaves/help/help-host.html">
     <f:textbox checkMethod="post"/>
   </f:entry>
 
-  <f:entry title="${%Credentials}" field="credentialsId" help="/io/jenkins/plugins/sshbuildagents/help/help-credentialsId.html">
+  <f:entry title="${%Credentials}" field="credentialsId" help="/plugin/ssh-slaves/help/help-credentialsId.html">
       <c:select checkMethod="post"/>
   </f:entry>
 
-  <f:dropdownDescriptorSelector title="${%Host Key Verification Strategy}" field="sshHostKeyVerificationStrategy" help="/io/jenkins/plugins/sshbuildagents/help/help-sshHostKeyVerificationStrategy.html"/>
+  <f:dropdownDescriptorSelector title="${%Host Key Verification Strategy}" field="sshHostKeyVerificationStrategy" help="/plugin/ssh-slaves/help/help-sshHostKeyVerificationStrategy.html"/>
 
   <f:advanced>
-      <f:entry title="${%Port}" field="port" help="/io/jenkins/plugins/sshbuildagents/help/help-port.html">
+      <f:entry title="${%Port}" field="port" help="/plugin/ssh-slaves/help/help-port.html">
           <f:textbox default="22" checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%JavaPath}" field="javaPath" help="/io/jenkins/plugins/sshbuildagents/help/help-javaPath.html">
+      <f:entry title="${%JavaPath}" field="javaPath" help="/plugin/ssh-slaves/help/help-javaPath.html">
           <f:textbox checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%JVM Options}" field="jvmOptions" help="/io/jenkins/plugins/sshbuildagents/help/help-jvmOptions.html">
+      <f:entry title="${%JVM Options}" field="jvmOptions" help="/plugin/ssh-slaves/help/help-jvmOptions.html">
           <f:textbox checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%Prefix Start Agent Command}" field="prefixStartSlaveCmd" help="/io/jenkins/plugins/sshbuildagents/help/help-prefixStartSlaveCmd.html">
+      <f:entry title="${%Prefix Start Agent Command}" field="prefixStartSlaveCmd" help="/plugin/ssh-slaves/help/help-prefixStartSlaveCmd.html">
           <f:textbox checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%Suffix Start Agent Command}" field="suffixStartSlaveCmd" help="/io/jenkins/plugins/sshbuildagents/help/help-suffixStartSlaveCmd.html">
+      <f:entry title="${%Suffix Start Agent Command}" field="suffixStartSlaveCmd" help="/plugin/ssh-slaves/help/help-suffixStartSlaveCmd.html">
           <f:textbox checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%Connection Timeout in Seconds}" field="launchTimeoutSeconds" help="/io/jenkins/plugins/sshbuildagents/help/help-launchTimeoutSeconds.html">
+      <f:entry title="${%Connection Timeout in Seconds}" field="launchTimeoutSeconds" help="/plugin/ssh-slaves/help/help-launchTimeoutSeconds.html">
           <f:textbox name="launchTimeoutSeconds" checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%Maximum Number of Retries}" field="maxNumRetries" help="/io/jenkins/plugins/sshbuildagents/help/help-maxNumRetries.html">
+      <f:entry title="${%Maximum Number of Retries}" field="maxNumRetries" help="/plugin/ssh-slaves/help/help-maxNumRetries.html">
           <f:textbox name="maxNumRetries" checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%Seconds To Wait Between Retries}" field="retryWaitTime" help="/io/jenkins/plugins/sshbuildagents/help/help-retryWaitTime.html">
+      <f:entry title="${%Seconds To Wait Between Retries}" field="retryWaitTime" help="/plugin/ssh-slaves/help/help-retryWaitTime.html">
           <f:textbox name="retryWaitTime" checkMethod="post"/>
       </f:entry>
 
-      <f:entry title="${%Use TCP_NODELAY flag on the SSH connection}" field="tcpNoDelay" help="/io/jenkins/plugins/sshbuildagents/help/help-tcpNoDelay.html">
+      <f:entry title="${%Use TCP_NODELAY flag on the SSH connection}" field="tcpNoDelay" help="/plugin/ssh-slaves/help/help-tcpNoDelay.html">
           <f:checkbox name="tcpNoDelay" default="true"/>
       </f:entry>
 
-      <f:entry title="${%Remoting Work directory}" field="workDir" help="/io/jenkins/plugins/sshbuildagents/help/help-workDir.html">
+      <f:entry title="${%Remoting Work directory}" field="workDir" help="/plugin/ssh-slaves/help/help-workDir.html">
           <f:textbox name="workDir" checkMethod="post"/>
       </f:entry>
 
