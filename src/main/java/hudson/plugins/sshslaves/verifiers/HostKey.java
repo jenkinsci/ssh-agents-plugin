@@ -23,10 +23,10 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import io.jenkins.plugins.sshbuildagents.ssh.KnownHosts;
-
 import java.io.Serializable;
 import java.util.Arrays;
+
+import com.trilead.ssh2.KnownHosts;
 
 /**
  * A representation of the SSH key provided by a remote host to verify itself

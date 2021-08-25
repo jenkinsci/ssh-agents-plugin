@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.jenkins.plugins.sshbuildagents.ssh.Connection;
+import com.trilead.ssh2.Connection;
 import hudson.Plugin;
 
 /**

@@ -109,21 +109,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
         }
 
-        return parseKey(algorithm, keyValue);
-    }
-
-    private static HostKey parseKey(String algorithm, byte[] keyValue) throws KeyParseException {
-      for (KeyAlgorithm<?, ?> keyAlgorithm : KeyAlgorithmManager.getSupportedAlgorithms()) {
-        try {
-          if (keyAlgorithm.getKeyFormat().equals(algorithm)) {
-            keyAlgorithm.decodePublicKey(keyValue);
-            return new HostKey(algorithm, keyValue);
-          }
-        } catch (IOException ex) {
-          throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
-        }
-      }
-      throw new KeyParseException("Unexpected key algorithm: " + algorithm);
+        return TrileadVersionSupportManager.getTrileadSupport().parseKey(algorithm, keyValue);
     }
 
     @Extension
