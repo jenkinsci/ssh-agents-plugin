@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package io.jenkins.plugins.sshbuildagents.ssh;
+package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +37,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import io.jenkins.plugins.sshbuildagents.ssh.Connection;
+import io.jenkins.plugins.sshbuildagents.ssh.ServerHostKeyVerifier;
+import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.future.AuthFuture;
 import org.apache.sshd.client.future.ConnectFuture;

@@ -27,10 +27,8 @@ import java.io.IOException;
 
 /**
  * @author Ivan Fernandez Calvo
- * @param <T>
- * @param <T1>
  */
-public class KeyAlgorithm<T, T1> {
+public class KeyAlgorithm{
   public String getKeyFormat() {
     return "";
   }

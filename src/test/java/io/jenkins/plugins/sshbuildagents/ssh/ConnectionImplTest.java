@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
+import io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.sshd.client.channel.ChannelShell;

@@ -21,14 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package io.jenkins.plugins.sshbuildagents.ssh;
+package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
+import java.util.Collections;
 import java.util.List;
+import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithm;
+import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithmManager;
 
 /**
  * @author Ivan Fernandez Calvo
  */
-public interface KeyAlgorithmManager {
-
-  List<KeyAlgorithm> getSupportedAlgorithms();
+public class KeyAlgorithmManagerImpl implements KeyAlgorithmManager {
+  @Override
+  public List<KeyAlgorithm> getSupportedAlgorithms() {
+    return Collections.emptyList();
+  }
 }
