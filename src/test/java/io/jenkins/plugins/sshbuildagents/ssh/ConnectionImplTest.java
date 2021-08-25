@@ -112,7 +112,7 @@ public class ConnectionImplTest {
     byte[] data = IOUtils.readFully(shellChannel.getInvertedStdout(), shellChannel.getInvertedStdout().available());
     String dataStr = IOUtils.toString(data, "UTF-8");
     System.err.println(dataStr);
-    assertEquals("FOO", dataStr);
+    assertEquals("FOO\n", dataStr);
   }
 
   @Test

@@ -631,6 +631,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     if (credentials == null) {
       throw new AbortException("Cannot find SSH User credentials with id: " + credentialsId);
     }
+    // TODO  implement verifiers.
     String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
     if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
       connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
