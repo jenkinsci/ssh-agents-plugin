@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>1.33.0</version>
   <packaging>hpi</packaging>
 
   <name>SSH Build Agents plugin</name>
@@ -81,7 +81,7 @@
     <connection>scm:git:git://github.com/jenkinsci/ssh-slaves-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/ssh-slaves-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
-    <tag>${scmTag}</tag>
+    <tag>ssh-slaves-1.33.0</tag>
   </scm>
 
   <repositories>
