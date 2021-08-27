@@ -157,19 +157,23 @@ public class ConnectionImpl implements Connection{
 
   @Override
   public ClientSession connect() throws IOException {
-    this.client = SshClient.setUpDefaultClient();
-    //client.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
-    //client.setHostConfigEntryResolver(HostConfigEntryResolver.EMPTY);
-    //client.setKeyIdentityProvider(KeyIdentityProvider.EMPTY_KEYS_PROVIDER);
-    //CoreModuleProperties.NIO2_READ_TIMEOUT.set(client, READ_TIMEOUT);
-    //PropertyResolver propertyResolver = PropertyResolver.EMPTY; //TODO implement
-    //SshConfigFileReader.configureKeyExchanges(client, propertyResolver, true, ClientBuilder.DH2KEX, true);
-    //SshConfigFileReader.configureSignatures(client, propertyResolver, true, true);
-    //SshClientConfigFileReader.setupClientHeartbeat(client, propertyResolver);
-    CoreModuleProperties.WINDOW_SIZE.set(client, WINDOW_SIZE);
-    CoreModuleProperties.TCP_NODELAY.set(client, tcpNoDelay);
-    CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofMillis(HEARTBEAT_INTERVAL));
-    client.start();
+    if(client == null) {
+      client = SshClient.setUpDefaultClient();
+      //client.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
+      //client.setHostConfigEntryResolver(HostConfigEntryResolver.EMPTY);
+      //client.setKeyIdentityProvider(KeyIdentityProvider.EMPTY_KEYS_PROVIDER);
+      //CoreModuleProperties.NIO2_READ_TIMEOUT.set(client, READ_TIMEOUT);
+      //PropertyResolver propertyResolver = PropertyResolver.EMPTY; //TODO implement
+      //SshConfigFileReader.configureKeyExchanges(client, propertyResolver, true, ClientBuilder.DH2KEX, true);
+      //SshConfigFileReader.configureSignatures(client, propertyResolver, true, true);
+      //SshClientConfigFileReader.setupClientHeartbeat(client, propertyResolver);
+      CoreModuleProperties.WINDOW_SIZE.set(client, WINDOW_SIZE);
+      CoreModuleProperties.TCP_NODELAY.set(client, tcpNoDelay);
+      CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofMillis(HEARTBEAT_INTERVAL));
+    }
+    if(client.isStarted() == false){
+      client.start();
+    }
     for (int i = 0; i <= maxNumRetries; i++) {
       try {
         ConnectFuture connectionFuture = client.connect(this.credentials.getUsername(), this.host, this.port);
