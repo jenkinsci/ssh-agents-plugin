@@ -44,7 +44,6 @@ import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.future.AuthFuture;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
-import org.apache.sshd.common.util.ExceptionUtils;
 import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.scp.client.DefaultScpClient;
 import hudson.util.Secret;
@@ -130,7 +129,18 @@ public class ConnectionImpl implements Connection{
 
   @Override
   public void close() {
-    client.stop();
+    if(session != null){
+      try {
+        session.close();
+      } catch (IOException e) {
+        //NOOP
+      }
+    }
+    if(client != null){
+      client.stop();
+    }
+    client = null;
+    session = null;
   }
 
   @Override

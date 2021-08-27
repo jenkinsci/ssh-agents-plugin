@@ -86,7 +86,6 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
 import jenkins.model.Jenkins;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
@@ -169,10 +168,6 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    * It is used in {@link #afterDisconnect(SlaveComputer, TaskListener)} to avoid multiple parallel calls.
    */
   private transient volatile boolean tearingDownConnection;
-  /**
-   * The session inside {@link #connection} that controls the agent process.
-   */
-  private transient ShellChannel session;
 
   // TODO: It is a bad idea to create a new Executor service for each launcher.
   // Maybe a Remoting thread pool should be used, but it requires the logic rework to Futures
@@ -200,6 +195,12 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    * @see <a href="https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory">Remoting Work directory</a>
    */
   private String workDir;
+
+  /**
+   * Shell channel to execute the remoting process.
+   */
+  @CheckForNull
+  private transient ShellChannel shellChannel;
 
   /**
    * Constructor SSHLauncher creates a new SSHLauncher instance.
@@ -576,7 +577,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
 
     listener.getLogger().println(Messages.SSHLauncher_StartingAgentProcess(getTimestamp(), cmd));
-    ShellChannel shellChannel = connection.shellChannel();
+    shellChannel = connection.shellChannel();
     shellChannel.execCommand(cmd);
     try {
       computer.setChannel(shellChannel.getInvertedStdout(), shellChannel.getInvertedStdin(), listener.getLogger(),
@@ -723,73 +724,28 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   private synchronized void tearDownConnection(@NonNull SlaveComputer slaveComputer,
                                                final @NonNull TaskListener listener) {
     if (connection != null) {
-      tearDownConnectionImpl(slaveComputer, listener);
+      try {
+        tearingDownConnection = true;
+        if(shellChannel != null){
+          if(shellChannel.getStatus() != null) {
+            listener.getLogger().println("Connection\n\tstatus: " + shellChannel.getStatus().name());
+          }
+          if(shellChannel.getLastError() != null){
+            listener.getLogger().println("\tException: " + shellChannel.getLastError().getMessage());
+          }
+          if(StringUtils.isNotBlank(shellChannel.getLastHint())) {
+            listener.getLogger().println("\tHint: " + shellChannel.getLastHint());
+          }
+        }
+        connection.close();
+        connection = null;
+        cleanupConnection(listener);
+      } finally {
+        tearingDownConnection = false;
+      }
     }
   }
 
-  /**
-   * If the SSH connection as a whole is lost, report that information.
-   */
-    /* TODO review if it still makes sense
-    private boolean reportTransportLoss(Connection c, TaskListener listener) {
-        Throwable cause = c.getReasonClosedCause();
-        if (cause != null) {
-            cause.printStackTrace(listener.error("Socket connection to SSH server was lost"));
-        }
-
-        return cause != null;
-    }*/
-
-  private void tearDownConnectionImpl(@NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
-      /* TODO review
-        try {
-            tearingDownConnection = true;
-            boolean connectionLost = reportTransportLoss(connection, listener);
-            if (session!=null) {
-                // give the process 3 seconds to write out its dying message before we cut the loss
-                // and give up on this process. if the agent process had JVM crash, OOME, or any other
-                // critical problem, this will allow us to capture that.
-                // exit code is also an useful info to figure out why the process has died.
-                try {
-                    listener.getLogger().println(getSessionOutcomeMessage(session,connectionLost));
-                    session.getStdout().close();
-                    session.close();
-                } catch (Throwable t) {
-                    t.printStackTrace(listener.error(Messages.SSHLauncher_ErrorWhileClosingConnection()));
-                }
-                session = null;
-            }
-
-            PluginImpl.unregister(connection);
-            cleanupConnection(listener);
-        } finally {
-            tearingDownConnection = false;
-        }
-
-       */
-  }
-
-  /**
-   * Find the exit code or exit status, which are differentiated in SSH protocol.
-   */
-    /*
-    TODO review if it still makes sense
-    private String getSessionOutcomeMessage(Session session, boolean isConnectionLost) throws InterruptedException {
-        session.waitForCondition(ChannelCondition.EXIT_STATUS | ChannelCondition.EXIT_SIGNAL, 3000);
-
-        Integer exitCode = session.getExitStatus();
-        if (exitCode != null)
-            return "Agent JVM has terminated. Exit code=" + exitCode;
-
-        String sig = session.getExitSignal();
-        if (sig != null)
-            return "Agent JVM has terminated. Exit signal=" + sig;
-
-        if (isConnectionLost)
-            return "Agent JVM has not reported exit code before the socket was lost";
-
-        return "Agent JVM has not reported exit code. Is it still running?";
-    }*/
   public String getCredentialsId() {
     return credentialsId;
   }

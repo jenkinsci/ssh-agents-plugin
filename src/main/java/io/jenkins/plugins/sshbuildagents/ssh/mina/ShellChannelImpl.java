@@ -33,13 +33,23 @@ import java.util.concurrent.TimeUnit;
 import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 import org.apache.sshd.client.channel.ChannelSession;
 import org.apache.sshd.client.channel.ClientChannelEvent;
+import org.apache.sshd.client.future.OpenFuture;
 import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.common.channel.Channel;
+import org.apache.sshd.common.channel.ChannelListener;
+import org.apache.sshd.common.future.SshFutureListener;
 
 /**
  * Implements {@link ShellChannel} using the Apache Mina SSHD library https://github.com/apache/mina-sshd
  * @author Ivan Fernandez Calvo
  */
 public class ShellChannelImpl implements ShellChannel {
+  public enum Status {
+    INIZIALIZED,
+    OPEN,
+    CLOSED,
+    FAILURE
+  }
   private final ClientSession session;
   private ChannelSession channel;
 
@@ -47,6 +57,38 @@ public class ShellChannelImpl implements ShellChannel {
   private OutputStream invertedIn = new PipedOutputStream();
   private InputStream in = new PipedInputStream((PipedOutputStream)invertedIn);
   private InputStream invertedOut = new PipedInputStream((PipedOutputStream)out);
+
+  private Status status;
+  private Throwable lastError;
+  private String lastHint;
+  private ChannelListener channelListener = new ChannelListener() {
+    @Override
+    public void channelInitialized(Channel channel) {
+      status = Status.INIZIALIZED;
+    }
+
+    @Override
+    public void channelOpenSuccess(Channel channel) {
+      status = Status.OPEN;
+    }
+
+    @Override
+    public void channelOpenFailure(Channel channel, Throwable reason) {
+      status = Status.FAILURE;
+      lastError = reason;
+    }
+
+    @Override
+    public void channelStateChanged(Channel channel, String hint) {
+      lastHint = hint;
+    }
+
+    @Override
+    public void channelClosed(Channel channel, Throwable reason) {
+      status = Status.CLOSED;
+      lastError = reason;
+    }
+  };
 
   public ShellChannelImpl(ClientSession session) throws IOException {
     this.session = session;
@@ -58,6 +100,7 @@ public class ShellChannelImpl implements ShellChannel {
     channel.setOut(out);
     channel.setIn(in);
     channel.open().verify(5L, TimeUnit.SECONDS);
+    channel.addChannelListener(channelListener);
     channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), 10000);
   }
 
@@ -69,6 +112,21 @@ public class ShellChannelImpl implements ShellChannel {
   @Override
   public OutputStream getInvertedStdin() {
     return invertedIn;
+  }
+
+  @Override
+  public Status getStatus() {
+    return status;
+  }
+
+  @Override
+  public Throwable getLastError() {
+    return lastError;
+  }
+
+  @Override
+  public String getLastHint() {
+    return lastHint;
   }
 
   @Override
