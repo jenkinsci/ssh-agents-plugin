@@ -33,34 +33,68 @@ import java.util.concurrent.TimeUnit;
 import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 import org.apache.sshd.client.channel.ChannelSession;
 import org.apache.sshd.client.channel.ClientChannelEvent;
-import org.apache.sshd.client.future.OpenFuture;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.channel.Channel;
 import org.apache.sshd.common.channel.ChannelListener;
-import org.apache.sshd.common.future.SshFutureListener;
 
 /**
  * Implements {@link ShellChannel} using the Apache Mina SSHD library https://github.com/apache/mina-sshd
  * @author Ivan Fernandez Calvo
  */
 public class ShellChannelImpl implements ShellChannel {
+  /**
+   * Enum to represent the channel status.
+   */
   public enum Status {
     INIZIALIZED,
     OPEN,
     CLOSED,
     FAILURE
   }
+
+  /**
+   * SSH Client session.
+   */
   private final ClientSession session;
+  /**
+   * Shell channel to execute the process.
+   */
   private ChannelSession channel;
 
+  /**
+   * Standard output of the channel.
+   * the process output is write in it.
+   */
   private OutputStream out = new PipedOutputStream();
+  /**
+   * Output stream to allow writing in the standard input of the process from outside the class.
+   */
   private OutputStream invertedIn = new PipedOutputStream();
+  /**
+   * Standard input of the channel.
+   * This is sent to the standard input of the process launched.
+   */
   private InputStream in = new PipedInputStream((PipedOutputStream)invertedIn);
+  /**
+   * Input stream tar allows to read the standard out of the process from outside the class.
+   */
   private InputStream invertedOut = new PipedInputStream((PipedOutputStream)out);
 
+  /**
+   * Current status of the channel.
+   */
   private Status status;
+  /**
+   * Last exception.
+   */
   private Throwable lastError;
+  /**
+   * last command received.
+   */
   private String lastHint;
+  /**
+   * Listener to report the status of the channel.
+   */
   private ChannelListener channelListener = new ChannelListener() {
     @Override
     public void channelInitialized(Channel channel) {
@@ -90,6 +124,11 @@ public class ShellChannelImpl implements ShellChannel {
     }
   };
 
+  /**
+   * Create a Shell channel for a process execution.
+   * @param session SSH session.
+   * @throws IOException in case of error.
+   */
   public ShellChannelImpl(ClientSession session) throws IOException {
     this.session = session;
   }
@@ -132,6 +171,6 @@ public class ShellChannelImpl implements ShellChannel {
   @Override
   public void close() throws IOException {
     channel.close();
-    session.close();
+    channel = null;
   }
 }

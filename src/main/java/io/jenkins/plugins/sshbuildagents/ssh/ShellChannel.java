@@ -52,10 +52,22 @@ public interface ShellChannel {
    */
   OutputStream getInvertedStdin();
 
-    ShellChannelImpl.Status getStatus();
+  /**
+   *
+   * @return The status of the channel.
+   */
+  ShellChannelImpl.Status getStatus();
 
+  /**
+   *
+   * @return the last error in the channel.
+   */
   Throwable getLastError();
 
+  /**
+   *
+   * @return the last command received in the SSH channel.
+   */
   String getLastHint();
 
   /**
