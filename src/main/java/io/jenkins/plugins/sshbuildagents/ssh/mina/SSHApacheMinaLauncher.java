@@ -1007,9 +1007,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context, @QueryParameter String host,
                                                  @QueryParameter String port, @QueryParameter String credentialsId) {
       Jenkins jenkins = Jenkins.get();
-      if ((context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (context != jenkins
-                                                                              && !context.hasPermission(
-        Computer.CONFIGURE))) {
+      if ((context == jenkins && !jenkins.hasPermission(Computer.CREATE))
+          || (context != jenkins && !context.hasPermission(Computer.CONFIGURE))) {
         return new StandardUsernameListBoxModel().includeCurrentValue(credentialsId);
       }
       try {
@@ -1018,7 +1017,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
                                                                     StandardUsernameCredentials.class,
                                                                     Collections.singletonList(
                                                                       new HostnamePortRequirement(host, portValue)),
-                                                                    SSHAuthenticator.matcher(Connection.class))
+                                                                    null)
                                                  .includeCurrentValue(
                                                    credentialsId); // always add the current value last in case already present
       } catch (NumberFormatException ex) {
@@ -1031,19 +1030,17 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
                                                @AncestorInPath AccessControlled _context, @QueryParameter String host,
                                                @QueryParameter String port, @QueryParameter String value) {
       Jenkins jenkins = Jenkins.get();
-      if ((_context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (_context != jenkins
-                                                                               && !_context.hasPermission(
-        Computer.CONFIGURE))) {
+      if ((_context == jenkins && !jenkins.hasPermission(Computer.CREATE))
+          || (_context != jenkins && !_context.hasPermission(Computer.CONFIGURE))) {
         return FormValidation.ok(); // no need to alarm a user that cannot configure
       }
       try {
         int portValue = Integer.parseInt(port);
         for (ListBoxModel.Option o : CredentialsProvider.listCredentials(StandardUsernameCredentials.class, context,
-                                                                         ACL.SYSTEM, Collections.singletonList(
-            new HostnamePortRequirement(host, portValue)), null
-                                                                   //TODO review
-                                                                   //SSHAuthenticator.matcher(Connection.class)
-        )) {
+                                                                         ACL.SYSTEM,
+                                                                         Collections.singletonList(
+                                                                           new HostnamePortRequirement(host, portValue)),
+                                                                         null)) {
           if (StringUtils.equals(value, o.value)) {
             return FormValidation.ok();
           }
