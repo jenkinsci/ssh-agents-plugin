@@ -72,6 +72,7 @@ public class ConnectionImpl implements Connection{
   private int retryWaitTime = 10;
   private String workingDirectory;
   private boolean tcpNoDelay = true;
+  private ClientSession session;
 
   public ConnectionImpl(String host, int port) {
     this.host = host;
@@ -93,10 +94,9 @@ public class ConnectionImpl implements Connection{
 
   /**
    * It adds the authentication details configured to the SSH session.
-   * @param session session to add authentication details.
    * @throws IOException in case of error.
    */
-  private void addAuthentication(ClientSession session)
+  private void addAuthentication()
     throws IOException {
     try {
       if(credentials instanceof StandardUsernamePasswordCredentials){
@@ -157,6 +157,53 @@ public class ConnectionImpl implements Connection{
 
   @Override
   public ClientSession connect() throws IOException {
+    initClient();
+    if(isSession() == false){
+      for (int i = 0; i <= maxNumRetries; i++) {
+        try {
+          return connectAndAuthenticate();
+        } catch (Exception ex) {
+          String message = getExMessage(ex);
+          if (maxNumRetries - i > 0) {
+            println(stderr, "SSH Connection failed with IOException: \"" + message
+                            + "\", retrying in " + retryWaitTime + " seconds." +
+                            " There are " + (maxNumRetries - i) + " more retries left.");
+          }
+        }
+        waitToRetry();
+      }
+      throw new IOException("Max number or reties reached.");
+    }
+    return session;
+  }
+
+  /**
+   *
+   * @return True is the session is authenticated and open.
+   */
+  private boolean isSession() {
+    return session != null && session.isAuthenticated() && session.isOpen();
+  }
+
+  /**
+   * Connets to the SSH service configured and authenticate
+   * @return Returns a ClientSession connected and authenticated.
+   * @throws IOException in case of error.
+   */
+  private ClientSession connectAndAuthenticate() throws IOException {
+    ConnectFuture connectionFuture = client.connect(this.credentials.getUsername(), this.host, this.port);
+    connectionFuture.verify(this.timeoutMillis);
+    session = connectionFuture.getSession();
+    addAuthentication();
+    AuthFuture auth = session.auth();
+    auth.verify(this.timeoutMillis);
+    return session;
+  }
+
+  /**
+   * Initialize the SSH client. It reuses the client if it exists.
+   */
+  private void initClient() {
     if(client == null) {
       client = SshClient.setUpDefaultClient();
       //client.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
@@ -174,26 +221,18 @@ public class ConnectionImpl implements Connection{
     if(client.isStarted() == false){
       client.start();
     }
-    for (int i = 0; i <= maxNumRetries; i++) {
-      try {
-        ConnectFuture connectionFuture = client.connect(this.credentials.getUsername(), this.host, this.port);
-        connectionFuture.verify(this.timeoutMillis);
-        return authSession(connectionFuture.getSession());
-      } catch (Exception ex) {
-        String message = getExMessage(ex);
-        if (maxNumRetries - i > 0) {
-          println(stderr, "SSH Connection failed with IOException: \"" + message
-                  + "\", retrying in " + retryWaitTime + " seconds." +
-                  " There are " + (maxNumRetries - i) + " more retries left.");
-        }
-      }
-      try {
-        Thread.sleep(TimeUnit.SECONDS.toMillis(retryWaitTime));
-      } catch (InterruptedException e) {
-        throw new IOException(e);
-      }
+  }
+
+  /**
+   * Sleep retryWaitTime seconds.
+   * @throws IOException in case of error.
+   */
+  private void waitToRetry() throws IOException {
+    try {
+      Thread.sleep(TimeUnit.SECONDS.toMillis(retryWaitTime));
+    } catch (InterruptedException e) {
+      throw new IOException(e);
     }
-    throw new IOException("Max number or reties reached.");
   }
 
   /**
@@ -269,50 +308,5 @@ public class ConnectionImpl implements Connection{
   @Override
   public void setStdOut(OutputStream stdout) {
     this.stdout = stdout;
-  }
-
-  /**
-   * Authenticate the session passed as parameter.
-   * @param clientSession session to use.
-   * @return hte same session passed as parameter after authenticate.
-   * @throws IOException
-   */
-  protected ClientSession authSession(ClientSession clientSession)
-    throws IOException {
-    ClientSession session = clientSession;
-    addAuthentication(session);
-    IOException err = null;
-    try {
-      AuthFuture auth = session.auth();
-      auth.verify(this.timeoutMillis);
-      session = null; // disable auto-close
-    } catch (IOException e) {
-      err = ExceptionUtils.accumulateException(err, e);
-    } finally {
-      err = closeSession(session, err);
-    }
-
-    if (err != null) {
-      throw err;
-    }
-
-    return clientSession;
-  }
-
-  /**
-   * Close a session after an exception, and return an accumulative exception.
-   * @param session session to use.
-   * @param err Excetion cause of the close action.
-   * @return
-   */
-  private IOException closeSession(ClientSession session, IOException err) {
-    if (session != null) {
-      try {
-        session.close();
-      } catch (IOException e) {
-        err = ExceptionUtils.accumulateException(err, e);
-      }
-    }
-    return err;
   }
 }
