@@ -607,12 +607,19 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    * @throws IOException If something goes wrong.
    */
   @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification = "there is a bug related with Java 11 bytecode see https://github.com/spotbugs/spotbugs/issues/756")
-  private void copyAgentJar(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
+  private void copyAgentJar(TaskListener listener, String workingDirectory) throws IOException {
     String fileName = workingDirectory + SLASH_AGENT_JAR;
     boolean overwrite = true;
     boolean checkSameContent = true;
     byte[] bytes = new Slave.JnlpJar(AGENT_JAR).readFully();
-    connection.copyFile(fileName, bytes, overwrite, checkSameContent);
+    try {
+      listener.getLogger().println("Uploading " + fileName + " file to the agent.");
+      connection.copyFile(fileName, bytes, overwrite, checkSameContent);
+    } catch (Exception e){
+      listener.getLogger().println("Error: unable to write the " + fileName + " file to the agent.");
+      listener.getLogger().println("Check the user, work directory, and permissions you have configured.");
+      throw new IOException(e);
+    }
   }
 
   protected void reportEnvironment(TaskListener listener) throws IOException {
