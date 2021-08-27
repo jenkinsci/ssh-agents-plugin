@@ -392,8 +392,6 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
             verifyNoHeaderJunk(listener);
             reportEnvironment(listener);
             startAgent(computer, listener, workingDirectory);
-            // TODO check if this is executed after the agent start or when it dies
-            // PluginImpl.register(connection);
             rval = Boolean.TRUE;
           } catch (RuntimeException | Error e) {
             String msg = Messages.SSHLauncher_UnexpectedError();
