@@ -622,7 +622,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
 
   protected void openConnection(final TaskListener listener, final SlaveComputer computer,
                                 final String workingDirectory) throws IOException {
-    if (workingDirectory == null) {
+    if (StringUtils.isBlank(workingDirectory)) {
       String msg = "Cannot get the working directory for " + computer;
       listener.error(msg);
       throw new AbortException(msg);
