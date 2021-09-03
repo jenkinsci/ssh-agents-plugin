@@ -21,4 +21,4 @@ Provides a means to launch agents via SSH.
 ## Notes
 
 This plugin is formerly known as "SSH Slaves Plugin".
-It was renamed in [1.32.0](https://github.com/jenkinsci/ssh-slaves-plugin/releases/tag/ssh-slaves-1.31.0), but the plugin ID was retained as `ssh-slaves` to retain compatibility for the plugin users.
+It was renamed in [1.31.0](https://github.com/jenkinsci/ssh-slaves-plugin/releases/tag/ssh-slaves-1.31.0), but the plugin ID was retained as `ssh-slaves` to retain compatibility for the plugin users.
