@@ -116,7 +116,7 @@ potentially using the ssh hostname command to initiate a connection and update t
 Checks the key provided by the remote host matches the key set by the user who configured this connection.
 
 The SSH key expected for this connection. This key should be in the form `algorithm value`
-where algorithm is one of ssh-rsa or ssh-dss, and value is the Base 64 encoded content of the key. The keys should be placed in /etc/ssh/<key_name>.pub
+where `algorithm` is one of ssh-rsa, ssh-ed25519, or ecdsa-sha2-nistp256, and `value` is the base 64 encoded content of the key. The public keys for a Linux agent can be read from the agent file system at `/etc/ssh/<key_name>.pub`.
 
 #### Manually trusted key Verification Strategy
 
