@@ -23,6 +23,7 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Action;
 import hudson.model.Actionable;
@@ -38,7 +39,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -55,23 +55,23 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     private static final Logger LOGGER = Logger.getLogger(ManuallyTrustedKeyVerificationStrategy.class.getName());
-    
+
     private final boolean requireInitialManualTrust;
-    
+
     @DataBoundConstructor
     public ManuallyTrustedKeyVerificationStrategy(boolean requireInitialManualTrust) {
         super();
         this.requireInitialManualTrust = requireInitialManualTrust;
     }
-    
+
     public boolean isRequireInitialManualTrust() {
         return requireInitialManualTrust;
     }
-    
+
     @Override
     public boolean verify(final SlaveComputer computer, HostKey hostKey, TaskListener listener) throws IOException {
         HostKeyHelper hostManager = HostKeyHelper.getInstance();
-        
+
         HostKey existingHostKey = hostManager.getHostKey(computer);
         if (null == existingHostKey) {
             if (isRequireInitialManualTrust()) {
@@ -119,7 +119,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
     }
 
     /** TODO replace with {@link Computer#addAction} after core baseline picks up JENKINS-42969 fix */
-    private static void addAction(@Nonnull Computer c, @Nonnull Action a) {
+    private static void addAction(@NonNull Computer c, @NonNull Action a) {
         try {
             c.addAction(a);
         } catch (UnsupportedOperationException x) {
@@ -134,25 +134,26 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
             }
         }
     }
-    
+
     private boolean hasExistingTrustAction(SlaveComputer computer, HostKey hostKey) {
         for (TrustHostKeyAction action : computer.getActions(TrustHostKeyAction.class)) {
             if (!action.isComplete() && action.getHostKey().equals(hostKey)) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     @Extension
     public static class ManuallyTrustedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.ManualTrustingHostKeyVerifier_DescriptorDisplayName();
         }
-        
+
     }
-    
+
 }

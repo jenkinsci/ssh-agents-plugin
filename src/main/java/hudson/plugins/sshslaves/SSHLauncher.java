@@ -258,7 +258,8 @@ public class SSHLauncher extends ComputerLauncher {
      */
     public SSHLauncher(@NonNull String host, int port, String credentialsId,
              String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
-             Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+             Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime,
+             @CheckForNull SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
         setHost(host);
         setJvmOptions(jvmOptions);
         setPort(port);
@@ -1030,7 +1031,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     @DataBoundSetter
-    public void setSshHostKeyVerificationStrategy(SshHostKeyVerificationStrategy value) {
+    public void setSshHostKeyVerificationStrategy(@CheckForNull SshHostKeyVerificationStrategy value) {
         this.sshHostKeyVerificationStrategy = value;
     }
 
@@ -1204,6 +1205,7 @@ public class SSHLauncher extends ComputerLauncher {
         /**
          * {@inheritDoc}
          */
+        @NonNull
         public String getDisplayName() {
             return Messages.SSHLauncher_DescriptorDisplayName();
         }
@@ -1345,12 +1347,12 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         @Override
-        public void write(byte[] b) throws IOException {
+        public void write(@NonNull byte[] b) throws IOException {
             if (out != null) out.write(b);
         }
 
         @Override
-        public void write(byte[] b, int off, int len) throws IOException {
+        public void write(@NonNull byte[] b, int off, int len) throws IOException {
             if (out != null) out.write(b, off, len);
         }
     }

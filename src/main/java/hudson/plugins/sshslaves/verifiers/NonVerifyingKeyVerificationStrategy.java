@@ -23,6 +23,7 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.Extension;
@@ -45,21 +46,22 @@ public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationS
     public NonVerifyingKeyVerificationStrategy() {
         super();
     }
-    
+
     @Override
     public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
         listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
         return true;
     }
-    
+
     @Extension
     public static class NonVerifyingKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.NonVerifyingHostKeyVerifier_DescriptorDisplayName();
         }
-        
+
     }
-    
+
 }

@@ -24,6 +24,7 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import com.trilead.ssh2.KnownHosts;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
@@ -117,6 +118,7 @@ public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificatio
   @Extension
   public static class KnownHostsFileKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
+    @NonNull
     @Override
     public String getDisplayName() {
       return Messages.KnownHostsFileHostKeyVerifier_DisplayName();
