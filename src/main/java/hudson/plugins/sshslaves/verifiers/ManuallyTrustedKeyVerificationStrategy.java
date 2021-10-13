@@ -24,21 +24,15 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import hudson.Extension;
-import hudson.model.Action;
-import hudson.model.Actionable;
-import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -55,29 +49,29 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     private static final Logger LOGGER = Logger.getLogger(ManuallyTrustedKeyVerificationStrategy.class.getName());
-    
+
     private final boolean requireInitialManualTrust;
-    
+
     @DataBoundConstructor
     public ManuallyTrustedKeyVerificationStrategy(boolean requireInitialManualTrust) {
         super();
         this.requireInitialManualTrust = requireInitialManualTrust;
     }
-    
+
     public boolean isRequireInitialManualTrust() {
         return requireInitialManualTrust;
     }
-    
+
     @Override
     public boolean verify(final SlaveComputer computer, HostKey hostKey, TaskListener listener) throws IOException {
         HostKeyHelper hostManager = HostKeyHelper.getInstance();
-        
+
         HostKey existingHostKey = hostManager.getHostKey(computer);
         if (null == existingHostKey) {
             if (isRequireInitialManualTrust()) {
                 listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
                 if (!hasExistingTrustAction(computer, hostKey)) {
-                    addAction(computer, new TrustHostKeyAction(computer, hostKey));
+                    computer.addAction(new TrustHostKeyAction(computer, hostKey));
                 }
                 return false;
             }
@@ -90,7 +84,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
         else if (!existingHostKey.equals(hostKey)) {
             listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
             if (!hasExistingTrustAction(computer, hostKey)) {
-                addAction(computer, new TrustHostKeyAction(computer, hostKey));
+                computer.addAction(new TrustHostKeyAction(computer, hostKey));
             }
             return false;
         }
@@ -118,33 +112,16 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
         return algorithms;
     }
 
-    /** TODO replace with {@link Computer#addAction} after core baseline picks up JENKINS-42969 fix */
-    private static void addAction(@Nonnull Computer c, @Nonnull Action a) {
-        try {
-            c.addAction(a);
-        } catch (UnsupportedOperationException x) {
-            try {
-                Field actionsF = Actionable.class.getDeclaredField("actions");
-                actionsF.setAccessible(true);
-                @SuppressWarnings("unchecked")
-                List<Action> actions = (List) actionsF.get(c);
-                actions.add(a);
-            } catch (Exception x2) {
-                LOGGER.log(Level.WARNING, null, x2);
-            }
-        }
-    }
-    
     private boolean hasExistingTrustAction(SlaveComputer computer, HostKey hostKey) {
         for (TrustHostKeyAction action : computer.getActions(TrustHostKeyAction.class)) {
             if (!action.isComplete() && action.getHostKey().equals(hostKey)) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     @Extension
     public static class ManuallyTrustedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
@@ -152,7 +129,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
         public String getDisplayName() {
             return Messages.ManualTrustingHostKeyVerifier_DescriptorDisplayName();
         }
-        
+
     }
-    
+
 }
