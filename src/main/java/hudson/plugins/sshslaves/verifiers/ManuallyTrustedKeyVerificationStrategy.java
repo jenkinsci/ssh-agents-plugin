@@ -25,19 +25,14 @@ package hudson.plugins.sshslaves.verifiers;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
-import hudson.model.Action;
-import hudson.model.Actionable;
-import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -77,7 +72,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
             if (isRequireInitialManualTrust()) {
                 listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
                 if (!hasExistingTrustAction(computer, hostKey)) {
-                    addAction(computer, new TrustHostKeyAction(computer, hostKey));
+                    computer.addAction(new TrustHostKeyAction(computer, hostKey));
                 }
                 return false;
             }
@@ -90,7 +85,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
         else if (!existingHostKey.equals(hostKey)) {
             listener.getLogger().println(Messages.ManualTrustingHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
             if (!hasExistingTrustAction(computer, hostKey)) {
-                addAction(computer, new TrustHostKeyAction(computer, hostKey));
+                computer.addAction(new TrustHostKeyAction(computer, hostKey));
             }
             return false;
         }
@@ -116,23 +111,6 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
         }
 
         return algorithms;
-    }
-
-    /** TODO replace with {@link Computer#addAction} after core baseline picks up JENKINS-42969 fix */
-    private static void addAction(@NonNull Computer c, @NonNull Action a) {
-        try {
-            c.addAction(a);
-        } catch (UnsupportedOperationException x) {
-            try {
-                Field actionsF = Actionable.class.getDeclaredField("actions");
-                actionsF.setAccessible(true);
-                @SuppressWarnings("unchecked")
-                List<Action> actions = (List) actionsF.get(c);
-                actions.add(a);
-            } catch (Exception x2) {
-                LOGGER.log(Level.WARNING, null, x2);
-            }
-        }
     }
 
     private boolean hasExistingTrustAction(SlaveComputer computer, HostKey hostKey) {
