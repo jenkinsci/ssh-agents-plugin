@@ -23,6 +23,7 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
@@ -125,6 +126,7 @@ public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificati
     @Extension
     public static class ManuallyTrustedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.ManualTrustingHostKeyVerifier_DescriptorDisplayName();

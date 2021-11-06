@@ -24,6 +24,7 @@
 package hudson.plugins.sshslaves;
 
 import com.trilead.ssh2.Connection;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.slaves.SlaveComputer;
@@ -32,13 +33,12 @@ import hudson.util.VersionNumber;
 
 import java.util.List;
 import java.util.Collections;
-import javax.annotation.Nonnull;
 
 /**
  * Guess where Java is.
  */
 public abstract class JavaProvider implements ExtensionPoint {
-    
+
     private static final VersionNumber JAVA_LEVEL_8 = new VersionNumber("8");
 
     /**
@@ -68,12 +68,12 @@ public abstract class JavaProvider implements ExtensionPoint {
 
     /**
      * Gets minimal required Java version.
-     * 
+     *
      * @return Minimal Java version required on the controller and agent side.
      * @since TODO
-     * 
+     *
      */
-    @Nonnull
+    @NonNull
     public static VersionNumber getMinJavaLevel() {
         return JAVA_LEVEL_8;
     }

@@ -44,7 +44,6 @@ import hudson.model.TaskListener;
 import hudson.slaves.SlaveComputer;
 import hudson.util.VersionNumber;
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.WARNING;
 
 /**
  * class to check if the version of java installed on the agent is a supported one.

@@ -30,6 +30,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -51,7 +52,7 @@ import java.util.Collections;
 public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     private final HostKey key;
-    
+
     @DataBoundConstructor
     public ManuallyProvidedKeyVerificationStrategy(String key) {
         super();
@@ -61,15 +62,15 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             throw new IllegalArgumentException("Invalid key: " + e.getMessage(), e);
         }
     }
-    
+
     public String getKey() {
         return key.getAlgorithm() + " " + Base64.getEncoder().encodeToString(key.getKey());
     }
-    
+
     public HostKey getParsedKey() {
         return key;
     }
-    
+
     @Override
     public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
         if (key.equals(hostKey)) {
@@ -91,7 +92,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
 
         return sortedAlgorithms.toArray(new String[0]);
     }
-    
+
     private static HostKey parseKey(String key) throws KeyParseException {
         if (!key.contains(" ")) {
             throw new IllegalArgumentException(Messages.ManualKeyProvidedHostKeyVerifier_TwoPartKey());
@@ -102,18 +103,19 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
         if (null == keyValue) {
             throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_Base64EncodedKeyValueRequired());
         }
-        
+
         return TrileadVersionSupportManager.getTrileadSupport().parseKey(algorithm, keyValue);
     }
-    
+
     @Extension
     public static class ManuallyProvidedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
 
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.ManualKeyProvidedHostKeyVerifier_DisplayName();
         }
-        
+
         public FormValidation doCheckKey(@QueryParameter String key) {
             try {
                 ManuallyProvidedKeyVerificationStrategy.parseKey(key);
@@ -122,7 +124,7 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
                 return FormValidation.error(ex.getMessage());
             }
         }
-        
+
     }
 
 }

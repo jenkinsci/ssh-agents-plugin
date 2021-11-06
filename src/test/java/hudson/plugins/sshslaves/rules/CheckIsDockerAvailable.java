@@ -1,10 +1,8 @@
 package hudson.plugins.sshslaves.rules;
 
-import org.apache.commons.lang.SystemUtils;
 import org.junit.rules.ExternalResource;
 import org.testcontainers.DockerClientFactory;
 
-import java.io.IOException;
 import static org.junit.Assume.assumeTrue;
 
 /**

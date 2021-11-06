@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.trilead.ssh2.Connection;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.ItemGroup;
 import hudson.model.TaskListener;
@@ -167,7 +168,7 @@ public class SSHConnector extends ComputerConnector {
     }
 
     @Override
-    public SSHLauncher launch(String host, TaskListener listener) {
+    public SSHLauncher launch(@NonNull String host, TaskListener listener) {
         SSHLauncher sshLauncher = new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
                 suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
         sshLauncher.setWorkDir(workDir);
@@ -283,6 +284,7 @@ public class SSHConnector extends ComputerConnector {
 
     @Extension
     public static class DescriptorImpl extends ComputerConnectorDescriptor {
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.SSHLauncher_DescriptorDisplayName();
