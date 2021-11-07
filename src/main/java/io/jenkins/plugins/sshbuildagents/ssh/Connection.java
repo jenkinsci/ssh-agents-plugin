@@ -145,6 +145,8 @@ public interface Connection {
    */
   void setStdOut(OutputStream stdout);
 
+    boolean isOpen();
+
   /*
   TODO rid of SSHAuthenticator
 

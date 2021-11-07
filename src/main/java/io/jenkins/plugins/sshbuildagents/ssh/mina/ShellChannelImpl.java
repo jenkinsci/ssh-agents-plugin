@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
@@ -36,12 +37,23 @@ import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.channel.Channel;
 import org.apache.sshd.common.channel.ChannelListener;
+import org.apache.sshd.common.session.ReservedSessionMessagesHandler;
+import org.apache.sshd.common.session.Session;
+import org.apache.sshd.common.session.SessionHeartbeatController;
+import org.apache.sshd.common.util.buffer.Buffer;
 
 /**
  * Implements {@link ShellChannel} using the Apache Mina SSHD library https://github.com/apache/mina-sshd
  * @author Ivan Fernandez Calvo
  */
 public class ShellChannelImpl implements ShellChannel {
+
+  /**
+   * Time between session heartbeat probes.
+   */
+  public static final int SESSION_HEARTBEAT = 20000;
+  public static final int OPERATION_TIMEOUT = 10000;
+
   /**
    * Enum to represent the channel status.
    */
@@ -136,11 +148,12 @@ public class ShellChannelImpl implements ShellChannel {
   @Override
   public void execCommand(String cmd) throws IOException {
     this.channel = session.createExecChannel(cmd + "\n");
+    session.setSessionHeartbeat(SessionHeartbeatController.HeartbeatType.IGNORE, Duration.ofMillis(SESSION_HEARTBEAT));
     channel.setOut(out);
     channel.setIn(in);
-    channel.open().verify(5L, TimeUnit.SECONDS);
+    channel.open().verify(OPERATION_TIMEOUT, TimeUnit.MILLISECONDS);
     channel.addChannelListener(channelListener);
-    channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), 10000);
+    channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), OPERATION_TIMEOUT);
   }
 
   @Override

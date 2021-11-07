@@ -44,6 +44,7 @@ import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.future.AuthFuture;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.common.session.SessionHeartbeatController;
 import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.scp.client.DefaultScpClient;
 import hudson.util.Secret;
@@ -217,16 +218,17 @@ public class ConnectionImpl implements Connection{
     if(client == null) {
       client = SshClient.setUpDefaultClient();
       //client.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
-      //client.setHostConfigEntryResolver(HostConfigEntryResolver.EMPTY);
-      //client.setKeyIdentityProvider(KeyIdentityProvider.EMPTY_KEYS_PROVIDER);
       //CoreModuleProperties.NIO2_READ_TIMEOUT.set(client, READ_TIMEOUT);
-      //PropertyResolver propertyResolver = PropertyResolver.EMPTY; //TODO implement
-      //SshConfigFileReader.configureKeyExchanges(client, propertyResolver, true, ClientBuilder.DH2KEX, true);
-      //SshConfigFileReader.configureSignatures(client, propertyResolver, true, true);
-      //SshClientConfigFileReader.setupClientHeartbeat(client, propertyResolver);
       CoreModuleProperties.WINDOW_SIZE.set(client, WINDOW_SIZE);
       CoreModuleProperties.TCP_NODELAY.set(client, tcpNoDelay);
+      CoreModuleProperties.HEARTBEAT_REQUEST.set(client, "keepalive@jenkins.io");
       CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofMillis(HEARTBEAT_INTERVAL));
+      CoreModuleProperties.HEARTBEAT_REPLY_WAIT.set(client, Duration.ofMillis(HEARTBEAT_INTERVAL*2));
+      CoreModuleProperties.NIO2_READ_TIMEOUT.set(client, Duration.ofMillis(timeoutMillis));
+
+      CoreModuleProperties.IDLE_TIMEOUT.getRequired(client);
+      CoreModuleProperties.NIO2_READ_TIMEOUT.getRequired(client);
+      CoreModuleProperties.HEARTBEAT_REPLY_WAIT.getRequired(client);
     }
     if(client.isStarted() == false){
       client.start();
@@ -318,5 +320,10 @@ public class ConnectionImpl implements Connection{
   @Override
   public void setStdOut(OutputStream stdout) {
     this.stdout = stdout;
+  }
+
+  @Override
+  public boolean isOpen(){
+    return isSession() && client != null && client.isOpen();
   }
 }
