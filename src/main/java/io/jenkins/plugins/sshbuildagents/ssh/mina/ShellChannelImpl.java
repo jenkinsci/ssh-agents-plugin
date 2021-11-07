@@ -32,7 +32,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
-import org.apache.commons.io.output.QueueOutputStream;
 import org.apache.sshd.client.channel.ChannelSession;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
@@ -78,20 +77,20 @@ public class ShellChannelImpl implements ShellChannel {
    * Standard output of the channel.
    * the process output is write in it.
    */
-  private OutputStream out = new QueueOutputStream();
+  private OutputStream out = new PipedOutputStream();
   /**
    * Output stream to allow writing in the standard input of the process from outside the class.
    */
-  private OutputStream invertedIn = new QueueOutputStream();
+  private OutputStream invertedIn = new PipedOutputStream();
   /**
    * Standard input of the channel.
    * This is sent to the standard input of the process launched.
    */
-  private InputStream in = ((QueueOutputStream)invertedIn).newQueueInputStream();
+  private InputStream in = new PipedInputStream((PipedOutputStream)invertedIn);
   /**
    * Input stream tar allows to read the standard out of the process from outside the class.
    */
-  private InputStream invertedOut = ((QueueOutputStream)out).newQueueInputStream();
+  private InputStream invertedOut = new PipedInputStream((PipedOutputStream)out);
 
   /**
    * Current status of the channel.
