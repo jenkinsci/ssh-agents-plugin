@@ -152,11 +152,18 @@
       <groupId>io.jenkins</groupId>
       <artifactId>configuration-as-code</artifactId>
       <scope>test</scope>
+      <version>1.52</version>
     </dependency>
     <dependency>
       <groupId>io.jenkins.configuration-as-code</groupId>
       <artifactId>test-harness</artifactId>
       <scope>test</scope>
+      <version>1.52</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.main</groupId>
+      <artifactId>jenkins-test-harness</artifactId>
+      <version>1648.ved2b9ab8b19e</version>
     </dependency>
     <!-- Jupiter/JUnit 5 testcontainers https://java.testcontainers.org/test_framework_integration/junit_5/ -->
     <dependency>
@@ -181,4 +188,17 @@
       <artifactId>bouncycastle-api</artifactId>
     </dependency>-->
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <configuration>
+          <loggers>
+            <org.apache.sshd>FINE</org.apache.sshd>
+          </loggers>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
