@@ -25,23 +25,12 @@ package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -49,7 +38,6 @@ import io.jenkins.plugins.sshbuildagents.Messages;
 import io.jenkins.plugins.sshbuildagents.ssh.Connection;
 import io.jenkins.plugins.sshbuildagents.ssh.ServerHostKeyVerifier;
 import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.common.util.io.NoCloseOutputStream;
 import org.jenkinsci.Symbol;
@@ -84,7 +72,6 @@ import hudson.slaves.SlaveComputer;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import hudson.util.NamingThreadFactory;
 import jenkins.model.Jenkins;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -163,19 +150,6 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    * SSH connection to the agent.
    */
   private transient volatile Connection connection;
-  /**
-   * Indicates that the {@link #tearDownConnection(SlaveComputer, TaskListener)} is in progress.
-   * It is used in {@link #afterDisconnect(SlaveComputer, TaskListener)} to avoid multiple parallel calls.
-   */
-  private transient volatile boolean tearingDownConnection;
-
-  // TODO: It is a bad idea to create a new Executor service for each launcher.
-  // Maybe a Remoting thread pool should be used, but it requires the logic rework to Futures
-  /**
-   * Keeps executor service for the async launch operation.
-   */
-  @CheckForNull
-  private transient volatile ExecutorService launcherExecutorService;
 
   /**
    * The verifier to use for checking the SSH key presented by the host
@@ -259,52 +233,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     return workingDirectory;
   }
 
-  /**
-   * Method reads an input stream into a byte array and closes the input stream when finished.
-   * Added for reading the remoting jar and generating a hash value for it.
-   *
-   * @param inputStream
-   * @return
-   * @throws IOException
-   */
-  static byte[] readInputStreamIntoByteArrayAndClose(InputStream inputStream) throws IOException {
-
-    byte[] bytes = null;
-    try {
-      bytes = IOUtils.toByteArray(inputStream);
-    } catch (IOException e) {
-      throw e;
-    } finally {
-      IOUtils.closeQuietly(inputStream);
-      if (bytes == null) {
-        bytes = new byte[1];
-      }
-    }
-
-    return bytes;
-  }
-
-  public Object readResolve() {
-    if (tcpNoDelay == null) {
-      tcpNoDelay = true;
-    }
-
-    //JENKINS-58589 we include 210 seconds because it was the default value before 1.30.3
-    if (this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 || launchTimeoutSeconds == 210) {
-      this.launchTimeoutSeconds = DEFAULT_LAUNCH_TIMEOUT_SECONDS;
-    }
-
-    if (this.maxNumRetries == null) {
-      this.maxNumRetries = DEFAULT_MAX_NUM_RETRIES;
-    }
-
-    if (this.retryWaitTime == null) {
-      this.retryWaitTime = DEFAULT_RETRY_WAIT_TIME;
-    }
-    return this;
-  }
-
-  public StandardUsernameCredentials getCredentials() {
+  public StandardUsernameCredentials   getCredentials() {
     String credentialsId =
       this.credentialsId == null ? (this.credentials == null ? null : this.credentials.getId()) : this.credentialsId;
     try {
@@ -328,7 +257,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    */
   @Override
   public boolean isLaunchSupported() {
-    return true;
+      return connection == null;
   }
 
   /**
@@ -350,8 +279,6 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    *
    * @return The optional java command to use to launch the agent JVM.
    */
-  @SuppressWarnings("unused") // Used by vsphere-cloud-plugin
-  @Deprecated
   public String getJavaPath() {
     return javaPath == null ? "" : javaPath;
   }
@@ -376,73 +303,22 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
         return;
       }
       connection = new ConnectionImpl(host, port);
-      NamingThreadFactory namingThreadFactory = new NamingThreadFactory(Executors.defaultThreadFactory(),
-                                                                        "SSHLauncher.launch for '" + computer.getName()
-                                                                        + "' node");
-      launcherExecutorService = Executors.newSingleThreadExecutor(namingThreadFactory);
-      Set<Callable<Boolean>> callables = new HashSet<>();
-      callables.add(new Callable<Boolean>() {
-        public Boolean call() throws InterruptedException {
-          Boolean rval = Boolean.FALSE;
-          final String workingDirectory = getWorkingDirectory(computer);
-          try {
-            listener.getLogger().println(logConfiguration());
-            openConnection(listener, computer, workingDirectory);
-            copyAgentJar(listener, workingDirectory);
-            verifyNoHeaderJunk(listener);
-            reportEnvironment(listener);
-            startAgent(computer, listener, workingDirectory);
-            rval = Boolean.TRUE;
-          } catch (RuntimeException | Error e) {
-            String msg = Messages.SSHLauncher_UnexpectedError();
-            if (StringUtils.isNotBlank(e.getMessage())) {
-              msg = e.getMessage();
-            }
-            e.printStackTrace(listener.error(msg));
-          } catch (AbortException e) {
-            listener.getLogger().println(e.getMessage());
-          } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-          } finally {
-            return rval;
-          }
-        }
-      });
 
-      final String nodeName = node != null ? node.getNodeName() : "unknown";
+      final String workingDirectory = getWorkingDirectory(computer);
+      listener.getLogger().println(logConfiguration());
       try {
-        long time = System.currentTimeMillis();
-        List<Future<Boolean>> results;
-        final ExecutorService srv = launcherExecutorService;
-        if (srv == null) {
-          throw new IllegalStateException(
-            "Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
+        openConnection(listener, computer, workingDirectory);
+        copyAgentJar(listener, workingDirectory);
+        verifyNoHeaderJunk(listener);
+        reportEnvironment(listener);
+        startAgent(computer, listener, workingDirectory);
+      } catch (Error | Exception e) {
+        String msg = Messages.SSHLauncher_UnexpectedError();
+        if (StringUtils.isNotBlank(e.getMessage())) {
+          msg = e.getMessage();
         }
-
-        results = srv.invokeAll(callables);
-        long duration = System.currentTimeMillis() - time;
-        Boolean res;
-        try {
-          res = results.get(0).get();
-        } catch (CancellationException | ExecutionException e) {
-          res = Boolean.FALSE;
-          listener.getLogger().println(Messages.SSHLauncher_launchCanceled());
-        }
-        if (!res) {
-          System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(), nodeName, host, duration));
-          listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
-          cleanupConnection(listener);
-        } else {
-          System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(), nodeName, host, duration));
-        }
-      } catch (InterruptedException e) {
-        System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(), nodeName, host));
-      } finally {
-        ExecutorService srv = launcherExecutorService;
-        if (srv != null) {
-          srv.shutdownNow();
-          launcherExecutorService = null;
-        }
+        e.printStackTrace(listener.error(msg));
+        close();
       }
     }
     if (node != null && getTrackCredentials()) {
@@ -470,19 +346,6 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
       LOGGER.log(WARNING, msg);
       listener.getLogger().println(msg);
       throw new AbortException(msg);
-    }
-  }
-
-  /**
-   * Called to terminate the SSH connection. Used liberally when we back out from an error.
-   */
-  private void cleanupConnection(TaskListener listener) {
-    // we might be called multiple times from multiple finally/catch block,
-    Connection _connection = connection;
-    if (_connection != null) {
-      Computer.threadPoolForRemoting.submit(_connection::close);
-      connection = null;
-      listener.getLogger().println(Messages.SSHLauncher_ConnectionClosed(getTimestamp()));
     }
   }
 
@@ -581,20 +444,9 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
       computer.setChannel(shellChannel.getInvertedStdout(), shellChannel.getInvertedStdin(), listener.getLogger(),
                           null);
     } catch (InterruptedException e) {
-      connection.close();
       throw new IOException(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
     } catch (IOException e) {
       throw new AbortException(e.getMessage());
-          /* TODO review
-            try {
-                // often times error this early means the JVM has died, so let's see if we can capture all stderr
-                // and exit code
-                throw new AbortException(getSessionOutcomeMessage(session,false));
-            } catch (InterruptedException x) {
-                throw new IOException(e);
-            }
-
-           */
     }
   }
 
@@ -701,29 +553,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     if (connection == null) {
       // Nothing to do here, the connection is not established
       return;
-    }
-
-    ExecutorService srv = launcherExecutorService;
-    if (srv != null) {
-      // If the service is still running, shut it down and interrupt the operations if any
-      srv.shutdown();
-    }
-
-    if (tearingDownConnection) {
-      // tear down operation is in progress, do not even try to synchronize the call.
-      //TODO: what if reconnect attempts collide? It should not be possible due to locks, but maybe it worth investigation
-      LOGGER.log(Level.FINE, "There is already a tear down operation in progress for connection {0}. Skipping the call",
-                 connection);
-      return;
-    }
-    tearDownConnection(slaveComputer, listener);
-  }
-
-  private synchronized void tearDownConnection(@NonNull SlaveComputer slaveComputer,
-                                               final @NonNull TaskListener listener) {
-    if (connection != null) {
+    } else {
       try {
-        tearingDownConnection = true;
         if(shellChannel != null){
           if(shellChannel.getStatus() != null) {
             listener.getLogger().println("Connection\n\tstatus: " + shellChannel.getStatus().name());
@@ -735,13 +566,26 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
             listener.getLogger().println("\tHint: " + shellChannel.getLastHint());
           }
         }
-        connection.close();
-        connection = null;
-        cleanupConnection(listener);
-      } finally {
-        tearingDownConnection = false;
+        close();
+      } catch (Exception e) {
+        listener.getLogger().println("Error after disconnect agent: "+e.getMessage());
       }
     }
+  }
+
+  private void close(){
+    try{
+      if(shellChannel != null){
+        shellChannel.close();
+      }
+      if (connection != null) {
+        connection.close();
+      }
+    } catch (Exception e){
+      //NOOP
+    }
+    connection = null;
+    shellChannel = null;
   }
 
   public String getCredentialsId() {
@@ -919,7 +763,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   }
 
   public String logConfiguration() {
-    final StringBuilder sb = new StringBuilder("SSHLauncher{");
+    final StringBuilder sb = new StringBuilder(this.getClass().getName()+"{");
     sb.append("host='").append(getHost()).append('\'');
     sb.append(", port=").append(getPort());
     sb.append(", credentialsId='").append(Util.fixNull(credentialsId)).append('\'');
