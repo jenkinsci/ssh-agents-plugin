@@ -35,6 +35,7 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ConnectionImplTest {
   private SshServer sshd;
@@ -113,6 +114,20 @@ public class ConnectionImplTest {
     String dataStr = IOUtils.toString(data, "UTF-8");
     System.err.println(dataStr);
     assertEquals("FOO\n", dataStr);
+  }
+
+  @Test
+  public void testRunLongConnection() throws IOException, InterruptedException {
+    Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
+    StandardUsernameCredentials credentials = new FakeSSHKeyCredential();
+    connection.setCredentials(credentials);
+    ShellChannel shellChannel = connection.shellChannel();
+    shellChannel.execCommand("sleep 500s");
+    for(int i=0;i<300;i++){
+      Thread.sleep(1000);
+      assertTrue(connection.isOpen());
+    }
+    connection.close();
   }
 
   @Test
