@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -44,11 +46,12 @@ public class ConnectionImplTest {
 
   @Before
   public void setup() throws IOException {
+    Logger.getLogger("org.apache.sshd").setLevel(Level.FINE);
+    Logger.getLogger("io.jenkins.plugins.sshbuildagents").setLevel(Level.FINE);
     sshd = SshServer.setUpDefaultServer();
     sshd.setHost("127.0.0.1");
     ScpCommandFactory.Builder cmdFactoryBuilder = new ScpCommandFactory.Builder();
     sshd.setCommandFactory(cmdFactoryBuilder.withDelegate(ProcessShellCommandFactory.INSTANCE).build());
-    //sshd.setShellFactory(new ProcessShellFactory("bash", "/bin/bash", "-i", "-l"));
     sshd.setShellFactory(InteractiveProcessShellFactory.INSTANCE);
     sshd.setPasswordAuthenticator((username, password, session) ->
                                     AgentConnectionBase.USER.equals(username) && AgentConnectionBase.PASSWORD.equals(password));

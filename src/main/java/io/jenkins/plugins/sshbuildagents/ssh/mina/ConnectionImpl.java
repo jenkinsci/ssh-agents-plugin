@@ -218,17 +218,14 @@ public class ConnectionImpl implements Connection{
     if(client == null) {
       client = SshClient.setUpDefaultClient();
       //client.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
-      //CoreModuleProperties.NIO2_READ_TIMEOUT.set(client, READ_TIMEOUT);
       CoreModuleProperties.WINDOW_SIZE.set(client, WINDOW_SIZE);
       CoreModuleProperties.TCP_NODELAY.set(client, tcpNoDelay);
       CoreModuleProperties.HEARTBEAT_REQUEST.set(client, "keepalive@jenkins.io");
       CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofMillis(HEARTBEAT_INTERVAL));
       CoreModuleProperties.HEARTBEAT_REPLY_WAIT.set(client, Duration.ofMillis(HEARTBEAT_INTERVAL*2));
-      CoreModuleProperties.NIO2_READ_TIMEOUT.set(client, Duration.ofMillis(timeoutMillis));
+      //CoreModuleProperties.NIO2_READ_TIMEOUT.set(client, Duration.ofMillis(timeoutMillis));
 
-      CoreModuleProperties.IDLE_TIMEOUT.getRequired(client);
-      CoreModuleProperties.NIO2_READ_TIMEOUT.getRequired(client);
-      CoreModuleProperties.HEARTBEAT_REPLY_WAIT.getRequired(client);
+      //CoreModuleProperties.BUFFERED_IO_OUTPUT_MAX_PENDING_WRITE_WAIT.set(client, Duration.ofMillis(10));
     }
     if(client.isStarted() == false){
       client.start();

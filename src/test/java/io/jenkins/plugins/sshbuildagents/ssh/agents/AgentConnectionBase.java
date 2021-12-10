@@ -11,7 +11,6 @@ import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 import hudson.model.Descriptor;
 import hudson.model.Node;
-import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.plugins.sshslaves.rules.CheckIsDockerAvailable;
 import hudson.plugins.sshslaves.rules.CheckIsLinuxOrMac;
 import hudson.plugins.sshslaves.rules.Retry;
@@ -38,7 +37,7 @@ public class AgentConnectionBase {
   public static final String SSH_SSHD_CONFIG = "ssh/sshd_config";
   public static final String DOCKERFILE = "Dockerfile";
   public static final String SSH_AUTHORIZED_KEYS = "ssh/authorized_keys";
-  public static final String AGENTS_RESOURCES_PATH = "/hudson/plugins/sshslaves/agents/";
+  public static final String AGENTS_RESOURCES_PATH =  "/io/jenkins/plugins/sshbuildagents/ssh/agents";
 
   @Rule
   public CheckIsLinuxOrMac isLinuxOrMac = new CheckIsLinuxOrMac();
@@ -81,7 +80,7 @@ public class AgentConnectionBase {
     String credId = "sshCredentialsId";
     createSshKeyCredentials(credId, keyResourcePath, passphrase);
     final SSHApacheMinaLauncher launcher = new SSHApacheMinaLauncher(host , sshPort, credId);
-    launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
+    initLauncher(launcher);
     DumbSlave agent = new DumbSlave(name, AGENT_WORK_DIR, launcher);
     j.jenkins.addNode(agent);
     return j.jenkins.getNode(agent.getNodeName());
@@ -89,13 +88,21 @@ public class AgentConnectionBase {
 
   protected Node createPermanentAgent(String name, String host, int sshPort)
         throws Descriptor.FormException, IOException {
-      String credId = "sshCredentialsId";
-      createSshCredentials(credId);
-      final SSHLauncher launcher = new SSHLauncher(host , sshPort, credId);
-      launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
-      DumbSlave agent = new DumbSlave(name, AGENT_WORK_DIR, launcher);
-      j.jenkins.addNode(agent);
-      return j.jenkins.getNode(agent.getNodeName());
+    String credId = "sshCredentialsId";
+    createSshCredentials(credId);
+    final SSHApacheMinaLauncher launcher = new SSHApacheMinaLauncher(host , sshPort, credId);
+    initLauncher(launcher);
+    DumbSlave agent = new DumbSlave(name, AGENT_WORK_DIR, launcher);
+    j.jenkins.addNode(agent);
+    return j.jenkins.getNode(agent.getNodeName());
+  }
+
+  private void initLauncher(SSHApacheMinaLauncher launcher) {
+    launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
+    launcher.setJvmOptions(" -Dhudson.remoting.Launcher.pingIntervalSec=-1 "
+                           + "-Dhudson.slaves.ChannelPinger.pingIntervalSeconds=-1 "
+                           + "-Djava.awt.headless=true ");
+    launcher.setSuffixStartSlaveCmd(" -loggingConfig /home/jenkins/.ssh/remoting_logger.properties ");
   }
 
   private void createSshKeyCredentials(String id, String keyResourcePath, String passphrase) throws IOException {

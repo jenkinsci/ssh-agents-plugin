@@ -1,6 +1,7 @@
 package io.jenkins.plugins.sshbuildagents.ssh.agents;
 
 import java.io.IOException;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -22,6 +23,7 @@ public class AgentRSA512ConnectionTest extends AgentConnectionBase {
   public static final String SSH_AGENT_NAME = "ssh-agent-rsa512";
   public static final String SSH_KEY_PATH = "ssh/rsa-512-key";
   public static final String SSH_KEY_PUB_PATH = "ssh/rsa-512-key.pub";
+  public static final String LOGGING_PROPERTIES = "remoting_logger.properties";
 
   @Rule
   public GenericContainer agentContainer = new GenericContainer(
@@ -30,7 +32,8 @@ public class AgentRSA512ConnectionTest extends AgentConnectionBase {
       .withFileFromClasspath(SSH_KEY_PATH, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PATH)
       .withFileFromClasspath(SSH_KEY_PUB_PATH, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PUB_PATH)
       .withFileFromClasspath(SSH_SSHD_CONFIG, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_SSHD_CONFIG)
-      .withFileFromClasspath(DOCKERFILE, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + DOCKERFILE))
+      .withFileFromClasspath(DOCKERFILE, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + DOCKERFILE)
+      .withFileFromClasspath("ssh/" + LOGGING_PROPERTIES, "/" + LOGGING_PROPERTIES))
       .withExposedPorts(22);
 
   @Test

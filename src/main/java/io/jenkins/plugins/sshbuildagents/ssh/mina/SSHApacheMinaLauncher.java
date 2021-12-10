@@ -556,9 +556,6 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     } else {
       try {
         if(shellChannel != null){
-          if(shellChannel.getStatus() != null) {
-            listener.getLogger().println("Connection\n\tstatus: " + shellChannel.getStatus().name());
-          }
           if(shellChannel.getLastError() != null){
             listener.getLogger().println("\tException: " + shellChannel.getLastError().getMessage());
           }

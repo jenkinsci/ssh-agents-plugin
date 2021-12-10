@@ -26,7 +26,6 @@ package io.jenkins.plugins.sshbuildagents.ssh;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import io.jenkins.plugins.sshbuildagents.ssh.mina.ShellChannelImpl;
 
 /**
  * Interface to manage non-interactive sessions.
@@ -51,12 +50,6 @@ public interface ShellChannel {
    * @return The standard input of the process launched in a OutputStream for writting.
    */
   OutputStream getInvertedStdin();
-
-  /**
-   *
-   * @return The status of the channel.
-   */
-  ShellChannelImpl.Status getStatus();
 
   /**
    *

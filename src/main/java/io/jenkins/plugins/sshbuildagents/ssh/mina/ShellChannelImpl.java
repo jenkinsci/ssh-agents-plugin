@@ -23,6 +23,7 @@
  */
 package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -55,16 +56,6 @@ public class ShellChannelImpl implements ShellChannel {
   public static final int OPERATION_TIMEOUT = 10000;
 
   /**
-   * Enum to represent the channel status.
-   */
-  public enum Status {
-    INIZIALIZED,
-    OPEN,
-    CLOSED,
-    FAILURE
-  }
-
-  /**
    * SSH Client session.
    */
   private final ClientSession session;
@@ -93,10 +84,6 @@ public class ShellChannelImpl implements ShellChannel {
   private InputStream invertedOut = new PipedInputStream((PipedOutputStream)out);
 
   /**
-   * Current status of the channel.
-   */
-  private Status status;
-  /**
    * Last exception.
    */
   private Throwable lastError;
@@ -104,37 +91,6 @@ public class ShellChannelImpl implements ShellChannel {
    * last command received.
    */
   private String lastHint;
-  /**
-   * Listener to report the status of the channel.
-   */
-  private ChannelListener channelListener = new ChannelListener() {
-    @Override
-    public void channelInitialized(Channel channel) {
-      status = Status.INIZIALIZED;
-    }
-
-    @Override
-    public void channelOpenSuccess(Channel channel) {
-      status = Status.OPEN;
-    }
-
-    @Override
-    public void channelOpenFailure(Channel channel, Throwable reason) {
-      status = Status.FAILURE;
-      lastError = reason;
-    }
-
-    @Override
-    public void channelStateChanged(Channel channel, String hint) {
-      lastHint = hint;
-    }
-
-    @Override
-    public void channelClosed(Channel channel, Throwable reason) {
-      status = Status.CLOSED;
-      lastError = reason;
-    }
-  };
 
   /**
    * Create a Shell channel for a process execution.
@@ -148,11 +104,11 @@ public class ShellChannelImpl implements ShellChannel {
   @Override
   public void execCommand(String cmd) throws IOException {
     this.channel = session.createExecChannel(cmd + "\n");
-    session.setSessionHeartbeat(SessionHeartbeatController.HeartbeatType.IGNORE, Duration.ofMillis(SESSION_HEARTBEAT));
+    //session.setSessionHeartbeat(SessionHeartbeatController.HeartbeatType.IGNORE, Duration.ofMillis
+    // (SESSION_HEARTBEAT));
     channel.setOut(out);
     channel.setIn(in);
     channel.open().verify(OPERATION_TIMEOUT, TimeUnit.MILLISECONDS);
-    channel.addChannelListener(channelListener);
     channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), OPERATION_TIMEOUT);
   }
 
@@ -164,11 +120,6 @@ public class ShellChannelImpl implements ShellChannel {
   @Override
   public OutputStream getInvertedStdin() {
     return invertedIn;
-  }
-
-  @Override
-  public Status getStatus() {
-    return status;
   }
 
   @Override
