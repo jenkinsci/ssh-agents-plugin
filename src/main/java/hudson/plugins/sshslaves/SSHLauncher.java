@@ -419,60 +419,58 @@ public class SSHLauncher extends ComputerLauncher {
             launcherExecutorService = Executors.newSingleThreadExecutor(
                     new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
             Set<Callable<Boolean>> callables = new HashSet<>();
-            callables.add(new Callable<Boolean>() {
-                public Boolean call() throws InterruptedException {
-                    Boolean rval = Boolean.FALSE;
-                    try {
-                        String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
-                        if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
-                            connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
-                        } else {
-                            listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
-                        }
-
-                        listener.getLogger().println(logConfiguration());
-
-                        openConnection(listener, computer);
-
-                        verifyNoHeaderJunk(listener);
-                        reportEnvironment(listener);
-
-                        final String workingDirectory = getWorkingDirectory(computer);
-                        if (workingDirectory == null) {
-                            listener.error("Cannot get the working directory for " + computer);
-                            return Boolean.FALSE;
-                        }
-
-                        String java = null;
-                        if (StringUtils.isNotBlank(javaPath)) {
-                            java = expandExpression(computer, javaPath);
-                        } else {
-                          checkJavaIsInPath(listener);
-                          //FIXME deprecated on 2020-12-10, it will removed after 2021-09-01
-                            JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
-                                    connection);
-                            java = javaVersionChecker.resolveJava();
-                        }
-
-                        copyAgentJar(listener, workingDirectory);
-
-                        startAgent(computer, listener, java, workingDirectory);
-
-                        PluginImpl.register(connection);
-                        rval = Boolean.TRUE;
-                    } catch (RuntimeException|Error e) {
-                        String msg = Messages.SSHLauncher_UnexpectedError();
-                        if(StringUtils.isNotBlank(e.getMessage())){
-                            msg = e.getMessage();
-                        }
-                        e.printStackTrace(listener.error(msg));
-                    } catch (AbortException e) {
-                        listener.getLogger().println(e.getMessage());
-                    } catch (IOException e) {
-                        e.printStackTrace(listener.getLogger());
-                    } finally {
-                        return rval;
+            callables.add(() -> {
+                Boolean rval = Boolean.FALSE;
+                try {
+                    String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
+                    if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
+                        connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
+                    } else {
+                        listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
                     }
+
+                    listener.getLogger().println(logConfiguration());
+
+                    openConnection(listener, computer);
+
+                    verifyNoHeaderJunk(listener);
+                    reportEnvironment(listener);
+
+                    final String workingDirectory = getWorkingDirectory(computer);
+                    if (workingDirectory == null) {
+                        listener.error("Cannot get the working directory for " + computer);
+                        return Boolean.FALSE;
+                    }
+
+                    String java = null;
+                    if (StringUtils.isNotBlank(javaPath)) {
+                        java = expandExpression(computer, javaPath);
+                    } else {
+                      checkJavaIsInPath(listener);
+                      //FIXME deprecated on 2020-12-10, it will removed after 2021-09-01
+                        JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
+                                connection);
+                        java = javaVersionChecker.resolveJava();
+                    }
+
+                    copyAgentJar(listener, workingDirectory);
+
+                    startAgent(computer, listener, java, workingDirectory);
+
+                    PluginImpl.register(connection);
+                    rval = Boolean.TRUE;
+                } catch (RuntimeException|Error e) {
+                    String msg = Messages.SSHLauncher_UnexpectedError();
+                    if(StringUtils.isNotBlank(e.getMessage())){
+                        msg = e.getMessage();
+                    }
+                    e.printStackTrace(listener.error(msg));
+                } catch (AbortException e) {
+                    listener.getLogger().println(e.getMessage());
+                } catch (IOException e) {
+                    e.printStackTrace(listener.getLogger());
+                } finally {
+                    return rval;
                 }
             });
 
