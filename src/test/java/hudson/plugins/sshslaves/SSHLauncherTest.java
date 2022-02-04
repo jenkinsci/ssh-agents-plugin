@@ -76,6 +76,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -154,12 +155,7 @@ public class SSHLauncherTest {
   }
 
   private static void assertNotSupported(final String testVersionOutput) throws AssertionError {
-    try {
-      checkSupported(testVersionOutput);
-      fail("Expected version " + testVersionOutput + " to be not supported, but it is supported");
-    } catch (IOException e) {
-      // expected
-    }
+    assertThrows(IOException.class, () -> checkSupported(testVersionOutput));
   }
 
   private void checkRoundTrip(String host) throws Exception {
@@ -400,7 +396,7 @@ public class SSHLauncherTest {
     try {
       byte[] bytes = "Leave me alone!".getBytes();
       String result = SSHLauncher.getMd5Hash(bytes);
-      assertTrue("1EB226C8E950BAC1494BE197E84A264C".equals(result));
+      assertEquals("1EB226C8E950BAC1494BE197E84A264C", result);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -420,7 +416,7 @@ public class SSHLauncherTest {
       byte[] bytes = SSHLauncher.readInputStreamIntoByteArrayAndClose(inputStream);
       assertNotNull(bytes);
       assertTrue(bytes.length > 0);
-      assertTrue("Don't change me or add newlines!".equals(new String(bytes)));
+      assertEquals("Don't change me or add newlines!", new String(bytes));
 
     } catch (Exception e) {
       e.printStackTrace();
