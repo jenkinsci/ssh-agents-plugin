@@ -187,25 +187,21 @@ public class TrustHostKeyActionTest {
         return java.lang.reflect.Proxy.newProxyInstance(
                 commandFactoryClass.getClassLoader(),
                 new java.lang.Class[]{commandFactoryClass},
-                new java.lang.reflect.InvocationHandler() {
+          (proxy, method, args) -> {
 
-                    @Override
-                    public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
+              if (method.getName().equals("createCommand")) {
+                  Class commandClass;
+                  try {
+                      commandClass = Class.forName("org.apache.sshd.server.command.UnknownCommand");
+                  } catch (ClassNotFoundException e) {
+                      commandClass = Class.forName("org.apache.sshd.server.scp.UnknownCommand");
+                  }
 
-                        if (method.getName().equals("createCommand")) {
-                            Class commandClass;
-                            try {
-                                commandClass = Class.forName("org.apache.sshd.server.command.UnknownCommand");
-                            } catch (ClassNotFoundException e) {
-                                commandClass = Class.forName("org.apache.sshd.server.scp.UnknownCommand");
-                            }
+                  return commandClass.getConstructor(String.class).newInstance(args[0]);
+              }
 
-                            return commandClass.getConstructor(String.class).newInstance(args[0]);
-                        }
-
-                        return null;
-                    }
-                });
+              return null;
+          });
     }
 
     private Class newCommandAuthenticatorClass() throws ClassNotFoundException {
@@ -223,18 +219,14 @@ public class TrustHostKeyActionTest {
         return java.lang.reflect.Proxy.newProxyInstance(
                 passwordAuthenticatorClass.getClassLoader(),
                 new java.lang.Class[]{passwordAuthenticatorClass},
-                new java.lang.reflect.InvocationHandler() {
+          (proxy, method, args) -> {
 
-                    @Override
-                    public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
+              if (method.getName().equals("authenticate")) {
+                  return Boolean.TRUE;
+              }
 
-                        if (method.getName().equals("authenticate")) {
-                            return Boolean.TRUE;
-                        }
-
-                        return null;
-                    }
-                });
+              return null;
+          });
     }
 
     private Object invoke(Object target, String methodName, Class[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
