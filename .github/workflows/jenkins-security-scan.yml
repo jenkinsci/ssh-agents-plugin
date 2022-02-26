@@ -3,8 +3,9 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    types: [ opened, synchronize, reopened ]
+# see https://github.com/jenkins-infra/jenkins-security-scan/issues/3      
+#  pull_request:
+#    types: [ opened, synchronize, reopened ]
   workflow_dispatch:
 
 jobs:
