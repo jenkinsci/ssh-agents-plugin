@@ -493,16 +493,16 @@ public class SSHLauncher extends ComputerLauncher {
                     listener.getLogger().println(Messages.SSHLauncher_launchCanceled());
                 }
                 if (!res) {
-                    System.out.println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
+                    listener.getLogger().println(Messages.SSHLauncher_LaunchFailedDuration(getTimestamp(),
                             nodeName, host, duration));
                     listener.getLogger().println(getTimestamp() + " Launch failed - cleaning up connection");
                     cleanupConnection(listener);
                 } else {
-                    System.out.println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
+                    listener.getLogger().println(Messages.SSHLauncher_LaunchCompletedDuration(getTimestamp(),
                             nodeName, host, duration));
                 }
             } catch (InterruptedException e) {
-                System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
+                listener.getLogger().println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
                         nodeName, host));
             } finally {
                 ExecutorService srv = launcherExecutorService;
