@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>${revision}-${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>SSH Build Agents plugin</name>
