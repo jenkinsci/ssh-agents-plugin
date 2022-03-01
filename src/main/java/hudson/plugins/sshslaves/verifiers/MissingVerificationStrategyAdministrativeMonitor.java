@@ -65,6 +65,11 @@ public class MissingVerificationStrategyAdministrativeMonitor extends Administra
     }
 
     public String getAgentNames() {
-      return agentNames != null ? agentNames.toString() : "";
+        return agentNames != null ? agentNames.toString() : "";
+    }
+
+    @Override
+    public boolean isSecurity() {
+        return true;
     }
 }
