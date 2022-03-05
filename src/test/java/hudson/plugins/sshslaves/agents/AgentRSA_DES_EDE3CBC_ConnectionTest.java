@@ -11,12 +11,14 @@ import hudson.model.Node;
 import hudson.plugins.sshslaves.categories.AgentSSHTest;
 import hudson.plugins.sshslaves.categories.SSHKeyAuthenticationTest;
 import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 
 /**
  * Connect to a remote SSH Agent
  *
  * @author Kuisathaverat
  */
+@Ignore("Only for manual test.")
 @Category({ AgentSSHTest.class, SSHKeyAuthenticationTest.class})
 public class AgentRSA_DES_EDE3CBC_ConnectionTest extends AgentConnectionBase {
   public static final String SSH_AGENT_NAME = "ssh-agent-rsa";
