@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>ssh-slaves</artifactId>
-  <version>${revision}-${changelist}</version>
+  <version>${revision}.${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>SSH Build Agents plugin</name>
@@ -25,8 +25,8 @@
   </licenses>
 
   <properties>
-    <revision>1.33.1</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <revision>1</revision>
+    <changelist>999999-SNAPSHOT</changelist>
     <jenkins.version>2.289.1</jenkins.version>
     <java.level>8</java.level>
     <hpi.compatibleSinceVersion>1.31.0</hpi.compatibleSinceVersion>
