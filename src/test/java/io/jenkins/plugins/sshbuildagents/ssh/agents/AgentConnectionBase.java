@@ -52,7 +52,7 @@ public class AgentConnectionBase {
   public Retry retry = new Retry(3);
 
   @Rule
-  public Timeout globalTimeout= new Timeout(4, TimeUnit.MINUTES);
+  public Timeout globalTimeout= new Timeout(6, TimeUnit.MINUTES);
 
   protected boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
     boolean ret = false;

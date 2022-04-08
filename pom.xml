@@ -219,20 +219,12 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <systemProperties>
-            <property>
-              <name>java.util.logging.config.file</name>
-              <value>src/test/resources/remoting_logger.properties</value>
-            </property>
-            <property>
-              <name>hudson.remoting.Launcher.pingIntervalSec</name>
-              <value>-1</value>
-            </property>
-            <property>
-              <name>hudson.slaves.ChannelPinger.pingIntervalSeconds</name>
-              <value>-1</value>
-            </property>
-          </systemProperties>
+          <systemPropertyVariables>
+            <java.util.logging.config.file>src/test/resources/remoting_logger.properties</java.util.logging.config.file>
+            <hudson.remoting.Launcher.pingIntervalSec>-1</hudson.remoting.Launcher.pingIntervalSec>
+            <hudson.slaves.ChannelPinger.pingIntervalSeconds>-1</hudson.slaves.ChannelPinger.pingIntervalSeconds>
+            <jenkins.test.timeout>-1</jenkins.test.timeout>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>

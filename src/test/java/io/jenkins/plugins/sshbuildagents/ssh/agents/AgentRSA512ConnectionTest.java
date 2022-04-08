@@ -1,10 +1,10 @@
 package io.jenkins.plugins.sshbuildagents.ssh.agents;
 
 import java.io.IOException;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.jvnet.hudson.test.recipes.WithTimeout;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import hudson.model.Descriptor;
@@ -45,15 +45,14 @@ public class AgentRSA512ConnectionTest extends AgentConnectionBase {
   }
 
   @Test
+  @WithTimeout(300)
   public void longConnectionTests() throws IOException, InterruptedException, Descriptor.FormException {
     Node node = createPermanentAgent(SSH_AGENT_NAME, agentContainer.getHost(), agentContainer.getMappedPort(SSH_PORT),
                                      SSH_AGENT_NAME + "/" + SSH_KEY_PATH, "");
     waitForAgentConnected(node);
     assertTrue(isSuccessfullyConnected(node));
-    for(int i=0;i<300;i++){
-      Thread.sleep(1000);
-      assertTrue(node.toComputer().isOnline());
-    }
+    Thread.sleep(60000);
+    assertTrue(node.toComputer().isOnline());
   }
 
 }

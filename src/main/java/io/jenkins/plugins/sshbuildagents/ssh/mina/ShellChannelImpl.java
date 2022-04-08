@@ -23,25 +23,18 @@
  */
 package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 import org.apache.sshd.client.channel.ChannelSession;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
-import org.apache.sshd.common.channel.Channel;
-import org.apache.sshd.common.channel.ChannelListener;
-import org.apache.sshd.common.session.ReservedSessionMessagesHandler;
-import org.apache.sshd.common.session.Session;
-import org.apache.sshd.common.session.SessionHeartbeatController;
-import org.apache.sshd.common.util.buffer.Buffer;
+
 
 /**
  * Implements {@link ShellChannel} using the Apache Mina SSHD library https://github.com/apache/mina-sshd
