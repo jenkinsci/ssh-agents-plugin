@@ -1,6 +1,7 @@
 package hudson.plugins.sshslaves.agents;
 
 import java.io.IOException;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -18,6 +19,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Kuisathaverat
  */
+@Ignore("Only for manual test.")
 @Category({ AgentSSHTest.class, SSHKeyAuthenticationTest.class})
 public class AgentUbuntu2004RSAConnectionTest extends AgentConnectionBase {
   public static final String SSH_AGENT_NAME = "ssh-agent-ubuntu-20.04";
