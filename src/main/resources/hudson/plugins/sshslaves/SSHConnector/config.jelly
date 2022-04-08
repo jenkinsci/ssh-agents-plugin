@@ -5,7 +5,9 @@
       <c:select checkMethod="post"/>
   </f:entry>
 
-  <f:dropdownDescriptorSelector title="${%Host Key Verification Strategy}" field="sshHostKeyVerificationStrategy" />
+  <f:entry>
+    <f:dropdownDescriptorSelector field="sshHostKeyVerificationStrategy" title="${%Host Key Verification Strategy}"/>
+  </f:entry>
 
   <f:advanced>
       <f:entry title="${%Port}" field="port">
