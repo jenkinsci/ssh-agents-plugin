@@ -66,7 +66,6 @@ import hudson.util.NamingThreadFactory;
 import hudson.util.NullStream;
 import java.util.Collections;
 
-import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
