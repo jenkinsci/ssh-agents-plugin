@@ -65,6 +65,8 @@ import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
 import hudson.util.NullStream;
 import java.util.Collections;
+
+import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -214,6 +216,11 @@ public class SSHLauncher extends ComputerLauncher {
      * Allow to enable/disable the TCP_NODELAY flag on the SSH connection.
      */
     private Boolean tcpNoDelay;
+
+
+    private transient boolean isWindows = false;
+
+    private transient boolean isPowershell = false;
 
     /**
      * Set the value to add to the remoting parameter -workDir
@@ -434,6 +441,7 @@ public class SSHLauncher extends ComputerLauncher {
                     openConnection(listener, computer);
 
                     verifyNoHeaderJunk(listener);
+                    interrogateRemoteSystem(listener);
                     reportEnvironment(listener);
 
                     final String workingDirectory = getWorkingDirectory(computer);
@@ -601,19 +609,42 @@ public class SSHLauncher extends ComputerLauncher {
     private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         connection.exec("exit 0",baos);
-        final String s;
-        //TODO: Seems we need to retrieve the encoding from the connection destination
-        try {
-            s = baos.toString(Charset.defaultCharset().name());
-        } catch (UnsupportedEncodingException ex) { // Should not happen
-            throw new IOException("Default encoding is unsupported", ex);
-        }
+      //TODO: Seems we need to retrieve the encoding from the connection destination
+        final String s = fromByteArrayOutputStream(baos);
 
         if (s.length()!=0) {
             listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
             listener.getLogger().println(s);
             throw new AbortException();
         }
+    }
+
+    private void interrogateRemoteSystem(TaskListener listener) throws IOException, InterruptedException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        connection.exec("cmd.exe /c echo \"ssh-agents-plugin\"", baos);
+        String s = fromByteArrayOutputStream(baos);
+
+        if (s.contains("ssh-agents-plugin")) {
+            // we have a Windows system since the cmd.exe worked
+            isWindows = true;
+
+            // now we need to see if the remote shell is cmd.exe or powershell of some sort
+            connection.exec("Write-Host \"ssh-agents-plugin\"",baos);
+            s = fromByteArrayOutputStream(baos);
+            if(s.contains("ssh-agents-plugin")) {
+                isPowershell = true;
+            }
+        }
+    }
+
+    private String fromByteArrayOutputStream(ByteArrayOutputStream baos) throws IOException {
+        final String s;
+        try {
+            s = baos.toString(Charset.defaultCharset().name());
+        } catch (UnsupportedEncodingException ex) {
+            throw new IOException("Default encoding is unsupported", ex);
+        }
+        return s;
     }
 
     /**
@@ -632,6 +663,11 @@ public class SSHLauncher extends ComputerLauncher {
         expandChannelBufferSize(session,listener);
         String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
                      getWorkDirParam(workingDirectory);
+
+        if(isWindows && isPowershell) {
+            cmd = "try { Push-Location \"" + workingDirectory + "\" ; " + java + " " + getJvmOptions() + " -jar " +
+                AGENT_JAR + getWorkDirParam(workingDirectory) + " } finally { Pop-Location }";
+        }
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
         cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
@@ -817,18 +853,34 @@ public class SSHLauncher extends ComputerLauncher {
     private void copySlaveJarUsingSCP(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
         SCPClient scp = new SCPClient(connection);
         try {
-            // check if the working directory exists
-            if (connection.exec("test -d " + workingDirectory ,listener.getLogger())!=0) {
+            if(isWindows) {
+              // check if the working directory exists
+              if (connection.exec("Test-Path " + workingDirectory, listener.getLogger()) != 0) {
                 listener.getLogger().println(
-                        Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
+                  Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
                 // working directory doesn't exist, lets make it.
-                if (connection.exec("mkdir -p " + workingDirectory, listener.getLogger())!=0) {
-                    listener.getLogger().println("Failed to create "+workingDirectory);
+                if (connection.exec("New-Item -ItemType Directory -Path " + workingDirectory, listener.getLogger()) != 0) {
+                  listener.getLogger().println("Failed to create " + workingDirectory);
                 }
-            }
+              }
 
-            // delete the agent jar as we do with SFTP
-            connection.exec("rm " + workingDirectory + SLASH_AGENT_JAR, new NullStream());
+              // delete the agent jar as we do with SFTP
+              connection.exec("Remove-Item -Force " + workingDirectory + SLASH_AGENT_JAR, new NullStream());
+
+            } else {
+                // check if the working directory exists
+                if (connection.exec("test -d " + workingDirectory, listener.getLogger()) != 0) {
+                    listener.getLogger().println(
+                      Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
+                    // working directory doesn't exist, lets make it.
+                    if (connection.exec("mkdir -p " + workingDirectory, listener.getLogger()) != 0) {
+                        listener.getLogger().println("Failed to create " + workingDirectory);
+                    }
+                }
+
+                // delete the agent jar as we do with SFTP
+                connection.exec("rm " + workingDirectory + SLASH_AGENT_JAR, new NullStream());
+            }
 
             // SCP it to the agent. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
             listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
@@ -840,7 +892,11 @@ public class SSHLauncher extends ComputerLauncher {
 
     protected void reportEnvironment(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages._SSHLauncher_RemoteUserEnvironment(getTimestamp()));
-        connection.exec("set",listener.getLogger());
+        if(isWindows && isPowershell) {
+            connection.exec("Get-ChildItem env:", listener.getLogger());
+        } else {
+            connection.exec("set", listener.getLogger());
+        }
     }
 
     protected void openConnection(final TaskListener listener, final SlaveComputer computer) throws IOException, InterruptedException {
