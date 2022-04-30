@@ -659,12 +659,13 @@ public class SSHLauncher extends ComputerLauncher {
                             String workingDirectory) throws IOException {
         session = connection.openSession();
         expandChannelBufferSize(session,listener);
-        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
-                     getWorkDirParam(workingDirectory);
-
-        if(isWindows && isPowershell) {
+        String cmd = "command no set"
+        if(isWindows && isPowershell){
             cmd = "try { Push-Location \"" + workingDirectory + "\" ; " + java + " " + getJvmOptions() + " -jar " +
                 AGENT_JAR + getWorkDirParam(workingDirectory) + " } finally { Pop-Location }";
+        } else {
+            cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
+                     getWorkDirParam(workingDirectory);
         }
 
         //This will wrap the cmd with prefix commands and suffix commands if they are set.
