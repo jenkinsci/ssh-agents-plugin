@@ -226,13 +226,16 @@ See [SSH Build Agents and Cygwin](https://wiki.jenkins.io/display/JENKINS/SSH+sl
 
 ### Launch Windows agents using Microsoft OpenSSH
 
-The current version of the plugin does not run directly on PowerShell, you have to use prefix and suffix settings to trick the command and make it works, Windows 10 machines can run as SSH agents with the Microsoft OpenSSH server by using:
+The current version of the plugin does not run when Powershell is the default shell for the agent system. To connect to the agent you have to use prefix and suffix settings to trick the command and make it work, Windows 10/11 machines can run as SSH agents with the Microsoft OpenSSH server by using:
 
 **Prefix Start Agent Command**
 
 ```
 powershell -Command "cd C:\J\S ; C:\J\S\jdk\bin\java.exe -jar remoting.jar" ; exit 0 ; rem '
 ```
+
+`C:\J\S` is the path to the agent work directory on the agent system. If java is in a different directory, you will need to specify that directory instead of `C:\J\S\jdk\bin`.
+
 **Suffix Start Agent Command**
 
 ```
