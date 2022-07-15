@@ -9,3 +9,4 @@ target
 work
 bin
 .DS_Store
+.vscode
