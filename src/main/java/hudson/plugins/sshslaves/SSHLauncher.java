@@ -505,11 +505,7 @@ public class SSHLauncher extends ComputerLauncher {
                 System.out.println(Messages.SSHLauncher_LaunchFailed(getTimestamp(),
                         nodeName, host));
             } finally {
-                ExecutorService srv = launcherExecutorService;
-                if (srv != null) {
-                    srv.shutdownNow();
-                    launcherExecutorService = null;
-                }
+              shutdownAndAwaitTerminationOfLauncher();
             }
         }
         if (node != null && getTrackCredentials()) {
@@ -934,12 +930,7 @@ public class SSHLauncher extends ComputerLauncher {
             // Nothing to do here, the connection is not established
             return;
         }
-
-        ExecutorService srv = launcherExecutorService;
-        if (srv != null) {
-            // If the service is still running, shut it down and interrupt the operations if any
-            srv.shutdown();
-        }
+        shutdownAndAwaitTerminationOfLauncher();
 
         if (tearingDownConnection) {
             // tear down operation is in progress, do not even try to synchronize the call.
@@ -980,6 +971,30 @@ public class SSHLauncher extends ComputerLauncher {
         } finally {
             tearingDownConnection = false;
         }
+    }
+
+    private void shutdownAndAwaitTerminationOfLauncher() {
+      ExecutorService srv = launcherExecutorService;
+      if (srv == null) {
+          return;
+      }
+      srv.shutdown(); // Disable new tasks from being submitted
+      launcherExecutorService = null;
+      try {
+          // Wait a while for existing tasks to terminate
+          if (!srv.awaitTermination(10, TimeUnit.SECONDS)) {
+              srv.shutdownNow(); // Cancel currently executing tasks
+              // Wait a while for tasks to respond to being cancelled
+              if (!srv.awaitTermination(10, TimeUnit.SECONDS)) {
+                  LOGGER.log(WARNING, "launcherExecutorService thread pool did not terminate cleanly");
+              }
+          }
+      } catch (InterruptedException ie) {
+        // (Re-)Cancel if current thread also interrupted
+        srv.shutdownNow();
+        // Preserve interrupt status
+        Thread.currentThread().interrupt();
+      }
     }
 
     /**
