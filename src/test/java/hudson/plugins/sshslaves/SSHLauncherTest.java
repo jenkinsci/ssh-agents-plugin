@@ -248,6 +248,9 @@ public class SSHLauncherTest {
       )
     );
     SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
+    launcher.setLaunchTimeoutSeconds(5);
+    launcher.setRetryWaitTime(5);
+    launcher.setMaxNumRetries(2);
     DumbSlave agent = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
 
     Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
@@ -273,6 +276,9 @@ public class SSHLauncherTest {
       )
     );
     SSHLauncher launcher = new SSHLauncher("localhost", 123, "dummyCredentialId");
+    launcher.setLaunchTimeoutSeconds(5);
+    launcher.setRetryWaitTime(5);
+    launcher.setMaxNumRetries(2);
     DumbSlave agent = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
 
     Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
