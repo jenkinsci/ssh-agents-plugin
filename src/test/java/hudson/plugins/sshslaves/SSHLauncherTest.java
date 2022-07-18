@@ -66,6 +66,8 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.HostnamePortSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import org.jvnet.hudson.test.recipes.WithTimeout;
+
 import static hudson.plugins.sshslaves.SSHLauncher.JAR_CACHE_DIR;
 import static hudson.plugins.sshslaves.SSHLauncher.JAR_CACHE_PARAM;
 import static hudson.plugins.sshslaves.SSHLauncher.WORK_DIR_PARAM;
@@ -239,6 +241,7 @@ public class SSHLauncherTest {
   }
 
   @Issue("JENKINS-38832")
+  @WithTimeout(600)
   @Test
   public void trackCredentialsWithUsernameAndPassword() throws Exception {
     UsernamePasswordCredentialsImpl credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass");
@@ -264,6 +267,7 @@ public class SSHLauncherTest {
   }
 
   @Issue("JENKINS-38832")
+  @WithTimeout(600)
   @Test
   public void trackCredentialsWithUsernameAndPrivateKey() throws Exception {
     BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
