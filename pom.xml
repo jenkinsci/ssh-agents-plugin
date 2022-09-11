@@ -25,10 +25,10 @@
   </licenses>
 
   <properties>
-    <revision>1</revision>
+    <revision>2</revision>
     <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.346.2</jenkins.version>
-    <hpi.compatibleSinceVersion>1.31.0</hpi.compatibleSinceVersion>
+    <jenkins.version>2.361</jenkins.version>
+    <hpi.compatibleSinceVersion>2.0.0</hpi.compatibleSinceVersion>
   </properties>
 
   <developers>
@@ -101,7 +101,7 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.346.x</artifactId>
+        <artifactId>bom-2.361.x</artifactId>
         <version>1607.va_c1576527071</version>
         <type>pom</type>
         <scope>import</scope>
