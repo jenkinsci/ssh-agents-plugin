@@ -135,7 +135,7 @@
     <dependency>
       <groupId>org.jenkins-ci.test</groupId>
       <artifactId>docker-fixtures</artifactId>
-      <version>1.12</version>
+      <version>163.v12f007a_0d63f</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
