@@ -90,6 +90,7 @@ public class TrustHostKeyAction extends TaskAction  {
         response.sendRedirect("../");
     }
 
+    @RequirePOST
     public void doIndex(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
         req.getView(this, "trustHostKey").forward(req, rsp);
     }
