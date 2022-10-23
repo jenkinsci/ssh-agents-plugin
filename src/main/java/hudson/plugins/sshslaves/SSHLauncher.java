@@ -1296,6 +1296,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         @RequirePOST
         public FormValidation doCheckPort(@QueryParameter String value) {
+            Jenkins.get().checkPermission(Computer.CONFIGURE);
             if (StringUtils.isEmpty(value)) {
                 return FormValidation.error(Messages.SSHLauncher_PortNotSpecified());
             }
@@ -1315,6 +1316,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         @RequirePOST
         public FormValidation doCheckHost(@QueryParameter String value) {
+            Jenkins.get().checkPermission(Computer.CONFIGURE);
             FormValidation ret = FormValidation.ok();
             if (StringUtils.isEmpty(value)) {
                 return FormValidation.error(Messages.SSHLauncher_HostNotSpecified());
@@ -1324,6 +1326,7 @@ public class SSHLauncher extends ComputerLauncher {
 
         @RequirePOST
         public FormValidation doCheckJavaPath(@QueryParameter String value) {
+            Jenkins.get().checkPermission(Computer.CONFIGURE);
             FormValidation ret = FormValidation.ok();
             if (value != null && value.contains(" ")
                 && !(value.startsWith("\"") && value.endsWith("\""))

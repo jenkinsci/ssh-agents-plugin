@@ -32,15 +32,18 @@ import java.util.StringTokenizer;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.QueryParameter;
 
 import hudson.Extension;
+import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 import java.util.Collections;
+import jenkins.model.Jenkins;
 
 /**
  * Checks a key provided by a remote hosts matches a key specified as being required by the
@@ -116,7 +119,9 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             return Messages.ManualKeyProvidedHostKeyVerifier_DisplayName();
         }
 
+        @RequirePOST
         public FormValidation doCheckKey(@QueryParameter String key) {
+            Jenkins.get().checkPermission(Computer.CONFIGURE);
             try {
                 ManuallyProvidedKeyVerificationStrategy.parseKey(key);
                 return FormValidation.ok();
