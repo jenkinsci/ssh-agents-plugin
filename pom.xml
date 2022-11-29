@@ -129,7 +129,7 @@
     <dependency>
       <groupId>org.jenkins-ci.modules</groupId>
       <artifactId>sshd</artifactId>
-      <version>3.249.v2dc2ea_416e33</version>
+      <version>3.270.vb_a_e71e64c287</version>
       <scope>test</scope>
     </dependency>
     <dependency>
