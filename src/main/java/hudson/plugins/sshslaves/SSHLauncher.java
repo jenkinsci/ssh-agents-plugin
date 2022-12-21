@@ -1370,15 +1370,6 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-//    static {
-//        com.trilead.ssh2.log.Logger.enabled = true;
-//        com.trilead.ssh2.log.Logger.logger = new DebugLogger() {
-//            public void log(int level, String className, String message) {
-//                System.out.println(className+"\n"+message);
-//            }
-//        };
-//    }
-
     public String logConfiguration() {
         final StringBuilder sb = new StringBuilder("SSHLauncher{");
         sb.append("host='").append(getHost()).append('\'');
