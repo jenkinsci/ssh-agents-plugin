@@ -106,10 +106,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>org.jenkins-ci.plugins</groupId>
-        <artifactId>jackson2-api</artifactId>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
