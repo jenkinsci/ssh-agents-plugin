@@ -27,7 +27,7 @@
   <properties>
     <revision>2</revision>
     <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.361.4</jenkins.version>
+    <jenkins.version>2.387.4</jenkins.version>
     <hpi.compatibleSinceVersion>2.0.0</hpi.compatibleSinceVersion>
   </properties>
 
@@ -101,7 +101,7 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.361.x</artifactId>
+        <artifactId>bom-2.387.x</artifactId>
         <version>2143.ve4c3c9ec790a</version>
         <type>pom</type>
         <scope>import</scope>
