@@ -294,8 +294,8 @@ public class SSHLauncher extends ComputerLauncher {
     public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
         return CredentialsMatchers.firstOrNull(
                 CredentialsProvider
-                        .lookupCredentials(StandardUsernameCredentials.class, Jenkins.get(), ACL.SYSTEM,
-                                SSH_SCHEME),
+                        .lookupCredentialsInItemGroup(StandardUsernameCredentials.class, Jenkins.get(), ACL.SYSTEM2,
+                                List.of(SSH_SCHEME)),
                 CredentialsMatchers.withId(credentialsId)
         );
     }
@@ -1276,7 +1276,7 @@ public class SSHLauncher extends ComputerLauncher {
             try {
                 int portValue = Integer.parseInt(port);
                 for (ListBoxModel.Option o : CredentialsProvider
-                        .listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
+                        .listCredentialsInItemGroup(StandardUsernameCredentials.class, context, ACL.SYSTEM2,
                                 Collections.singletonList(
                                         new HostnamePortRequirement(host, portValue)
                                 ),

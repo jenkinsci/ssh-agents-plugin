@@ -316,7 +316,7 @@ public class SSHConnector extends ComputerConnector {
             if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
                 return FormValidation.ok(); // no need to alarm a user that cannot configure
             }
-            for (ListBoxModel.Option o : CredentialsProvider.listCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
+            for (ListBoxModel.Option o : CredentialsProvider.listCredentialsInItemGroup(StandardUsernameCredentials.class, context, ACL.SYSTEM2,
                     Collections.singletonList(SSHLauncher.SSH_SCHEME),
                     SSHAuthenticator.matcher(Connection.class))) {
                 if (StringUtils.equals(value, o.value)) {
