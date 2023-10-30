@@ -43,8 +43,8 @@ THE SOFTWARE.
                   <p>${%replaceKeyTrust(existingHostKey.fingerprint, it.hostKey.fingerprint)}</p>
                </j:otherwise>
             </j:choose>
-            <f:submit name="Yes" value="${%Yes}" />
-            <f:submit name="No" value="${%No}" />
+            <f:submit name="Yes" value="${%Yes}" clazz="jenkins-!-margin-left-1"/>
+            <f:submit name="No" value="${%No}" clazz="jenkins-!-margin-left-1"/>
          </f:form>
       </l:main-panel>
    </l:layout>
