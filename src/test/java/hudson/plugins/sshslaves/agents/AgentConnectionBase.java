@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import hudson.plugins.sshslaves.rules.Retry;
 import org.apache.commons.io.IOUtils;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -40,11 +41,11 @@ public class AgentConnectionBase {
   public static final String SSH_AUTHORIZED_KEYS = "ssh/authorized_keys";
   public static final String AGENTS_RESOURCES_PATH = "/hudson/plugins/sshslaves/agents/";
 
-  @Rule
-  public CheckIsLinuxOrMac isLinuxOrMac = new CheckIsLinuxOrMac();
+  @ClassRule
+  public static CheckIsLinuxOrMac isLinuxOrMac = new CheckIsLinuxOrMac();
 
-  @Rule
-  public CheckIsDockerAvailable isDockerAvailable = new CheckIsDockerAvailable();
+  @ClassRule
+  public static CheckIsDockerAvailable isDockerAvailable = new CheckIsDockerAvailable();
 
   @Rule
   public JenkinsRule j = new JenkinsRule();
