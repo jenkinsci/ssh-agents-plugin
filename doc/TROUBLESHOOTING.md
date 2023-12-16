@@ -138,7 +138,7 @@ java.lang.NoClassDefFoundError: com/trilead/ssh2/Connection
 [11/20/18 00:29:57] [SSH] Connection closed.
 ```
 
-### After upgrade to ssh-slaves 1.28+ Failed to connect using SSH key credentials from files
+### After upgrade to ssh-agents 1.28+ Failed to connect using SSH key credentials from files
 
 The SSH Build Agents Plugin version newer than 1.28 uses ssh-credentials 1.14, this versions deprecated the use of "From the Jenkins controller ~/.ssh", and "From a file on Jenkins controller" SSH credential types because [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), the ssh-credentials plugins should migrate these deprecated credentials to "Enter directly" type on restart but seems there are some cases that it fails or it is not possible.
 
@@ -166,7 +166,7 @@ ConversionException: Could not call com.cloudbees.jenkins.plugins.sshcredentials
 
 ### Selenium Grid agents failed to connect
 
-On Jenkins Core 2.89.3, [Agent - Controller Access Control](https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control) was introduced it can causes an issue with Selenium Grid Agents, to fix this problem you have to disable: "Manage Jenkins" > "Configure Global Security", and check "Enable Agent → Controller Access Control" (as it's said in Jenkins documentation) 
+On Jenkins Core 2.89.3, [Agent - Controller Access Control](https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control) was introduced it can causes an issue with Selenium Grid Agents, to fix this problem you have to disable: "Manage Jenkins" > "Configure Global Security", and check "Enable Agent → Controller Access Control" (as it's said in Jenkins documentation)
 you can see more details at [JENKINS-49118](https://issues.jenkins.io/browse/JENKINS-49118)
 https://wiki.jenkins.io/display/JENKINS/Slave+To+Master+Access+Control
 

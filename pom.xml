@@ -13,7 +13,7 @@
   <packaging>hpi</packaging>
 
   <name>SSH Build Agents plugin</name>
-  <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
+  <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
   <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
 
   <licenses>
@@ -77,9 +77,9 @@
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/jenkinsci/ssh-slaves-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/ssh-slaves-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/ssh-slaves-plugin</url>
+    <connection>scm:git:https://github.com/jenkinsci/ssh-agents-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:jenkinsci/ssh-agents-plugin.git</developerConnection>
+    <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
     <tag>${scmTag}</tag>
   </scm>
 
