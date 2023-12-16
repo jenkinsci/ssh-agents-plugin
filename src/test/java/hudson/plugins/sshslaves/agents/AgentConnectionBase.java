@@ -12,6 +12,7 @@ import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 import hudson.model.Descriptor;
 import hudson.model.Node;
+import hudson.model.Slave;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.plugins.sshslaves.rules.CheckIsDockerAvailable;
 import hudson.plugins.sshslaves.rules.CheckIsLinuxOrMac;
@@ -23,7 +24,6 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Base class to test connections to a remote SSH Agent
@@ -53,24 +53,25 @@ public class AgentConnectionBase {
   public Timeout globalTimeout= new Timeout(4, TimeUnit.MINUTES);
 
   protected boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
-    boolean ret = false;
     int count = 0;
     while (count < 30) {
       Thread.sleep(1000);
       String log = node.toComputer().getLog();
-      ret = log.contains("Agent successfully connected and online");
-      count++;
+      if (log.contains("Agent successfully connected and online")) {
+          return true;
+      }
     }
-    return ret;
+    return false;
   }
 
   protected void waitForAgentConnected(Node node) throws InterruptedException {
-    int count = 0;
-    while (!node.toComputer().isOnline() && count < 150) {
-      Thread.sleep(1000);
-      count++;
+    try {
+      j.waitOnline((Slave) node);
+    } catch (InterruptedException | RuntimeException x) {
+      throw x;
+    } catch (Exception x) {
+      throw new RuntimeException(x);
     }
-    assertTrue(node.toComputer().isOnline());
   }
 
   protected Node createPermanentAgent(String name, String host, int sshPort, String keyResourcePath, String passphrase)
