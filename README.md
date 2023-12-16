@@ -1,9 +1,9 @@
 SSH Build Agents Plugin for Jenkins
 =========================
 
-[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/ssh-agents.svg)](https://plugins.jenkins.io/ssh-agents)
+[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/ssh-slaves.svg)](https://plugins.jenkins.io/ssh-slaves)
 [![GitHub release](https://img.shields.io/github/release/jenkinsci/ssh-agents-plugin.svg?label=changelog)](https://github.com/jenkinsci/ssh-agents-plugin/releases/latest)
-[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/ssh-agents.svg?color=blue)](https://plugins.jenkins.io/ssh-agents)
+[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/ssh-slaves.svg?color=blue)](https://plugins.jenkins.io/ssh-slaves)
 
 Provides a means to launch agents via SSH.
 
