@@ -1,11 +1,11 @@
 # Changelog
 
-| WARNING: Changelogs have been moved to [GitHub Releases](https://github.com/jenkinsci/ssh-slaves-plugin/releases) |
+| WARNING: Changelogs have been moved to [GitHub Releases](https://github.com/jenkinsci/ssh-agents-plugin/releases) |
 | --- |
 
 ### Newer versions
 
-* See [GitHub Releases](https://github.com/jenkinsci/ssh-slaves-plugin/releases)
+* See [GitHub Releases](https://github.com/jenkinsci/ssh-agents-plugin/releases)
 
 ### 1.30.1 (Jul 21, 2019)
 * [JENKINS-58340](https://issues.jenkins-ci.org/browse/JENKINS-58340) docker-plugin-1.1.6 Docker cloud does not work with 1.30.0
@@ -38,7 +38,7 @@
 #### Breaking changes
 
 * if you upgrade from 1.29.X, you would have to uninstall trilead-api plugin is no longer used.
-* Due to [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), ssh-credentials could be incorrectly migrated see [Troubleshooting Guide](https://github.com/jenkinsci/ssh-slaves-plugin/blob/master/doc/TROUBLESHOOTING.md#after-upgrade-to-ssh-slaves-128-failed-to-connect-using-ssh-key-credentials-from-files)
+* Due to [SECURITY-440](https://jenkins.io/security/advisory/2018-06-25/#SECURITY-440), ssh-credentials could be incorrectly migrated see [Troubleshooting Guide](https://github.com/jenkinsci/ssh-agents-plugin/blob/master/doc/TROUBLESHOOTING.md#after-upgrade-to-ssh-agents-128-failed-to-connect-using-ssh-key-credentials-from-files)
 * see 1.27
 
 ### 1.29.1 (Nov 20, 2018)
@@ -50,7 +50,7 @@
 * see 1.27 and 1.29.0
 * It does not longer use the Trilead-ssh2 library provided by the core, it now uses Trilead-api plugin.
  * **Plugins that have it as a dependency (EC2 Fleet, Docker, ...) must test the upgrade to 1.29.0.**
- 
+
 ### 1.29.0 (Nov 18, 2018)
 
 * [JENKINS-54686](https://issues.jenkins-ci.org/browse/JENKINS-54686) Use trilead-api plugin instead trilead-ssh2 from core
@@ -101,7 +101,7 @@
 ### 1.26 (Feb 26, 2018)
 * [JENKINS-49607](https://issues.jenkins-ci.org/browse/JENKINS-49607) - Report the required Java version when the plugin cannot find Java on the agent
 * [JENKINS-43786](https://issues.jenkins-ci.org/browse/JENKINS-43786) - Adapt the administrative monitor to the new design in Jenkins 2.103+
-* [PR #82](https://github.com/jenkinsci/ssh-slaves-plugin/pull/82) - Do not lookup for credentials in SSHLauncher constructor so that the launcher can be initialized before the Credentials store is fully loaded (for Configuration-as-Code plugin)
+* [PR #82](https://github.com/jenkinsci/ssh-agents-plugin/pull/82) - Do not lookup for credentials in SSHLauncher constructor so that the launcher can be initialized before the Credentials store is fully loaded (for Configuration-as-Code plugin)
 
 ### 1.25.1 (Jan 26, 2018)
 * [JENKINS-49032](https://issues.jenkins-ci.org/browse/JENKINS-49032) - Revert usage of "exec" command so that SSH Node Launcher can connect to Windows agents (regression in 1.25)
@@ -118,18 +118,18 @@
 ### 1.23 (Dec 12, 2017)
 * [JENKINS-44893](https://issues.jenkins-ci.org/browse/JENKINS-44893) - Prevent the "java.lang.ClassNotFoundException: hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport" error in logs
 * [JENKINS-19465](https://issues.jenkins-ci.org/browse/JENKINS-19465) - Prevent agent hanging and piling up of afterDisconnect() handler threads when the agent gets disconnected before the launch completion
-* [PR #73](https://github.com/jenkinsci/ssh-slaves-plugin/pull/73) - Add explicit MIT license definition to the pom.xml file
+* [PR #73](https://github.com/jenkinsci/ssh-agents-plugin/pull/73) - Add explicit MIT license definition to the pom.xml file
 
 ### 1.22 (Oct 16, 2017)
 * [JENKINS-47448](https://issues.jenkins-ci.org/browse/JENKINS-47448) - Workaround the issue with default JDKInstaller in the plugin by installing Java jdk-8u144
-* [PR #71](https://github.com/jenkinsci/ssh-slaves-plugin/pull/71) - Add Chinese translation
+* [PR #71](https://github.com/jenkinsci/ssh-agents-plugin/pull/71) - Add Chinese translation
 
 ### 1.21 (Aug 18, 2017)
 * [JENKINS-29412](https://issues.jenkins-ci.org/browse/JENKINS-29412) - Minimal required Java Level is determined dynamically. Java 8 is required on agents when Jenkins version is 2.54+
 * [JENKINS-38832](https://issues.jenkins-ci.org/browse/JENKINS-38832) - Add support for credential usage tracking
-* [PR #58](https://github.com/jenkinsci/ssh-slaves-plugin/pull/58) - Remove obsolete reflection code in SSHLauncher
-* [PR #53](https://github.com/jenkinsci/ssh-slaves-plugin/pull/53), [PR #56](https://github.com/jenkinsci/ssh-slaves-plugin/pull/56), [PR #57](https://github.com/jenkinsci/ssh-slaves-plugin/pull/57) - Cleanup typos in the documentation and logs
-* [PR #64](https://github.com/jenkinsci/ssh-slaves-plugin/pull/64) - The plugin codebase is now explicitly licensed with MIT License 
+* [PR #58](https://github.com/jenkinsci/ssh-agents-plugin/pull/58) - Remove obsolete reflection code in SSHLauncher
+* [PR #53](https://github.com/jenkinsci/ssh-agents-plugin/pull/53), [PR #56](https://github.com/jenkinsci/ssh-agents-plugin/pull/56), [PR #57](https://github.com/jenkinsci/ssh-agents-plugin/pull/57) - Cleanup typos in the documentation and logs
+* [PR #64](https://github.com/jenkinsci/ssh-agents-plugin/pull/64) - The plugin codebase is now explicitly licensed with MIT License
 
 ### 1.20 (Jun 13, 2017)
 * [JENKINS-44832](https://issues.jenkins-ci.org/browse/JENKINS-44832) IllegalArgumentException under some conditions after update to 1.18 (or 1.19).
@@ -151,11 +151,11 @@
 * [JENKINS-42022](https://issues.jenkins-ci.org/browse/JENKINS-42022) Remove 'unix machines' from description.
 
 ### 1.14 (Mar 16, 2017)
-* [PR #44](https://github.com/jenkinsci/ssh-slaves-plugin/pull/44) Get rid of IOException2.
+* [PR #44](https://github.com/jenkinsci/ssh-agents-plugin/pull/44) Get rid of IOException2.
 * [JENKINS-42022](https://issues.jenkins-ci.org/browse/JENKINS-42022) Remove 'unix machines' from description.
 
 ### 1.13 (Jan 28, 2017)
-* [PR #41](https://github.com/jenkinsci/ssh-slaves-plugin/pull/41) Do not swallow IOException in case it is not recoverable.
+* [PR #41](https://github.com/jenkinsci/ssh-agents-plugin/pull/41) Do not swallow IOException in case it is not recoverable.
 * [JENKINS-40001](https://issues.jenkins-ci.org/browse/JENKINS-40001) Added plugin's description.
 
 ### 1.12 (Dec 01, 2016)
@@ -225,7 +225,7 @@
 * Added some Japanese localizations
 * Prevented persistence of duplicate credentials under some code paths
 * Restored support for using an empty username as an indicator of the user that Jenkins is running as.
-* Upgrade to the latest version of the ssh-credentials plugin. 
+* Upgrade to the latest version of the ssh-credentials plugin.
 
 ### 0.23 (Mar 21, 2013)
 * Rely on SSH Credentials Plugin for unified credential handling across different places that use SSH
