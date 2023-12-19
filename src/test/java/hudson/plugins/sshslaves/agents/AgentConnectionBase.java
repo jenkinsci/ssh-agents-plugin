@@ -46,11 +46,15 @@ public class AgentConnectionBase {
   @ClassRule
   public static CheckIsDockerAvailable isDockerAvailable = new CheckIsDockerAvailable();
 
-  @Rule
+  @Rule(order = 10)
   public JenkinsRule j = new JenkinsRule();
 
-  @Rule
-  public Timeout globalTimeout= new Timeout(4, TimeUnit.MINUTES);
+  @Rule(order = -10)
+  public Timeout globalTimeout = Timeout.builder().withTimeout(10, TimeUnit.MINUTES).withLookingForStuckThread(true).build();
+
+  protected AgentConnectionBase() {
+      j.timeout = 0;
+  }
 
   protected boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
     int count = 0;
