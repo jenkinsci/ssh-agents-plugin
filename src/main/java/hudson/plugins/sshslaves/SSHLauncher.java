@@ -39,6 +39,7 @@ import com.trilead.ssh2.Session;
 import com.trilead.ssh2.jenkins.SFTPClient;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -152,6 +153,7 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Field javaPath.
      */
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Preserve API compatibility.")
     public String javaPath;
 
     /**
@@ -173,26 +175,31 @@ public class SSHLauncher extends ComputerLauncher {
     /**
      * Field prefixStartSlaveCmd.
      */
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Preserve API compatibility.")
     public String prefixStartSlaveCmd;
 
     /**
      *  Field suffixStartSlaveCmd.
      */
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Preserve API compatibility.")
     public String suffixStartSlaveCmd;
 
     /**
      *  Field launchTimeoutSeconds.
      */
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Preserve API compatibility.")
     public Integer launchTimeoutSeconds;
 
     /**
      * Field maxNumRetries.
      */
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Preserve API compatibility.")
     public Integer maxNumRetries;
 
     /**
      * Field retryWaitTime (seconds).
      */
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Preserve API compatibility.")
     public Integer retryWaitTime;
 
     // TODO: It is a bad idea to create a new Executor service for each launcher.
