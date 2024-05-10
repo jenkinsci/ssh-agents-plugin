@@ -27,7 +27,7 @@
   <properties>
     <revision>2</revision>
     <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.387.3</jenkins.version>
+    <jenkins.version>2.426.3</jenkins.version>
     <hpi.compatibleSinceVersion>2.0.0</hpi.compatibleSinceVersion>
   </properties>
 
@@ -101,15 +101,15 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.387.x</artifactId>
-        <version>2543.vfb_1a_5fb_9496d</version>
+        <artifactId>bom-2.426.x</artifactId>
+        <version>3023.v02a_987a_b_3ff9</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>credentials</artifactId>
-        <version>1319.v7eb_51b_3a_c97b_</version>
+        <version>1337.v60b_d7b_c7b_c9f</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
