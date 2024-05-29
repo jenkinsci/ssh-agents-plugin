@@ -13,7 +13,7 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get update -y -qq \
 RUN add-apt-repository ppa:openjdk-r/ppa -y \
   && apt-get update -y -qq \
   && apt-get install -y -qq \
-    openjdk-11-jdk \
+    openjdk-17-jdk \
   && rm -rf /var/lib/apt/lists/*
 
 RUN useradd --password password --shell /bin/bash --uid 1000 jenkins \
@@ -36,7 +36,7 @@ RUN echo "password\npassword" | passwd root \
   && echo "password\npassword" | passwd jenkins
 
 EXPOSE 22
-ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-11-openjdk-amd64/jre/bin:/usr/lib/jvm/java-11-openjdk-amd64/bin
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-17-openjdk-amd64/jre/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin
 RUN echo "PATH=${PATH}" >> /etc/environment
 ENTRYPOINT []
 CMD [ "/bin/sh", "-c", "/usr/sbin/sshd -e -D -p 22"]
