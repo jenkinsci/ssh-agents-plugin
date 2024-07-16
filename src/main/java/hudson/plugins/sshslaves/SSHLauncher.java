@@ -64,7 +64,6 @@ import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
-import hudson.util.NullStream;
 import java.util.Collections;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
@@ -825,7 +824,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
 
             // delete the agent jar as we do with SFTP
-            connection.exec("rm " + workingDirectory + SLASH_AGENT_JAR, new NullStream());
+            connection.exec("rm " + workingDirectory + SLASH_AGENT_JAR, OutputStream.nullOutputStream());
 
             // SCP it to the agent. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
             listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));
@@ -1253,7 +1252,7 @@ public class SSHLauncher extends ComputerLauncher {
                 int portValue = Integer.parseInt(port);
                 return new StandardUsernameListBoxModel()
                         .includeMatchingAs(
-                                ACL.SYSTEM,
+                                ACL.SYSTEM2,
                                 jenkins,
                                 StandardUsernameCredentials.class,
                                 Collections.singletonList(

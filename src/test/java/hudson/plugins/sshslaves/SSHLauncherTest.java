@@ -42,6 +42,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -78,12 +79,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class SSHLauncherTest {
 
   @ClassRule
   public static BuildWatcher buildWatcher = new BuildWatcher();
+
+  @Rule
+  public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Rule
   public JenkinsRule j = new JenkinsRule();
@@ -167,7 +170,7 @@ public class SSHLauncherTest {
     SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId");
     launcher.setSshHostKeyVerificationStrategy(new KnownHostsFileKeyVerificationStrategy());
     assertEquals(host.trim(), launcher.getHost());
-    DumbSlave agent = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
+    DumbSlave agent = new DumbSlave("agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
     j.jenkins.addNode(agent);
 
     HtmlPage p = j.createWebClient().getPage(agent, "configure");
@@ -251,7 +254,7 @@ public class SSHLauncherTest {
     launcher.setLaunchTimeoutSeconds(5);
     launcher.setRetryWaitTime(5);
     launcher.setMaxNumRetries(2);
-    DumbSlave agent = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
+    DumbSlave agent = new DumbSlave("agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
 
     Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
     assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -279,7 +282,7 @@ public class SSHLauncherTest {
     launcher.setLaunchTimeoutSeconds(5);
     launcher.setRetryWaitTime(5);
     launcher.setMaxNumRetries(2);
-    DumbSlave agent = new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
+    DumbSlave agent = new DumbSlave("agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
 
     Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
     assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -456,7 +459,7 @@ public class SSHLauncherTest {
     launcher.setLaunchTimeoutSeconds(5);
     launcher.setRetryWaitTime(1);
     launcher.setMaxNumRetries(3);
-    return new DumbSlave("agent", j.createTmpDir().getPath(), launcher);
+    return new DumbSlave("agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
   }
 
   private void fakeCredentials(String id) {
