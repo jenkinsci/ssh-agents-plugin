@@ -46,7 +46,6 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import org.htmlunit.html.HtmlPage;
 
-import hudson.model.Node.Mode;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
@@ -82,15 +81,15 @@ public class TrustHostKeyActionTest {
         try {
             Object server = newSshServer();
             assertNotNull(server);
-            Class keyPairProviderClass = newKeyPairProviderClass();
+            Class<?> keyPairProviderClass = newKeyPairProviderClass();
             Object provider = newProvider();
             assertNotNull(provider);
             Object factory = newFactory();
             assertNotNull(factory);
-            Class commandFactoryClass = newCommandFactoryClass();
+            Class<?> commandFactoryClass = newCommandFactoryClass();
             Object commandFactory = newCommandFactory(commandFactoryClass);
             assertNotNull(commandFactory);
-            Class commandAuthenticatorClass = newCommandAuthenticatorClass();
+            Class<?> commandAuthenticatorClass = newCommandAuthenticatorClass();
             Object authenticator = newAuthenticator(commandAuthenticatorClass);
             assertNotNull(authenticator);
 
@@ -106,9 +105,9 @@ public class TrustHostKeyActionTest {
         }
 
         SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManuallyTrustedKeyVerificationStrategy(true));
-        DumbSlave agent = new DumbSlave("test-agent", "SSH Test agent",
-                temporaryFolder.newFolder().getAbsolutePath(), "1", Mode.NORMAL, "",
-                launcher, RetentionStrategy.NOOP, Collections.emptyList());
+        DumbSlave agent = new DumbSlave("test-agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
+        agent.setNodeDescription("SSH Test agent");
+        agent.setRetentionStrategy(RetentionStrategy.NOOP);
 
         jenkins.getInstance().addNode(agent);
         SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-agent");
@@ -136,7 +135,7 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Class serverClass;
+        Class<?> serverClass;
         try {
             serverClass = Class.forName("org.apache.sshd.SshServer");
         } catch (ClassNotFoundException e) {
@@ -146,8 +145,8 @@ public class TrustHostKeyActionTest {
         return serverClass.getDeclaredMethod("setUpDefaultServer", null).invoke(null);
     }
 
-    private Class newKeyPairProviderClass() throws ClassNotFoundException {
-        Class keyPairProviderClass;
+    private Class<?> newKeyPairProviderClass() throws ClassNotFoundException {
+        Class<?> keyPairProviderClass;
         try {
             keyPairProviderClass = Class.forName("org.apache.sshd.common.KeyPairProvider");
         } catch (ClassNotFoundException e) {
@@ -158,7 +157,7 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Class providerClass;
+        Class<?> providerClass;
         try {
             providerClass = Class.forName("org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider");
         } catch (ClassNotFoundException e) {
@@ -169,7 +168,7 @@ public class TrustHostKeyActionTest {
     }
 
     private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Class factoryClass;
+        Class<?> factoryClass;
         try {
             factoryClass = Class.forName("org.apache.sshd.server.auth.UserAuthPassword$Factory");
         } catch (ClassNotFoundException e) {
@@ -179,18 +178,18 @@ public class TrustHostKeyActionTest {
         return factoryClass.getConstructor().newInstance();
     }
 
-    private Class newCommandFactoryClass() throws ClassNotFoundException {
+    private Class<?> newCommandFactoryClass() throws ClassNotFoundException {
         return Class.forName("org.apache.sshd.server.command.CommandFactory");
     }
 
-    private Object newCommandFactory(Class commandFactoryClass) throws ClassNotFoundException, IllegalArgumentException {
+    private Object newCommandFactory(Class<?> commandFactoryClass) throws ClassNotFoundException, IllegalArgumentException {
         return java.lang.reflect.Proxy.newProxyInstance(
                 commandFactoryClass.getClassLoader(),
                 new java.lang.Class[]{commandFactoryClass},
           (proxy, method, args) -> {
 
               if (method.getName().equals("createCommand")) {
-                  Class commandClass;
+                  Class<?> commandClass;
                   try {
                       commandClass = Class.forName("org.apache.sshd.server.command.UnknownCommand");
                   } catch (ClassNotFoundException e) {
@@ -204,8 +203,8 @@ public class TrustHostKeyActionTest {
           });
     }
 
-    private Class newCommandAuthenticatorClass() throws ClassNotFoundException {
-        Class passwordAuthenticatorClass;
+    private Class<?> newCommandAuthenticatorClass() throws ClassNotFoundException {
+        Class<?> passwordAuthenticatorClass;
         try {
             passwordAuthenticatorClass = Class.forName("org.apache.sshd.server.PasswordAuthenticator");
         } catch(ClassNotFoundException e) {
@@ -215,7 +214,7 @@ public class TrustHostKeyActionTest {
         return passwordAuthenticatorClass;
     }
 
-    private Object newAuthenticator(Class passwordAuthenticatorClass) throws ClassNotFoundException, IllegalArgumentException {
+    private Object newAuthenticator(Class<?> passwordAuthenticatorClass) throws ClassNotFoundException, IllegalArgumentException {
         return java.lang.reflect.Proxy.newProxyInstance(
                 passwordAuthenticatorClass.getClassLoader(),
                 new java.lang.Class[]{passwordAuthenticatorClass},
@@ -229,7 +228,7 @@ public class TrustHostKeyActionTest {
           });
     }
 
-    private Object invoke(Object target, String methodName, Class[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private Object invoke(Object target, String methodName, Class<?>[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         return target.getClass().getMethod(methodName, parameterTypes).invoke(target, args);
     }
 }

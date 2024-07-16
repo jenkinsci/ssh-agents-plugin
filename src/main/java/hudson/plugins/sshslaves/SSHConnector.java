@@ -301,7 +301,7 @@ public class SSHConnector extends ComputerConnector {
             }
             return new StandardUsernameListBoxModel()
                     .includeMatchingAs(
-                            ACL.SYSTEM,
+                            ACL.SYSTEM2,
                             context,
                             StandardUsernameCredentials.class,
                             Collections.singletonList(SSHLauncher.SSH_SCHEME),
