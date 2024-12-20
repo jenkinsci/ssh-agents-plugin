@@ -13,6 +13,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 import hudson.model.Descriptor;
 import hudson.model.Node;
 import hudson.model.Slave;
+import hudson.model.Descriptor.FormException;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.plugins.sshslaves.rules.CheckIsDockerAvailable;
 import hudson.plugins.sshslaves.rules.CheckIsLinuxOrMac;
@@ -110,7 +111,7 @@ public class AgentConnectionBase {
                                                                           Collections.singletonList(credentials));
   }
 
-  private void createSshCredentials(String id) throws IOException {
+  private void createSshCredentials(String id) throws IOException, FormException {
     StandardUsernameCredentials credentials =
       new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, id, "", USER, PASSWORD);
     SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
