@@ -8,3 +8,7 @@ updates:
     directory: /
     schedule:
       interval: "daily"
+  - package-ecosystem: "docker"
+    directory: /src/test/resources/hudson/plugins/sshslaves/agents
+    schedule:
+      interval: "daily"

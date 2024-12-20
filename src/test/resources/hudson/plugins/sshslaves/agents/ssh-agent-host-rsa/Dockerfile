@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 USER root
 
 ENV TZ=Etc/UTC
@@ -17,7 +17,7 @@ RUN add-apt-repository ppa:openjdk-r/ppa -y \
     openjdk-17-jdk \
   && rm -rf /var/lib/apt/lists/*
 
-RUN useradd --password password --shell /bin/bash --uid 1000 jenkins \
+RUN useradd --password password --shell /bin/bash jenkins \
   && mkdir /home/jenkins \
   && chown -R jenkins:jenkins /home/jenkins
 
@@ -43,4 +43,4 @@ RUN echo "PATH=${PATH}" >> /etc/environment
 ENTRYPOINT []
 CMD [ "/bin/sh", "-c", "/usr/sbin/sshd -e -D -p 22"]
 
-RUN rm /etc/ssh/ssh_host_dsa* /etc/ssh/ssh_host_ed* /etc/ssh/ssh_host_ec*
+RUN rm /etc/ssh/ssh_host_ed* /etc/ssh/ssh_host_ec*

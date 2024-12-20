@@ -21,8 +21,8 @@ import static org.junit.Assert.assertTrue;
  */
 @Ignore("Only for manual test.")
 @Category({ AgentSSHTest.class, SSHKeyAuthenticationTest.class})
-public class AgentUbuntu2004RSAConnectionTest extends AgentConnectionBase {
-  public static final String SSH_AGENT_NAME = "ssh-agent-ubuntu-20.04";
+public class AgentUbuntu22RSAConnectionTest extends AgentConnectionBase {
+  public static final String SSH_AGENT_NAME = "ssh-agent-ubuntu-22";
   public static final String SSH_KEY_PATH = "ssh/rsa-key";
   public static final String SSH_KEY_PUB_PATH = "ssh/rsa-key.pub";
 
