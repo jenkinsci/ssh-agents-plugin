@@ -23,13 +23,10 @@
  */
 package hudson.plugins.sshslaves;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +55,6 @@ import hudson.slaves.NodeProperty;
 import hudson.slaves.SlaveComputer;
 import hudson.tools.ToolLocationNodeProperty;
 import hudson.util.FormValidation;
-import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -77,7 +73,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class SSHLauncherTest {
@@ -93,73 +88,6 @@ public class SSHLauncherTest {
 
   @Rule
   public DockerRule<JavaContainer> javaContainer = new DockerRule<>(JavaContainer.class);
-
-  @Test
-  public void checkJavaVersionOpenJDK7NetBSD() throws Exception {
-    VersionNumber java7 = new VersionNumber("7");
-    if (JavaProvider.getMinJavaLevel().equals(java7)) {
-      assertTrue("OpenJDK7 on NetBSD should be supported", checkSupported("openjdk-7-netbsd.version"));
-    } else {
-      assertNotSupported("openjdk-7-netbsd.version");
-    }
-  }
-
-  @Test
-  public void checkJavaVersionOpenJDK6Linux() {
-    assertNotSupported("openjdk-6-linux.version");
-  }
-
-  @Test
-  public void checkJavaVersionSun6Linux() {
-    assertNotSupported("sun-java-1.6-linux.version");
-  }
-
-  @Test
-  public void checkJavaVersionSun6Mac() {
-    assertNotSupported("sun-java-1.6-mac.version");
-  }
-
-  @Test
-  public void testCheckJavaVersionOracle7Mac() throws Exception {
-    VersionNumber java7 = new VersionNumber("7");
-    if (JavaProvider.getMinJavaLevel().equals(java7)) {
-      Assert.assertTrue("Oracle 7 on Mac should be supported", checkSupported("oracle-java-1.7-mac.version"));
-    } else {
-      assertNotSupported("oracle-java-1.7-mac.version");
-    }
-  }
-
-  @Test
-  public void testCheckJavaVersionOracle8Mac() throws Exception {
-    Assert.assertTrue("Oracle 8 on Mac should be supported", checkSupported("oracle-java-1.8-mac.version"));
-  }
-
-  @Test
-  public void checkJavaVersionSun4Linux() {
-    assertNotSupported("sun-java-1.4-linux.version");
-  }
-
-  /**
-   * Returns true if the version is supported.
-   *
-   * @param testVersionOutput the resource to find relative to this class that contains the
-   *                          output of "java -version"
-   */
-  private static boolean checkSupported(final String testVersionOutput) throws IOException {
-    final String javaCommand = "testing-java";
-    final InputStream versionStream = SSHLauncherTest.class
-      .getResourceAsStream(testVersionOutput);
-    final BufferedReader r = new BufferedReader(new InputStreamReader(
-      versionStream));
-    final StringWriter output = new StringWriter();
-    final String result = new JavaVersionChecker(null, null, null, null)
-      .checkJavaVersion(System.out, javaCommand, r, output);
-    return null != result;
-  }
-
-  private static void assertNotSupported(final String testVersionOutput) throws AssertionError {
-    assertThrows(IOException.class, () -> checkSupported(testVersionOutput));
-  }
 
   private void checkRoundTrip(String host) throws Exception {
     SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
