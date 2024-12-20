@@ -43,7 +43,7 @@ jobs:
           tags: |
             type=raw,prefix=base,value=latest,enable={{is_default_branch}}
             type=ref,prefix=base,event=branch
-            type=ref,prefix=base,vent=pr
+            type=ref,prefix=base,event=pr
             type=sha,prefix=base
 
       - name: Build and push
