@@ -448,15 +448,9 @@ public class SSHLauncher extends ComputerLauncher {
                         return Boolean.FALSE;
                     }
 
-                    String java = null;
+                    String java = "java";
                     if (StringUtils.isNotBlank(javaPath)) {
-                        java = expandExpression(computer, javaPath);
-                    } else {
-                      checkJavaIsInPath(listener);
-                      //FIXME deprecated on 2020-12-10, it will removed after 2021-09-01
-                        JavaVersionChecker javaVersionChecker = new JavaVersionChecker(computer, listener, getJvmOptions(),
-                                connection);
-                        java = javaVersionChecker.resolveJava();
+                      java = expandExpression(computer, javaPath);
                     }
 
                     copyAgentJar(listener, workingDirectory);
