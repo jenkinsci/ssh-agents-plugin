@@ -33,7 +33,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -111,15 +110,7 @@ public class TrustHostKeyActionTest {
 
         jenkins.getInstance().addNode(agent);
         SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-agent");
-
-        try {
-            computer.connect(false).get();
-        } catch (ExecutionException ex){
-            //TODO(oleg_nenashev): "Slave" check is still needed for PCT purposes, but it should be eventually cleaned up
-            if (!ex.getMessage().startsWith("java.io.IOException: Slave failed") && !ex.getMessage().startsWith("java.io.IOException: Agent failed")) {
-                throw ex;
-            }
-        }
+        computer.connect(false).get();
 
         List<TrustHostKeyAction> actions = computer.getActions(TrustHostKeyAction.class);
         assertEquals(computer.getLog(), 1, actions.size());
@@ -130,8 +121,6 @@ public class TrustHostKeyActionTest {
 
         assertTrue(actions.get(0).isComplete());
         assertEquals(actions.get(0).getExistingHostKey(), actions.get(0).getHostKey());
-
-
     }
 
     private Object newSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
