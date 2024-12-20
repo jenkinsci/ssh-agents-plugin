@@ -3,14 +3,17 @@ USER root
 
 ENV TZ=Etc/UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-RUN add-apt-repository ppa:openjdk-r/ppa -y
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update -y -qq \
   && DEBIAN_FRONTEND="noninteractive" apt-get install -y -qq \
     --no-install-recommends \
     openssh-server \
     software-properties-common \
     git \
-    make \
+    make
+
+RUN add-apt-repository ppa:openjdk-r/ppa -y \
+  && DEBIAN_FRONTEND="noninteractive" apt-get update -y -qq \
+  && DEBIAN_FRONTEND="noninteractive" apt-get install -y -qq \
     openjdk-17-jdk \
   && rm -rf /var/lib/apt/lists/*
 
