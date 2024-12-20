@@ -26,6 +26,7 @@ package hudson.plugins.sshslaves.verifiers;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -111,15 +112,7 @@ public class TrustHostKeyActionTest {
 
         jenkins.getInstance().addNode(agent);
         SlaveComputer computer = (SlaveComputer) jenkins.getInstance().getComputer("test-agent");
-
-        try {
-            computer.connect(false).get();
-        } catch (ExecutionException ex){
-            //TODO(oleg_nenashev): "Slave" check is still needed for PCT purposes, but it should be eventually cleaned up
-            if (!ex.getMessage().startsWith("java.io.IOException: Slave failed") && !ex.getMessage().startsWith("java.io.IOException: Agent failed")) {
-                throw ex;
-            }
-        }
+        assertThrows(ExecutionException.class, () -> computer.connect(false).get());
 
         List<TrustHostKeyAction> actions = computer.getActions(TrustHostKeyAction.class);
         assertEquals(computer.getLog(), 1, actions.size());
