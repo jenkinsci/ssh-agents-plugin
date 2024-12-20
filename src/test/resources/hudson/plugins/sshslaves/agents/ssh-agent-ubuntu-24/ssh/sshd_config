@@ -11,6 +11,7 @@ GSSAPICleanupCredentials yes
 ClientAliveInterval 600
 ClientAliveCountMax 4
 Subsystem       sftp    /usr/lib/openssh/sftp-server
-PubkeyAcceptedKeyTypes ssh-rsa
-HostbasedAcceptedKeyTypes ssh-rsa
-HostKeyAlgorithms ssh-rsa
+
+#PubkeyAcceptedKeyTypes ssh-rsa
+#HostbasedAcceptedKeyTypes ssh-rsa
+#HostKeyAlgorithms ssh-rsa

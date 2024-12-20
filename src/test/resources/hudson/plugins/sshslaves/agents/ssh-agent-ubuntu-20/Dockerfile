@@ -1,7 +1,8 @@
-FROM ubuntu:14.04
+FROM ubuntu:24.04
 USER root
 
 ENV TZ=Etc/UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update -y -qq \
   &&  apt-get install -y -qq \
     --no-install-recommends \
@@ -16,7 +17,7 @@ RUN add-apt-repository ppa:openjdk-r/ppa -y \
     openjdk-17-jdk \
   && rm -rf /var/lib/apt/lists/*
 
-RUN useradd --password password --shell /bin/bash --uid 1000 jenkins \
+RUN useradd --password password --shell /bin/bash jenkins \
   && mkdir /home/jenkins \
   && chown -R jenkins:jenkins /home/jenkins
 
@@ -30,6 +31,7 @@ RUN chown -R root:root /root/ \
   && chmod 600 /root/.ssh/*
 RUN ssh-keygen -A
 COPY ssh/sshd_config /etc/ssh/sshd_config
+
 RUN mkdir -p  /var/run/sshd
 
 RUN echo "password\npassword" | passwd root \

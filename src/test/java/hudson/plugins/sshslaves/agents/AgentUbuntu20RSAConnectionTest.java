@@ -1,17 +1,18 @@
 package hudson.plugins.sshslaves.agents;
 
 import java.io.IOException;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+
 import hudson.model.Descriptor;
 import hudson.model.Node;
 import hudson.plugins.sshslaves.categories.AgentSSHTest;
 import hudson.plugins.sshslaves.categories.SSHKeyAuthenticationTest;
 import static org.junit.Assert.assertTrue;
-import org.junit.Ignore;
 
 /**
  * Connect to a remote SSH Agent
@@ -20,8 +21,8 @@ import org.junit.Ignore;
  */
 @Ignore("Only for manual test.")
 @Category({ AgentSSHTest.class, SSHKeyAuthenticationTest.class})
-public class AgentUbuntu1404RSAConnectionTest extends AgentConnectionBase {
-  public static final String SSH_AGENT_NAME = "ssh-agent-ubuntu-14.04";
+public class AgentUbuntu20RSAConnectionTest extends AgentConnectionBase {
+  public static final String SSH_AGENT_NAME = "ssh-agent-ubuntu-20";
   public static final String SSH_KEY_PATH = "ssh/rsa-key";
   public static final String SSH_KEY_PUB_PATH = "ssh/rsa-key.pub";
 
