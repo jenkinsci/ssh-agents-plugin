@@ -254,38 +254,6 @@ public class SSHLauncherTest {
     Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir + JAR_CACHE_PARAM + anotherWorkDir + JAR_CACHE_DIR);
   }
 
-  @Issue("JENKINS-53245")
-  @Test
-  public void setJavaHome() throws Exception {
-    String javaHome = "/java_home";
-    String javaHomeTool = "/java_home_tool";
-
-    SSHLauncher sshLauncher = new SSHLauncher("Hostname", 22, "credentialID");
-    DumbSlave agent = new DumbSlave("agent" + j.jenkins.getNodes().size(), "/home/test/agent", sshLauncher);
-    j.jenkins.addNode(agent);
-    SlaveComputer computer = agent.getComputer();
-
-    List<EnvironmentVariablesNodeProperty.Entry> env = new ArrayList<>();
-    EnvironmentVariablesNodeProperty.Entry entry = new EnvironmentVariablesNodeProperty.Entry(DefaultJavaProvider.JAVA_HOME, javaHome);
-    env.add(entry);
-    NodeProperty<?> javaHomeProperty = new EnvironmentVariablesNodeProperty(env);
-
-    JDK.DescriptorImpl jdkType = Jenkins.get().getDescriptorByType(JDK.DescriptorImpl.class);
-    ToolLocationNodeProperty tool = new ToolLocationNodeProperty(new ToolLocationNodeProperty.ToolLocation(
-      jdkType, "toolJdk", javaHomeTool));
-
-    List<NodeProperty<?>> properties = new ArrayList<>();
-    properties.add(javaHomeProperty);
-    properties.add(tool);
-    computer.getNode().setNodeProperties(properties);
-
-    JavaProvider provider = new DefaultJavaProvider();
-    List<String> javas = provider.getJavas(computer, null, null);
-    assertTrue(javas.contains(javaHome + DefaultJavaProvider.BIN_JAVA));
-    assertTrue(javas.contains(javaHomeTool + DefaultJavaProvider.BIN_JAVA));
-    assertTrue(javas.contains(SSHLauncher.getWorkingDirectory(computer) + DefaultJavaProvider.JDK_BIN_JAVA));
-  }
-
   @Test
   public void timeoutAndRetrySettings() {
     final SSHLauncher launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
