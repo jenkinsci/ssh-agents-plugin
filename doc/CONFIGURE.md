@@ -9,7 +9,7 @@ This launch method will
 * Start the remoting process.
 
 ## Prerequisites
-Before you start to use the the plugin with your agents, you need to prepare your agents to run the remoting process.
+Before you start to use the plugin with your agents, you need to prepare your agents to run the remoting process.
 This means that **you have to install a JDK/JRE 8 on your agent** in order to run the *remoting.jar* process.
 
 The agent should have **enough memory** to run the remoting process and the builds. 
