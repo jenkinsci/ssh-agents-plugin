@@ -107,11 +107,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>org.jenkins-ci.plugins</groupId>
-        <artifactId>credentials</artifactId>
-        <version>1405.vb_cda_74a_f8974</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
