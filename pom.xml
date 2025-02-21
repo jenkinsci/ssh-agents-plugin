@@ -150,6 +150,7 @@
       <artifactId>test-harness</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Jupiter/JUnit 5 testcontainers https://java.testcontainers.org/test_framework_integration/junit_5/ -->
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
