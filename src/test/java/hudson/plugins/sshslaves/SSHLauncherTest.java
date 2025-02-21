@@ -28,9 +28,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import org.htmlunit.html.HtmlPage;
 import org.apache.commons.io.IOUtils;
 import org.jenkinsci.test.acceptance.docker.DockerRule;
@@ -45,17 +43,11 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import hudson.model.Descriptor;
 import hudson.model.Fingerprint;
-import hudson.model.JDK;
 import hudson.model.Slave;
 import hudson.plugins.sshslaves.verifiers.KnownHostsFileKeyVerificationStrategy;
 import hudson.plugins.sshslaves.verifiers.NonVerifyingKeyVerificationStrategy;
 import hudson.slaves.DumbSlave;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
-import hudson.slaves.NodeProperty;
-import hudson.slaves.SlaveComputer;
-import hudson.tools.ToolLocationNodeProperty;
 import hudson.util.FormValidation;
-import jenkins.model.Jenkins;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -235,23 +227,23 @@ public class SSHLauncherTest {
       "javaPath", "prefix", "suffix",
       60, 10, 15, new NonVerifyingKeyVerificationStrategy());
     //use rootFS
-    Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + rootFS + JAR_CACHE_PARAM + rootFS + JAR_CACHE_DIR);
+    Assert.assertEquals(WORK_DIR_PARAM + rootFS + JAR_CACHE_PARAM + rootFS + JAR_CACHE_DIR, launcher.getWorkDirParam(rootFS));
 
     launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
       "javaPath", "prefix", "suffix" + WORK_DIR_PARAM + anotherWorkDir,
       60, 10, 15, new NonVerifyingKeyVerificationStrategy());
     //if worDir is in suffix return ""
-    Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
+    Assert.assertEquals("", launcher.getWorkDirParam(rootFS));
     //if worDir is in suffix return "", even do you set workDir in configuration
     launcher.setWorkDir(anotherWorkDir);
-    Assert.assertEquals(launcher.getWorkDirParam(rootFS), "");
+    Assert.assertEquals("", launcher.getWorkDirParam(rootFS));
 
     launcher = new SSHLauncher("Hostname", 22, "credentialID", "jvmOptions",
       "javaPath", "prefix", "suffix",
       60, 10, 15, new NonVerifyingKeyVerificationStrategy());
     //user the workDir set in configuration
     launcher.setWorkDir(anotherWorkDir);
-    Assert.assertEquals(launcher.getWorkDirParam(rootFS), WORK_DIR_PARAM + anotherWorkDir + JAR_CACHE_PARAM + anotherWorkDir + JAR_CACHE_DIR);
+    Assert.assertEquals(WORK_DIR_PARAM + anotherWorkDir + JAR_CACHE_PARAM + anotherWorkDir + JAR_CACHE_DIR, launcher.getWorkDirParam(rootFS));
   }
 
   @Test
@@ -311,7 +303,7 @@ public class SSHLauncherTest {
   public void readInputStreamIntoByteArrayAndClose() {
 
     InputStream inputStream = null;
-    File testFile = null;
+    File testFile;
     try {
 
       testFile = new File("target" + File.separator + "test-classes",
