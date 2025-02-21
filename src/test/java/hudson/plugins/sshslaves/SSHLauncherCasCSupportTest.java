@@ -4,29 +4,28 @@ import hudson.model.Node;
 import hudson.slaves.SlaveComputer;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
-import org.junit.Rule;
-import org.junit.Test;
+import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class SSHLauncherCasCSupportTest {
-    @Rule
-    public JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
+@WithJenkinsConfiguredWithCode
+class SSHLauncherCasCSupportTest {
 
     @Test
     @ConfiguredWithCode("SSHCasCConfig.yml")
-    public void shouldBeAbleToConfigureSSHSlaves() {
-        validateConfiguration();
+    void shouldBeAbleToConfigureSSHSlaves(JenkinsConfiguredWithCodeRule j) {
+        validateConfiguration(j);
     }
 
     @Test
     @ConfiguredWithCode("SSHCasCConfigLegacy.yml")
-    public void shouldBeAbleToConfigureLegacySSHSlaves() {
-        validateConfiguration();
+    void shouldBeAbleToConfigureLegacySSHSlaves(JenkinsConfiguredWithCodeRule j) {
+        validateConfiguration(j);
     }
 
-    private void validateConfiguration() {
+    private static void validateConfiguration(JenkinsConfiguredWithCodeRule j) {
         final Node node = j.jenkins.getNode("this-ssh-agent");
         assertNotNull(node);
 
