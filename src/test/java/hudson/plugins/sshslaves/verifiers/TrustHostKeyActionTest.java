@@ -23,12 +23,9 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
@@ -36,9 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -51,14 +47,13 @@ import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
 import hudson.slaves.SlaveComputer;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class TrustHostKeyActionTest {
+@WithJenkins
+class TrustHostKeyActionTest {
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @Rule
-    public final JenkinsRule jenkins = new JenkinsRule();
+    @TempDir
+    private File temporaryFolder;
 
     private static int findPort() throws IOException {
         try (ServerSocket socket = new ServerSocket()) {
@@ -67,9 +62,8 @@ public class TrustHostKeyActionTest {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testSubmitNotAuthorised() throws Exception {
+    void testSubmitNotAuthorised(JenkinsRule jenkins) throws Exception {
 
         SystemCredentialsProvider.getInstance().getDomainCredentialsMap().put(Domain.global(),
                 Collections.singletonList(
@@ -106,7 +100,7 @@ public class TrustHostKeyActionTest {
         }
 
         SSHLauncher launcher = new SSHLauncher("localhost", port, "dummyCredentialId", null, "xyz", null, null, 30, 1, 1, new ManuallyTrustedKeyVerificationStrategy(true));
-        DumbSlave agent = new DumbSlave("test-agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
+        DumbSlave agent = new DumbSlave("test-agent", newFolder(temporaryFolder, "junit").getAbsolutePath(), launcher);
         agent.setNodeDescription("SSH Test agent");
         agent.setRetentionStrategy(RetentionStrategy.NOOP);
 
@@ -115,7 +109,7 @@ public class TrustHostKeyActionTest {
         assertThrows(ExecutionException.class, () -> computer.connect(false).get());
 
         List<TrustHostKeyAction> actions = computer.getActions(TrustHostKeyAction.class);
-        assertEquals(computer.getLog(), 1, actions.size());
+        assertEquals(1, actions.size(), computer.getLog());
         assertNull(actions.get(0).getExistingHostKey());
 
         HtmlPage p = jenkins.createWebClient().getPage(agent, actions.get(0).getUrlName());
@@ -127,7 +121,7 @@ public class TrustHostKeyActionTest {
 
     }
 
-    private Object newSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private static Object newSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> serverClass;
         try {
             serverClass = Class.forName("org.apache.sshd.SshServer");
@@ -135,10 +129,10 @@ public class TrustHostKeyActionTest {
             serverClass = Class.forName("org.apache.sshd.server.SshServer");
         }
 
-        return serverClass.getDeclaredMethod("setUpDefaultServer", null).invoke(null);
+        return serverClass.getDeclaredMethod("setUpDefaultServer").invoke(null);
     }
 
-    private Class<?> newKeyPairProviderClass() throws ClassNotFoundException {
+    private static Class<?> newKeyPairProviderClass() throws ClassNotFoundException {
         Class<?> keyPairProviderClass;
         try {
             keyPairProviderClass = Class.forName("org.apache.sshd.common.KeyPairProvider");
@@ -149,7 +143,7 @@ public class TrustHostKeyActionTest {
         return keyPairProviderClass;
     }
 
-    private Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    private static Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         Class<?> providerClass;
         try {
             providerClass = Class.forName("org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider");
@@ -160,7 +154,7 @@ public class TrustHostKeyActionTest {
         return providerClass.getConstructor().newInstance();
     }
 
-    private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    private static Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         Class<?> factoryClass;
         try {
             factoryClass = Class.forName("org.apache.sshd.server.auth.UserAuthPassword$Factory");
@@ -171,11 +165,11 @@ public class TrustHostKeyActionTest {
         return factoryClass.getConstructor().newInstance();
     }
 
-    private Class<?> newCommandFactoryClass() throws ClassNotFoundException {
+    private static Class<?> newCommandFactoryClass() throws ClassNotFoundException {
         return Class.forName("org.apache.sshd.server.command.CommandFactory");
     }
 
-    private Object newCommandFactory(Class<?> commandFactoryClass) throws ClassNotFoundException, IllegalArgumentException {
+    private static Object newCommandFactory(Class<?> commandFactoryClass) throws IllegalArgumentException {
         return java.lang.reflect.Proxy.newProxyInstance(
                 commandFactoryClass.getClassLoader(),
                 new java.lang.Class[]{commandFactoryClass},
@@ -196,7 +190,7 @@ public class TrustHostKeyActionTest {
           });
     }
 
-    private Class<?> newCommandAuthenticatorClass() throws ClassNotFoundException {
+    private static Class<?> newCommandAuthenticatorClass() throws ClassNotFoundException {
         Class<?> passwordAuthenticatorClass;
         try {
             passwordAuthenticatorClass = Class.forName("org.apache.sshd.server.PasswordAuthenticator");
@@ -207,7 +201,7 @@ public class TrustHostKeyActionTest {
         return passwordAuthenticatorClass;
     }
 
-    private Object newAuthenticator(Class<?> passwordAuthenticatorClass) throws ClassNotFoundException, IllegalArgumentException {
+    private static Object newAuthenticator(Class<?> passwordAuthenticatorClass) throws IllegalArgumentException {
         return java.lang.reflect.Proxy.newProxyInstance(
                 passwordAuthenticatorClass.getClassLoader(),
                 new java.lang.Class[]{passwordAuthenticatorClass},
@@ -221,7 +215,16 @@ public class TrustHostKeyActionTest {
           });
     }
 
-    private Object invoke(Object target, String methodName, Class<?>[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private static Object invoke(Object target, String methodName, Class<?>[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         return target.getClass().getMethod(methodName, parameterTypes).invoke(target, args);
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 }

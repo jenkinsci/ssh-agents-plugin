@@ -10,20 +10,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * @author Michael Clarke
  * @author Zhenlei Huang
  */
-public class TrileadVersionSupportManagerTest {
+class TrileadVersionSupportManagerTest {
 
     @Test
-    public void testLegacyInstance() {
+    void testLegacyInstance() {
         BlockingClassloader classloader = newBlockingClassloader();
         classloader.block("com.trilead.ssh2.signature.KeyAlgorithmManager");
 
@@ -33,7 +33,7 @@ public class TrileadVersionSupportManagerTest {
 
     @Test
     @Issue("JENKINS-44893")
-    public void testLegacyInstanceWithLinkageError() {
+    void testLegacyInstanceWithLinkageError() {
         BlockingClassloader classloader = newBlockingClassloader();
         classloader.inspectPackage("com.trilead.ssh2.signature");
         classloader.block("com.trilead.ssh2.signature.KeyAlgorithm");
@@ -43,13 +43,13 @@ public class TrileadVersionSupportManagerTest {
     }
 
     @Test
-    public void testCurrentInstance() {
+    void testCurrentInstance() {
         assertEquals(JenkinsTrilead9VersionSupport.class, TrileadVersionSupportManager.getTrileadSupport().getClass());
     }
 
     @Test
     @Issue("JENKINS-44893")
-    public void testCurrentInstanceWithIsolatedClassLoader() {
+    void testCurrentInstanceWithIsolatedClassLoader() {
         BlockingClassloader classloader = newBlockingClassloader();
         Object trileadSupport = invokeGetTrileadSupport(classloader);
 

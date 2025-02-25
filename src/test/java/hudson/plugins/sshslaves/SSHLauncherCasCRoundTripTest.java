@@ -2,16 +2,19 @@ package hudson.plugins.sshslaves;
 
 import hudson.model.Node;
 import hudson.slaves.SlaveComputer;
-import io.jenkins.plugins.casc.misc.RoundTripAbstractTest;
-import org.jvnet.hudson.test.RestartableJenkinsRule;
+import io.jenkins.plugins.casc.misc.junit.jupiter.AbstractRoundTripTest;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class SSHLauncherCasCRoundTripTest extends RoundTripAbstractTest {
+@WithJenkins
+class SSHLauncherCasCRoundTripTest extends AbstractRoundTripTest {
+
     @Override
-    protected void assertConfiguredAsExpected(RestartableJenkinsRule restartableJenkinsRule, String s) {
-        final Node node = r.j.jenkins.getNode("this-ssh-agent");
+    protected void assertConfiguredAsExpected(JenkinsRule jenkins, String s) {
+        final Node node = jenkins.jenkins.getNode("this-ssh-agent");
         assertNotNull(node);
 
         SlaveComputer computer = (SlaveComputer) node.toComputer();
