@@ -37,28 +37,36 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import io.jenkins.plugins.sshbuildagents.ssh.Connection;
-import io.jenkins.plugins.sshbuildagents.ssh.ServerHostKeyVerifier;
-import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
+
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.future.AuthFuture;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
-import org.apache.sshd.common.session.SessionHeartbeatController;
 import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.scp.client.DefaultScpClient;
-import hudson.util.Secret;
+
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+
+import hudson.util.Secret;
+import io.jenkins.plugins.sshbuildagents.ssh.Connection;
+import io.jenkins.plugins.sshbuildagents.ssh.ServerHostKeyVerifier;
+import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 
 /**
  * Implements {@link Connection} using the Apache Mina SSHD library https://github.com/apache/mina-sshd
  * @author Ivan Fernandez Calvo
  */
-public class ConnectionImpl implements Connection{
+public class ConnectionImpl implements Connection {
+  // The number of heartbeat pacakets lost before closing the connection.
+  public static final int HEARTBEAT_MAX_RETRY = 6;
+  // The size of the SSH window size in bytes.
   public static final long WINDOW_SIZE = 4L * 1024 * 1024;
-  public static final int HEARTBEAT_INTERVAL = 30000;
+  // The time in seconds to wait before sending a keepalive packet.
+  public static final int HEARTBEAT_INTERVAL = 10;
+  // The time in minutes to wait before closing the session if no command is executed.
+  public static final int IDLE_SESSION_TIMEOUT = 60;
   private OutputStream stdout = System.out;
   private OutputStream stderr = System.err;
   private InputStream stdIn = System.in;
@@ -217,15 +225,12 @@ public class ConnectionImpl implements Connection{
   private void initClient() {
     if(client == null) {
       client = SshClient.setUpDefaultClient();
-      //client.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
       CoreModuleProperties.WINDOW_SIZE.set(client, WINDOW_SIZE);
       CoreModuleProperties.TCP_NODELAY.set(client, tcpNoDelay);
       CoreModuleProperties.HEARTBEAT_REQUEST.set(client, "keepalive@jenkins.io");
-      CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofMillis(HEARTBEAT_INTERVAL));
-      CoreModuleProperties.HEARTBEAT_REPLY_WAIT.set(client, Duration.ofMillis(HEARTBEAT_INTERVAL*2));
-      //CoreModuleProperties.NIO2_READ_TIMEOUT.set(client, Duration.ofMillis(timeoutMillis));
-
-      //CoreModuleProperties.BUFFERED_IO_OUTPUT_MAX_PENDING_WRITE_WAIT.set(client, Duration.ofMillis(10));
+      CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofSeconds(HEARTBEAT_INTERVAL));
+      CoreModuleProperties.HEARTBEAT_NO_REPLY_MAX.set(client, HEARTBEAT_MAX_RETRY);
+      CoreModuleProperties.IDLE_TIMEOUT.set(client, Duration.ofMinutes(IDLE_SESSION_TIMEOUT));
     }
     if(client.isStarted() == false){
       client.start();

@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import edu.umd.cs.findbugs.annotations.NonNull;
+
 import org.apache.commons.io.IOUtils;
-import hudson.util.Secret;
+
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BaseSSHUser;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+
+import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.util.Secret;
 
 public class FakeSSHKeyCredential extends BaseSSHUser implements SSHUserPrivateKey {
   public static final String ROOT_PATH = "/hudson/plugins/sshslaves/agents";
@@ -19,13 +22,13 @@ public class FakeSSHKeyCredential extends BaseSSHUser implements SSHUserPrivateK
 
   public static final String ID = "id";
   public static final String USERNAME = "jenkins";
-  private final List<String> keys = new ArrayList();
+  private final List<String> keys = new ArrayList<>();
 
   public FakeSSHKeyCredential() throws IOException {
     super(CredentialsScope.SYSTEM, ID, USERNAME, "Fake credentials.");
-    String privateKey =
-      IOUtils.toString(getClass().getResourceAsStream(ROOT_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PATH),
-                       StandardCharsets.UTF_8);
+    String privateKey = IOUtils.toString(
+        getClass().getResourceAsStream(ROOT_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PATH),
+        StandardCharsets.UTF_8);
     keys.add(privateKey);
   }
 

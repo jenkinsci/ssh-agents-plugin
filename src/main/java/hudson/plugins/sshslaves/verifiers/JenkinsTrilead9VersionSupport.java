@@ -1,13 +1,14 @@
 package hudson.plugins.sshslaves.verifiers;
 
+import com.trilead.ssh2.signature.KeyAlgorithm;
+import com.trilead.ssh2.signature.KeyAlgorithmManager;
+import hudson.plugins.sshslaves.Messages;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import com.trilead.ssh2.signature.KeyAlgorithm;
-import com.trilead.ssh2.signature.KeyAlgorithmManager;
-import io.jenkins.plugins.sshbuildagents.Messages;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * @author Michael Clarke

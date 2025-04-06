@@ -23,7 +23,6 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import java.io.IOException;
 import com.trilead.ssh2.Connection;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.model.Describable;
@@ -32,10 +31,12 @@ import hudson.model.TaskListener;
 import hudson.slaves.SlaveComputer;
 import jenkins.model.Jenkins;
 
+import java.io.IOException;
+
 /**
  * A method for verifying the host key provided by the remote host during the
  * initiation of each connection.
- *
+ * 
  * @author Michael Clarke
  * @since 1.13
  */
@@ -66,11 +67,11 @@ public abstract class SshHostKeyVerificationStrategy implements Describable<SshH
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
         return TrileadVersionSupportManager.getTrileadSupport().getSupportedAlgorithms();
     }
-
+    
     public static abstract class SshHostKeyVerificationStrategyDescriptor extends Descriptor<SshHostKeyVerificationStrategy> {
-
+        
     }
+    
 
-
-
+    
 }

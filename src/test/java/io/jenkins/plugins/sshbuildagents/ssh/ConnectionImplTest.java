@@ -1,5 +1,8 @@
 package io.jenkins.plugins.sshbuildagents.ssh;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -13,14 +16,14 @@ import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.sshd.client.channel.ChannelShell;
 import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
-import org.apache.sshd.common.util.io.NoCloseOutputStream;
+import org.apache.sshd.common.util.io.output.NoCloseOutputStream;
 import org.apache.sshd.scp.server.ScpCommandFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.pubkey.AcceptAllPublickeyAuthenticator;
@@ -32,12 +35,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import hudson.plugins.sshslaves.agents.AgentConnectionBase;
+
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+
+import hudson.model.Descriptor.FormException;
+import io.jenkins.plugins.sshbuildagents.ssh.agents.AgentConnectionBaseTest;
+import io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl;
 
 public class ConnectionImplTest {
   private SshServer sshd;
@@ -53,8 +58,8 @@ public class ConnectionImplTest {
     ScpCommandFactory.Builder cmdFactoryBuilder = new ScpCommandFactory.Builder();
     sshd.setCommandFactory(cmdFactoryBuilder.withDelegate(ProcessShellCommandFactory.INSTANCE).build());
     sshd.setShellFactory(InteractiveProcessShellFactory.INSTANCE);
-    sshd.setPasswordAuthenticator((username, password, session) ->
-                                    AgentConnectionBase.USER.equals(username) && AgentConnectionBase.PASSWORD.equals(password));
+    sshd.setPasswordAuthenticator((username, password, session) -> AgentConnectionBaseTest.USER.equals(username)
+        && AgentConnectionBaseTest.PASSWORD.equals(password));
     sshd.setPublickeyAuthenticator(AcceptAllPublickeyAuthenticator.INSTANCE);
     sshd.setPublickeyAuthenticator(AcceptAllPublickeyAuthenticator.INSTANCE);
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
@@ -68,17 +73,16 @@ public class ConnectionImplTest {
   }
 
   @Test
-  public void testRunCommandUserPassword() throws IOException {
+  public void testRunCommandUserPassword() throws IOException, FormException {
     Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-    StandardUsernameCredentials credentials =
-      new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "", AgentConnectionBase.USER,
-                                          AgentConnectionBase.PASSWORD);
+    StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "",
+        AgentConnectionBaseTest.USER,
+        AgentConnectionBaseTest.PASSWORD);
     connection.setCredentials(credentials);
     int ret = connection.execCommand("echo FOO");
     connection.close();
     assertEquals(ret, 0);
   }
-
 
   @Test
   public void testRunCommandSSHKey() throws IOException {
@@ -91,12 +95,12 @@ public class ConnectionImplTest {
   }
 
   @Test
-  public void testCopyFile() throws IOException {
+  public void testCopyFile() throws IOException, FormException {
     final File tempFile = tempFolder.newFile("tempFile.txt");
     Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-    StandardUsernameCredentials credentials =
-      new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "", AgentConnectionBase.USER,
-                                          AgentConnectionBase.PASSWORD);
+    StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "",
+        AgentConnectionBaseTest.USER,
+        AgentConnectionBaseTest.PASSWORD);
     connection.setCredentials(credentials);
     String data = IOUtils.toString(getClass().getResourceAsStream("/fakeAgentJar.txt"), StandardCharsets.UTF_8);
     connection.copyFile(tempFile.getAbsolutePath(), data.getBytes(StandardCharsets.UTF_8), true, true);
@@ -105,11 +109,11 @@ public class ConnectionImplTest {
   }
 
   @Test
-  public void testShellChannel() throws IOException {
+  public void testShellChannel() throws IOException, FormException {
     Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-    StandardUsernameCredentials credentials =
-      new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "", AgentConnectionBase.USER,
-                                          AgentConnectionBase.PASSWORD);
+    StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "",
+        AgentConnectionBaseTest.USER,
+        AgentConnectionBaseTest.PASSWORD);
     connection.setCredentials(credentials);
     ShellChannel shellChannel = connection.shellChannel();
     shellChannel.execCommand("echo FOO");
@@ -126,7 +130,7 @@ public class ConnectionImplTest {
     connection.setCredentials(credentials);
     ShellChannel shellChannel = connection.shellChannel();
     shellChannel.execCommand("sleep 500s");
-    for(int i=0;i<300;i++){
+    for (int i = 0; i < 300; i++) {
       Thread.sleep(1000);
       assertTrue(connection.isOpen());
     }
@@ -134,17 +138,17 @@ public class ConnectionImplTest {
   }
 
   @Test
-  public void testShellChannel2() throws IOException {
+  public void testShellChannel2() throws IOException, FormException {
     Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-    StandardUsernameCredentials credentials =
-      new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "", AgentConnectionBase.USER,
-                                          AgentConnectionBase.PASSWORD);
+    StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "",
+        AgentConnectionBaseTest.USER,
+        AgentConnectionBaseTest.PASSWORD);
     connection.setCredentials(credentials);
     try (ClientSession session = connection.connect();
-      PipedOutputStream pipedIn = new PipedOutputStream();
-      InputStream inPipe = new PipedInputStream(pipedIn);
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      ByteArrayOutputStream err = new ByteArrayOutputStream()){
+        PipedOutputStream pipedIn = new PipedOutputStream();
+        InputStream inPipe = new PipedInputStream(pipedIn);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream()) {
       try (ChannelShell channel = session.createShellChannel()) {
         channel.setOut(new NoCloseOutputStream(out));
         channel.setErr(new NoCloseOutputStream(err));
@@ -154,7 +158,7 @@ public class ConnectionImplTest {
         pipedIn.flush();
 
         Collection<ClientChannelEvent> result = channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED),
-                                                                10000);
+            10000);
         System.err.println(out.toString("UTF-8"));
         System.err.println(err.toString("UTF-8"));
       }
@@ -164,15 +168,15 @@ public class ConnectionImplTest {
   @Test
   public void testClient() throws Exception {
     Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-    StandardUsernameCredentials credentials =
-      new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "", AgentConnectionBase.USER,
-                                          AgentConnectionBase.PASSWORD);
+    StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "",
+        AgentConnectionBaseTest.USER,
+        AgentConnectionBaseTest.PASSWORD);
     connection.setCredentials(credentials);
     try (ClientSession session = connection.connect();
-      ClientChannel channel = session.createShellChannel();
-      ByteArrayOutputStream sent = new ByteArrayOutputStream();
-      PipedOutputStream pipedIn = new PipedOutputStream();
-      PipedInputStream pipedOut = new PipedInputStream(pipedIn)) {
+        ClientChannel channel = session.createShellChannel();
+        ByteArrayOutputStream sent = new ByteArrayOutputStream();
+        PipedOutputStream pipedIn = new PipedOutputStream();
+        PipedInputStream pipedOut = new PipedInputStream(pipedIn)) {
 
       channel.setIn(pipedOut);
       channel.setOut(System.out);

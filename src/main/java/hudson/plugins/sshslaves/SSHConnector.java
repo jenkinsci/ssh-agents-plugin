@@ -27,39 +27,34 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
+import com.trilead.ssh2.Connection;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.util.Collections;
-import io.jenkins.plugins.sshbuildagents.Messages;
-import io.jenkins.plugins.sshbuildagents.ssh.Connection;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.interceptor.RequirePOST;
 import hudson.Extension;
-import hudson.model.Computer;
 import hudson.model.ItemGroup;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.security.ACL;
-import hudson.security.AccessControlled;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.util.Collections;
+
 import jenkins.model.Jenkins;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+
 import static hudson.Util.fixEmpty;
 import static hudson.Util.fixEmptyAndTrim;
-import static hudson.plugins.sshslaves.SSHLauncher.DEFAULT_LAUNCH_TIMEOUT_SECONDS;
-import static hudson.plugins.sshslaves.SSHLauncher.DEFAULT_MAX_NUM_RETRIES;
-import static hudson.plugins.sshslaves.SSHLauncher.DEFAULT_RETRY_WAIT_TIME;
-import static hudson.plugins.sshslaves.SSHLauncher.DEFAULT_SSH_PORT;
+import static hudson.plugins.sshslaves.SSHLauncher.*;
+
+import hudson.model.Computer;
+import hudson.security.AccessControlled;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * {@link ComputerConnector} for {@link SSHLauncher}.

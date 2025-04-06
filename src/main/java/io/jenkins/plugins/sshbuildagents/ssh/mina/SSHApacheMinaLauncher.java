@@ -23,6 +23,8 @@
  */
 package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
+import static hudson.Util.fixEmpty;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -30,16 +32,12 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import io.jenkins.plugins.sshbuildagents.Messages;
-import io.jenkins.plugins.sshbuildagents.ssh.Connection;
-import io.jenkins.plugins.sshbuildagents.ssh.ServerHostKeyVerifier;
-import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
+
 import org.apache.commons.lang.StringUtils;
-import org.apache.sshd.common.util.io.NoCloseOutputStream;
+import org.apache.sshd.common.util.io.output.NoCloseOutputStream;
 import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -48,6 +46,17 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
+import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
+import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
+
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -72,18 +81,15 @@ import hudson.slaves.SlaveComputer;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import io.jenkins.plugins.sshbuildagents.Messages;
+import io.jenkins.plugins.sshbuildagents.ssh.Connection;
+import io.jenkins.plugins.sshbuildagents.ssh.ServerHostKeyVerifier;
+import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 import jenkins.model.Jenkins;
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
-import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
-import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
-import static hudson.Util.fixEmpty;
-import static java.util.logging.Level.WARNING;
 
 /**
- * A computer launcher that tries to start a linux agent by opening an SSH connection and trying to find java.
+ * A computer launcher that tries to start a linux agent by opening an SSH
+ * connection and trying to find java.
  *
  * @author Ivan Fernandez Calvo
  */
@@ -139,7 +145,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    */
   private final String credentialsId;
   /**
-   * Transient stash of the credentials to use, mostly just for providing floating user object.
+   * Transient stash of the credentials to use, mostly just for providing floating
+   * user object.
    */
   private transient StandardUsernameCredentials credentials;
   /**
@@ -166,7 +173,9 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   /**
    * Set the value to add to the remoting parameter -workDir
    *
-   * @see <a href="https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory">Remoting Work directory</a>
+   * @see <a href=
+   *      "https://github.com/jenkinsci/remoting/blob/master/docs/workDir.md#remoting-work-directory">Remoting
+   *      Work directory</a>
    */
   private String workDir;
 
@@ -196,8 +205,10 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
 
   public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
     return CredentialsMatchers.firstOrNull(
-      CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, Jenkins.get(), ACL.SYSTEM, SSH_SCHEME),
-      CredentialsMatchers.withId(credentialsId));
+        CredentialsProvider
+            .lookupCredentialsInItemGroup(StandardUsernameCredentials.class, Jenkins.get(), ACL.SYSTEM2,
+                List.of(SSH_SCHEME)),
+        CredentialsMatchers.withId(credentialsId));
   }
 
   /**
@@ -233,14 +244,14 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     return workingDirectory;
   }
 
-  public StandardUsernameCredentials   getCredentials() {
-    String credentialsId =
-      this.credentialsId == null ? (this.credentials == null ? null : this.credentials.getId()) : this.credentialsId;
+  public StandardUsernameCredentials getCredentials() {
+    String credentialsId = this.credentialsId == null ? (this.credentials == null ? null : this.credentials.getId())
+        : this.credentialsId;
     try {
       // only ever want from the system
       // lookup every time so that we always have the latest
       StandardUsernameCredentials credentials = credentialsId != null ? SSHApacheMinaLauncher.lookupSystemCredentials(
-        credentialsId) : null;
+          credentialsId) : null;
       if (credentials != null) {
         this.credentials = credentials;
         return credentials;
@@ -257,7 +268,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    */
   @Override
   public boolean isLaunchSupported() {
-      return connection == null;
+    return connection == null;
   }
 
   /**
@@ -326,29 +337,6 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     }
   }
 
-  /**
-   * try to run the Java command in the PATH ad report its version.
-   *
-   * @param listener lister to print the output of the java command.
-   */
-  private void checkJavaIsInPath(TaskListener listener) throws AbortException {
-    String msg =
-      "Java is not in the PATH nor configured with the javaPath setting," + " Jenkins will try to guess where is Java, "
-      + "this guess will be removed in the future. :" + getDescriptor().getDisplayName();
-    int ret = 0;
-    try {
-      listener.getLogger().println("Checking Java version in the PATH");
-      ret = connection.execCommand("java -version");
-    } catch (Exception e) {
-      ret = -1;
-    }
-    if (ret != 0) {
-      LOGGER.log(WARNING, msg);
-      listener.getLogger().println(msg);
-      throw new AbortException(msg);
-    }
-  }
-
   private String expandExpression(SlaveComputer computer, String expression) {
     return getEnvVars(computer).expand(expression);
   }
@@ -393,7 +381,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   }
 
   /**
-   * Makes sure that SSH connection won't produce any unwanted text, which will interfere with sftp execution.
+   * Makes sure that SSH connection won't produce any unwanted text, which will
+   * interfere with sftp execution.
    * TODO review if it is needed or move to the SSH Provider.
    */
   private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
@@ -402,7 +391,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       connection.execCommand("exit 0");
       final String s;
-      //TODO: Seems we need to retrieve the encoding from the connection destination
+      // TODO: Seems we need to retrieve the encoding from the connection destination
       s = baos.toString(Charset.defaultCharset().name());
       if (s.length() != 0) {
         listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
@@ -419,22 +408,23 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    *
    * @param computer         The computer.
    * @param listener         The listener.
-   * @param workingDirectory The working directory from which to start the java process.
+   * @param workingDirectory The working directory from which to start the java
+   *                         process.
    * @throws IOException If something goes wrong.
    */
   private void startAgent(SlaveComputer computer, final TaskListener listener, String workingDirectory)
-    throws IOException {
+      throws IOException {
     String java = "java";
     if (StringUtils.isNotBlank(javaPath)) {
       java = expandExpression(computer, javaPath);
-    } else {
-      checkJavaIsInPath(listener);
     }
-    String cmd =
-      "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR + getWorkDirParam(
-        workingDirectory);
 
-    //This will wrap the cmd with prefix commands and suffix commands if they are set.
+    String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR
+        + getWorkDirParam(
+            workingDirectory);
+
+    // This will wrap the cmd with prefix commands and suffix commands if they are
+    // set.
     cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
 
     listener.getLogger().println(Messages.SSHLauncher_StartingAgentProcess(getTimestamp(), cmd));
@@ -442,7 +432,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     shellChannel.execCommand(cmd);
     try {
       computer.setChannel(shellChannel.getInvertedStdout(), shellChannel.getInvertedStdin(), listener.getLogger(),
-                          null);
+          null);
     } catch (InterruptedException e) {
       throw new IOException(Messages.SSHLauncher_AbortedDuringConnectionOpen(), e);
     } catch (IOException e) {
@@ -454,7 +444,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
    * Method copies the agent jar to the remote system.
    *
    * @param listener         The listener.
-   * @param workingDirectory The directory into which the agent jar will be copied.
+   * @param workingDirectory The directory into which the agent jar will be
+   *                         copied.
    * @throws IOException If something goes wrong.
    */
   @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification = "there is a bug related with Java 11 bytecode see https://github.com/spotbugs/spotbugs/issues/756")
@@ -466,7 +457,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     try {
       listener.getLogger().println("Uploading " + fileName + " file to the agent.");
       connection.copyFile(fileName, bytes, overwrite, checkSameContent);
-    } catch (Exception e){
+    } catch (Exception e) {
       listener.getLogger().println("Error: unable to write the " + fileName + " file to the agent.");
       listener.getLogger().println("Check the user, work directory, and permissions you have configured.");
       throw new IOException(e);
@@ -479,7 +470,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   }
 
   protected void openConnection(final TaskListener listener, final SlaveComputer computer,
-                                final String workingDirectory) throws IOException {
+      final String workingDirectory) throws IOException {
     if (StringUtils.isBlank(workingDirectory)) {
       String msg = "Cannot get the working directory for " + computer;
       listener.error(msg);
@@ -489,7 +480,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     if (credentials == null) {
       throw new AbortException("Cannot find SSH User credentials with id: " + credentialsId);
     }
-    // TODO  implement verifiers.
+    // TODO implement verifiers.
     String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
     if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
       connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
@@ -511,7 +502,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   }
 
   private void checkConfig() throws InterruptedException {
-    //JENKINS-58340 some plugins does not implement Descriptor
+    // JENKINS-58340 some plugins does not implement Descriptor
     Descriptor descriptorOrg = Jenkins.get().getDescriptor(this.getClass());
     if (!(descriptorOrg instanceof DescriptorImpl)) {
       return;
@@ -525,7 +516,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     FormValidation validatePort = descriptor.doCheckPort(port);
     FormValidation validateHost = descriptor.doCheckHost(this.host);
     FormValidation validateCredentials = descriptor.doCheckCredentialsId(Jenkins.get(), Jenkins.get(), this.host, port,
-                                                                         this.credentialsId);
+        this.credentialsId);
 
     if (validatePort.kind == FormValidation.Kind.ERROR) {
       isValid = false;
@@ -555,31 +546,31 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
       return;
     } else {
       try {
-        if(shellChannel != null){
-          if(shellChannel.getLastError() != null){
+        if (shellChannel != null) {
+          if (shellChannel.getLastError() != null) {
             listener.getLogger().println("\tException: " + shellChannel.getLastError().getMessage());
           }
-          if(StringUtils.isNotBlank(shellChannel.getLastHint())) {
+          if (StringUtils.isNotBlank(shellChannel.getLastHint())) {
             listener.getLogger().println("\tHint: " + shellChannel.getLastHint());
           }
         }
         close();
       } catch (Exception e) {
-        listener.getLogger().println("Error after disconnect agent: "+e.getMessage());
+        listener.getLogger().println("Error after disconnect agent: " + e.getMessage());
       }
     }
   }
 
-  private void close(){
-    try{
-      if(shellChannel != null){
+  private void close() {
+    try {
+      if (shellChannel != null) {
         shellChannel.close();
       }
       if (connection != null) {
         connection.close();
       }
-    } catch (Exception e){
-      //NOOP
+    } catch (Exception e) {
+      // NOOP
     }
     connection = null;
     shellChannel = null;
@@ -602,8 +593,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   @NonNull
   SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategyDefaulted() {
     return sshHostKeyVerificationStrategy != null
-           ? sshHostKeyVerificationStrategy
-           : new NonVerifyingKeyVerificationStrategy();
+        ? sshHostKeyVerificationStrategy
+        : new NonVerifyingKeyVerificationStrategy();
   }
 
   /**
@@ -673,8 +664,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
 
   private long getLaunchTimeoutMillis() {
     return launchTimeoutSeconds == null || launchTimeoutSeconds < 0
-           ? DEFAULT_LAUNCH_TIMEOUT_SECONDS
-           : TimeUnit.SECONDS.toMillis(launchTimeoutSeconds);
+        ? DEFAULT_LAUNCH_TIMEOUT_SECONDS
+        : TimeUnit.SECONDS.toMillis(launchTimeoutSeconds);
   }
 
   /**
@@ -717,11 +708,14 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   }
 
   /**
-   * Enable/Disable the credential tracking, this tracking store information about where it is used a credential,
-   * in this case in a node. If the tracking is enabled and you launch a big number of Agents per day, activate
+   * Enable/Disable the credential tracking, this tracking store information about
+   * where it is used a credential,
+   * in this case in a node. If the tracking is enabled and you launch a big
+   * number of Agents per day, activate
    * credentials tacking could cause a performance issue see
    *
-   * @see <a href="https://issues.jenkins-ci.org/browse/JENKINS-49235">JENKINS-49235</a>
+   * @see <a href=
+   *      "https://issues.jenkins-ci.org/browse/JENKINS-49235">JENKINS-49235</a>
    */
   public boolean getTrackCredentials() {
     String trackCredentials = System.getProperty(SSHApacheMinaLauncher.class.getName() + ".trackCredentials");
@@ -738,18 +732,21 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   }
 
   /**
-   * @param workingDirectory The Working directory set on the configuration of the node.
+   * @param workingDirectory The Working directory set on the configuration of the
+   *                         node.
    * @return the remoting parameter to set the workDir,
-   *   by default it is the same as the working directory configured on the node so "-workDir " + workingDirectory,
-   *   if workDir is set, he method will return "-workDir " + getWorkDir()
-   *   if the parameter is set in suffixStartSlaveCmd, the method will return an empty String.
+   *         by default it is the same as the working directory configured on the
+   *         node so "-workDir " + workingDirectory,
+   *         if workDir is set, he method will return "-workDir " + getWorkDir()
+   *         if the parameter is set in suffixStartSlaveCmd, the method will
+   *         return an empty String.
    */
   @NonNull
   @Restricted(NoExternalUse.class)
   public String getWorkDirParam(@NonNull String workingDirectory) {
     String ret;
     if (getSuffixStartSlaveCmd().contains(WORK_DIR_PARAM) || getSuffixStartSlaveCmd().contains(JAR_CACHE_PARAM)) {
-      //the parameter is already set on suffixStartSlaveCmd
+      // the parameter is already set on suffixStartSlaveCmd
       ret = "";
     } else if (StringUtils.isNotBlank(getWorkDir())) {
       ret = WORK_DIR_PARAM + getWorkDir() + JAR_CACHE_PARAM + getWorkDir() + JAR_CACHE_DIR;
@@ -760,7 +757,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
   }
 
   public String logConfiguration() {
-    final StringBuilder sb = new StringBuilder(this.getClass().getName()+"{");
+    final StringBuilder sb = new StringBuilder(this.getClass().getName() + "{");
     sb.append("host='").append(getHost()).append('\'');
     sb.append(", port=").append(getPort());
     sb.append(", credentialsId='").append(Util.fixNull(credentialsId)).append('\'');
@@ -772,7 +769,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     sb.append(", maxNumRetries=").append(getMaxNumRetries());
     sb.append(", retryWaitTime=").append(getRetryWaitTime());
     sb.append(", sshHostKeyVerificationStrategy=").append(
-      sshHostKeyVerificationStrategy != null ? sshHostKeyVerificationStrategy.getClass().getName() : "None");
+        sshHostKeyVerificationStrategy != null ? sshHostKeyVerificationStrategy.getClass().getName() : "None");
     sb.append(", tcpNoDelay=").append(getTcpNoDelay());
     sb.append(", trackCredentials=").append(getTrackCredentials());
     sb.append('}');
@@ -806,31 +803,39 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     }
 
     @RequirePOST
-    public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context, @QueryParameter String host,
-                                                 @QueryParameter String port, @QueryParameter String credentialsId) {
+    public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context,
+        @QueryParameter String host,
+        @QueryParameter String port,
+        @QueryParameter String credentialsId) {
       Jenkins jenkins = Jenkins.get();
       if ((context == jenkins && !jenkins.hasPermission(Computer.CREATE))
           || (context != jenkins && !context.hasPermission(Computer.CONFIGURE))) {
-        return new StandardUsernameListBoxModel().includeCurrentValue(credentialsId);
+        return new StandardUsernameListBoxModel()
+            .includeCurrentValue(credentialsId);
       }
       try {
         int portValue = Integer.parseInt(port);
-        return new StandardUsernameListBoxModel().includeMatchingAs(ACL.SYSTEM, jenkins,
-                                                                    StandardUsernameCredentials.class,
-                                                                    Collections.singletonList(
-                                                                      new HostnamePortRequirement(host, portValue)),
-                                                                    null)
-                                                 .includeCurrentValue(
-                                                   credentialsId); // always add the current value last in case already present
+        return new StandardUsernameListBoxModel()
+            .includeMatchingAs(
+                ACL.SYSTEM2,
+                jenkins,
+                StandardUsernameCredentials.class,
+                Collections.singletonList(
+                    new HostnamePortRequirement(host, portValue)),
+                SSHAuthenticator.matcher(Connection.class))
+            .includeCurrentValue(credentialsId); // always add the current value last in case already present
       } catch (NumberFormatException ex) {
-        return new StandardUsernameListBoxModel().includeCurrentValue(credentialsId);
+        return new StandardUsernameListBoxModel()
+            .includeCurrentValue(credentialsId);
       }
     }
 
     @RequirePOST
     public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
-                                               @AncestorInPath AccessControlled _context, @QueryParameter String host,
-                                               @QueryParameter String port, @QueryParameter String value) {
+        @AncestorInPath AccessControlled _context,
+        @QueryParameter String host,
+        @QueryParameter String port,
+        @QueryParameter String value) {
       Jenkins jenkins = Jenkins.get();
       if ((_context == jenkins && !jenkins.hasPermission(Computer.CREATE))
           || (_context != jenkins && !_context.hasPermission(Computer.CONFIGURE))) {
@@ -838,11 +843,11 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
       }
       try {
         int portValue = Integer.parseInt(port);
-        for (ListBoxModel.Option o : CredentialsProvider.listCredentials(StandardUsernameCredentials.class, context,
-                                                                         ACL.SYSTEM,
-                                                                         Collections.singletonList(
-                                                                           new HostnamePortRequirement(host, portValue)),
-                                                                         null)) {
+        for (ListBoxModel.Option o : CredentialsProvider
+            .listCredentialsInItemGroup(StandardUsernameCredentials.class, context, ACL.SYSTEM2,
+                Collections.singletonList(
+                    new HostnamePortRequirement(host, portValue)),
+                SSHAuthenticator.matcher(Connection.class))) {
           if (StringUtils.equals(value, o.value)) {
             return FormValidation.ok();
           }
@@ -884,12 +889,14 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     @RequirePOST
     public FormValidation doCheckJavaPath(@QueryParameter String value) {
       FormValidation ret = FormValidation.ok();
-      if (value != null && value.contains(" ") && !(value.startsWith("\"") && value.endsWith("\"")) && !(
-        value.startsWith("'") && value.endsWith("'"))) {
+      if (value != null && value.contains(" ") && !(value.startsWith("\"") && value.endsWith("\""))
+          && !(value.startsWith("'") && value.endsWith("'"))) {
         return FormValidation.warning(Messages.SSHLauncher_JavaPathHasWhiteSpaces());
       }
       return ret;
     }
+
+    // TODO add a connection verifier
   }
 
   // TODO refactor and extract.
@@ -904,7 +911,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     }
 
     public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey)
-      throws Exception {
+        throws Exception {
 
       final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
 

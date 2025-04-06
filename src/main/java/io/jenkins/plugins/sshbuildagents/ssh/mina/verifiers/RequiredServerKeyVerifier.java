@@ -25,8 +25,10 @@
 package io.jenkins.plugins.sshbuildagents.ssh.mina.verifiers;
 
 import java.security.PublicKey;
-import edu.umd.cs.findbugs.annotations.NonNull;
+
 import org.apache.sshd.client.keyverifier.ServerKeyVerifier;
+
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 public class RequiredServerKeyVerifier extends KeyVerifier {
   private String publicKey;

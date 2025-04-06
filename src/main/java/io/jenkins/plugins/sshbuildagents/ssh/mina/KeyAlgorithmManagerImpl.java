@@ -25,6 +25,7 @@ package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
 import java.util.Collections;
 import java.util.List;
+
 import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithm;
 import io.jenkins.plugins.sshbuildagents.ssh.KeyAlgorithmManager;
 

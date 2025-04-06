@@ -30,10 +30,12 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
+
 import org.apache.sshd.client.channel.ChannelSession;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
+
+import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 
 
 /**

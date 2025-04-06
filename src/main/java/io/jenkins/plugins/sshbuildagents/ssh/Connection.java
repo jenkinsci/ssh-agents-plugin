@@ -25,14 +25,16 @@ package io.jenkins.plugins.sshbuildagents.ssh;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
 import org.apache.sshd.client.session.ClientSession;
+
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 
 /**
  * Interface to manage an SSH connection.
  * @author Ivan Fernandez Calvo
  */
-public interface Connection {
+public interface Connection extends AutoCloseable {
   /**
    * Execute a command and return the error code returned when it finish.
    * @param command Command to execute.

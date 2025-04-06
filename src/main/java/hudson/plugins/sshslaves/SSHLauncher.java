@@ -23,30 +23,13 @@
  */
 package hudson.plugins.sshslaves;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
+import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
+import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
@@ -57,17 +40,6 @@ import com.trilead.ssh2.jenkins.SFTPClient;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.jenkins.plugins.sshbuildagents.Messages;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.Symbol;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.interceptor.RequirePOST;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -93,16 +65,43 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
 import java.util.Collections;
-import io.jenkins.plugins.sshbuildagents.ssh.Connection;
-import hudson.util.NullStream;
 import jenkins.model.Jenkins;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
-import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
-import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.lang.InterruptedException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.MessageFormat;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static hudson.Util.fixEmpty;
 import static java.util.logging.Level.WARNING;
 
@@ -427,54 +426,13 @@ public class SSHLauncher extends ComputerLauncher {
                     new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
             Set<Callable<Boolean>> callables = new HashSet<>();
             callables.add(() -> {
-                public Boolean call() throws InterruptedException {
-                    Boolean rval = Boolean.FALSE;
-                    try {
-                        String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
-                        if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
-                            connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
-                        } else {
-                            listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
-                        }
-
-                        listener.getLogger().println(logConfiguration());
-
-                        openConnection(listener, computer);
-
-                        verifyNoHeaderJunk(listener);
-                        reportEnvironment(listener);
-
-                        final String workingDirectory = getWorkingDirectory(computer);
-                        if (workingDirectory == null) {
-                            listener.error("Cannot get the working directory for " + computer);
-                            return Boolean.FALSE;
-                        }
-
-                        String java = "java";
-                        if (StringUtils.isNotBlank(javaPath)) {
-                            java = expandExpression(computer, javaPath);
-                        } else {
-                          checkJavaIsInPath(listener);
-                        }
-
-                        copyAgentJar(listener, workingDirectory);
-
-                        startAgent(computer, listener, java, workingDirectory);
-
-                        PluginImpl.register(connection);
-                        rval = Boolean.TRUE;
-                    } catch (RuntimeException|Error e) {
-                        String msg = Messages.SSHLauncher_UnexpectedError();
-                        if(StringUtils.isNotBlank(e.getMessage())){
-                            msg = e.getMessage();
-                        }
-                        e.printStackTrace(listener.error(msg));
-                    } catch (AbortException e) {
-                        listener.getLogger().println(e.getMessage());
-                    } catch (IOException e) {
-                        e.printStackTrace(listener.getLogger());
-                    } finally {
-                        return rval;
+                Boolean rval = Boolean.FALSE;
+                try {
+                    String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
+                    if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
+                        connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
+                    } else {
+                        listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
                     }
 
                     listener.getLogger().println(logConfiguration());
@@ -860,7 +818,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
 
             // delete the agent jar as we do with SFTP
-            connection.exec("rm " + workingDirectory + SLASH_AGENT_JAR, new NullStream());
+            connection.exec("rm " + workingDirectory + SLASH_AGENT_JAR, OutputStream.nullOutputStream());
 
             // SCP it to the agent. hudson.Util.ByteArrayOutputStream2 doesn't work for this. It pads the byte array.
             listener.getLogger().println(Messages.SSHLauncher_CopyingAgentJar(getTimestamp()));

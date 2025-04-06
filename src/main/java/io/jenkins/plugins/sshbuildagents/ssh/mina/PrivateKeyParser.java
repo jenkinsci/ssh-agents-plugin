@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
 import org.apache.sshd.common.config.keys.FilePasswordProvider;
 import org.apache.sshd.common.config.keys.loader.AbstractKeyPairResourceParser;
 import org.apache.sshd.common.config.keys.loader.KeyPairResourceParser;
@@ -78,7 +79,7 @@ public class PrivateKeyParser {
 
   public Collection<KeyPair> parseKey(String key, String passphrase) throws IOException, GeneralSecurityException, URISyntaxException {
     List<String> lines = Arrays.asList(key.split("\n"));
-    Collection<KeyPair> keys = Collections.EMPTY_LIST;
+    Collection<KeyPair> keys = Collections.emptyList();
     for(KeyPairResourceParser parser : parsers) {
       if (!(parser instanceof AbstractKeyPairResourceParser)) {
         continue;

@@ -31,7 +31,7 @@ import java.io.OutputStream;
  * Interface to manage non-interactive sessions.
  * @author Ivan Fernandez Calvo
  */
-public interface ShellChannel {
+public interface ShellChannel extends AutoCloseable{
   /**
    * Executed a command in a non-interactive session and exit, it does not wait for the result.
    * @param cmd
