@@ -14,9 +14,10 @@ import org.testcontainers.junit.jupiter.Container;
  */
 @Tag(AGENT_SSH_TEST)
 public class AgentUserAndPasswordConnectionTest extends AgentConnectionBaseTest {
-  public static final String SSH_AGENT_NAME = "ssh-agent-dsa";
-  public static final String SSH_KEY_PATH = "ssh/dsakey";
-  public static final String SSH_KEY_PUB_PATH = "ssh/dsakey.pub";
+  public static final String SSH_AGENT_NAME = "ssh-agent-rsa512";
+  public static final String SSH_KEY_PATH = "ssh/rsa-512-key";
+  public static final String SSH_KEY_PUB_PATH = "ssh/rsa-512-key.pub";
+  public static final String LOGGING_PROPERTIES = "remoting_logger.properties";
 
   @Container
   private static final GenericContainer<?> agentContainer = new GenericContainer<>(
@@ -27,7 +28,8 @@ public class AgentUserAndPasswordConnectionTest extends AgentConnectionBaseTest 
           .withFileFromClasspath(SSH_KEY_PUB_PATH,
               AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PUB_PATH)
           .withFileFromClasspath(SSH_SSHD_CONFIG, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_SSHD_CONFIG)
-          .withFileFromClasspath(DOCKERFILE, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + DOCKERFILE))
+          .withFileFromClasspath(DOCKERFILE, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + DOCKERFILE)
+          .withFileFromClasspath("ssh/" + LOGGING_PROPERTIES, "/" + LOGGING_PROPERTIES))
       .withExposedPorts(SSH_PORT);
 
   @Override
@@ -40,8 +42,4 @@ public class AgentUserAndPasswordConnectionTest extends AgentConnectionBaseTest 
     return agentContainer;
   }
 
-  @Override
-  protected String getAgentSshKeyPath() {
-    return SSH_AGENT_NAME + "/" + SSH_KEY_PATH;
-  }
 }

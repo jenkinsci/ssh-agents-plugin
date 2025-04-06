@@ -2,19 +2,11 @@ package io.jenkins.plugins.sshbuildagents.ssh.agents;
 
 import static hudson.plugins.sshslaves.tags.TestTags.AGENT_SSH_TEST;
 import static hudson.plugins.sshslaves.tags.TestTags.SSH_KEX_TEST;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.IOException;
 
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.jvnet.hudson.test.recipes.WithTimeout;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.junit.jupiter.Container;
-
-import hudson.model.Descriptor;
-import hudson.model.Node;
 
 /**
  * Connect to a remote SSH Agent
