@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.output.NoCloseOutputStream;
 import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
@@ -815,14 +816,16 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
       }
       try {
         int portValue = Integer.parseInt(port);
+        // TODO review if the HostnamePortRequirement is really needed
         return new StandardUsernameListBoxModel()
             .includeMatchingAs(
                 ACL.SYSTEM2,
                 jenkins,
                 StandardUsernameCredentials.class,
+                // Collections.singletonList(SSH_SCHEME),
                 Collections.singletonList(
                     new HostnamePortRequirement(host, portValue)),
-                SSHAuthenticator.matcher(Connection.class))
+                SSHAuthenticator.matcher(ClientSession.class))
             .includeCurrentValue(credentialsId); // always add the current value last in case already present
       } catch (NumberFormatException ex) {
         return new StandardUsernameListBoxModel()
@@ -842,12 +845,14 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
         return FormValidation.ok(); // no need to alarm a user that cannot configure
       }
       try {
+        // TODO review if the HostnamePortRequirement is really needed
         int portValue = Integer.parseInt(port);
         for (ListBoxModel.Option o : CredentialsProvider
             .listCredentialsInItemGroup(StandardUsernameCredentials.class, context, ACL.SYSTEM2,
+                // Collections.singletonList(SSH_SCHEME),
                 Collections.singletonList(
                     new HostnamePortRequirement(host, portValue)),
-                SSHAuthenticator.matcher(Connection.class))) {
+                SSHAuthenticator.matcher(ClientSession.class))) {
           if (StringUtils.equals(value, o.value)) {
             return FormValidation.ok();
           }
