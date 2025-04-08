@@ -28,7 +28,7 @@
     <revision>3</revision>
     <changelist>999999-SNAPSHOT</changelist>
     <jenkins.baseline>2.479</jenkins.baseline>
-    <jenkins.version>${jenkins.baseline}.1</jenkins.version>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
   </properties>
 
@@ -106,6 +106,12 @@
         <version>4136.vca_c3202a_7fd1</version>
         <type>pom</type>
         <scope>import</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>trilead-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -113,20 +119,33 @@
   <dependencies>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>trilead-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>ssh-credentials</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jenkins-ci.plugins</groupId>
+          <artifactId>trilead-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.jenkins-ci.modules</groupId>
-      <artifactId>sshd</artifactId>
-      <scope>test</scope>
+      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
+      <artifactId>mina-sshd-api-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
+      <artifactId>mina-sshd-api-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
+      <artifactId>mina-sshd-api-scp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.plugins</groupId>
+      <artifactId>eddsa-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.test</groupId>
@@ -157,5 +176,44 @@
       <version>1.20.6</version>
       <scope>test</scope>
     </dependency>
+    <!-- TODO remove in future versions -->
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>trilead-api</artifactId>
+    </dependency>
+    <!--
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>bouncycastle-api</artifactId>
+    </dependency>-->
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <configuration>
+          <loggers>
+            <hudson.remoting>FINE</hudson.remoting>
+            <hudson.slaves>FINE</hudson.slaves>
+            <io.jenkins.plugins.sshbuildagents>FINE</io.jenkins.plugins.sshbuildagents>
+            <org.apache.sshd.common.io.nio2>FINE</org.apache.sshd.common.io.nio2>
+            <org.apache.sshd>FINE</org.apache.sshd>
+          </loggers>
+          <minimumJavaVersion>${java.level}</minimumJavaVersion>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <java.util.logging.config.file>src/test/resources/remoting_logger.properties</java.util.logging.config.file>
+            <hudson.remoting.Launcher.pingIntervalSec>-1</hudson.remoting.Launcher.pingIntervalSec>
+            <hudson.slaves.ChannelPinger.pingIntervalSeconds>-1</hudson.slaves.ChannelPinger.pingIntervalSeconds>
+            <jenkins.test.timeout>-1</jenkins.test.timeout>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
