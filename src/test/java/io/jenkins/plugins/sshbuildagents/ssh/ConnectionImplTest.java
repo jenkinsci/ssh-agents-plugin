@@ -110,6 +110,7 @@ public class ConnectionImplTest {
 
   @Test
   public void testShellChannel() throws IOException, FormException {
+    Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
     Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
     StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "",
         AgentConnectionBaseTest.USER,
@@ -119,7 +120,7 @@ public class ConnectionImplTest {
     shellChannel.execCommand("echo FOO");
     byte[] data = IOUtils.readFully(shellChannel.getInvertedStdout(), shellChannel.getInvertedStdout().available());
     String dataStr = IOUtils.toString(data, "UTF-8");
-    System.err.println(dataStr);
+    logger.info(dataStr);
     assertEquals("FOO\n", dataStr);
   }
 
@@ -139,6 +140,7 @@ public class ConnectionImplTest {
 
   @Test
   public void testShellChannel2() throws IOException, FormException {
+    Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
     Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
     StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "",
         AgentConnectionBaseTest.USER,
@@ -147,26 +149,23 @@ public class ConnectionImplTest {
     try (ClientSession session = connection.connect();
         PipedOutputStream pipedIn = new PipedOutputStream();
         InputStream inPipe = new PipedInputStream(pipedIn);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ByteArrayOutputStream err = new ByteArrayOutputStream()) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream()) {
       try (ChannelShell channel = session.createShellChannel()) {
         channel.setOut(new NoCloseOutputStream(out));
-        channel.setErr(new NoCloseOutputStream(err));
+        channel.setErr(new NoCloseOutputStream(out));
         channel.setIn(inPipe);
         channel.open().verify(5L, TimeUnit.SECONDS);
         pipedIn.write(("echo BAR\n").getBytes(StandardCharsets.UTF_8));
         pipedIn.flush();
-
-        Collection<ClientChannelEvent> result = channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED),
-            10000);
-        System.err.println(out.toString("UTF-8"));
-        System.err.println(err.toString("UTF-8"));
+        channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), 10000);
+        logger.info(out.toString("UTF-8"));
       }
     }
   }
 
   @Test
   public void testClient() throws Exception {
+    Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
     Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
     StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "id", "",
         AgentConnectionBaseTest.USER,
@@ -176,11 +175,12 @@ public class ConnectionImplTest {
         ClientChannel channel = session.createShellChannel();
         ByteArrayOutputStream sent = new ByteArrayOutputStream();
         PipedOutputStream pipedIn = new PipedOutputStream();
-        PipedInputStream pipedOut = new PipedInputStream(pipedIn)) {
+        PipedInputStream pipedOut = new PipedInputStream(pipedIn);
+        ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
       channel.setIn(pipedOut);
-      channel.setOut(System.out);
-      channel.setErr(System.out);
+      channel.setOut(out);
+      channel.setErr(out);
       channel.open();
 
       pipedIn.write("touch /tmp/FOO\n".getBytes(StandardCharsets.UTF_8));
@@ -195,8 +195,8 @@ public class ConnectionImplTest {
 
       pipedIn.write("exit\n".getBytes(StandardCharsets.UTF_8));
       pipedIn.flush();
-
-      Collection<ClientChannelEvent> result = channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), 10000);
+      logger.info(out.toString());
+      channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), 10000);
 
       channel.close(false);
       connection.close();

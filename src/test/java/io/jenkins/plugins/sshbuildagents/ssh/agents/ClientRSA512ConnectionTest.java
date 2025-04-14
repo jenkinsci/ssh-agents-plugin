@@ -14,6 +14,7 @@ import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.WINDOW_S
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -29,6 +30,7 @@ import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.future.AuthFuture;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.common.util.io.input.NullInputStream;
 import org.apache.sshd.core.CoreModuleProperties;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,16 +94,18 @@ public class ClientRSA512ConnectionTest {
   @Test
   @Timeout(value = 15, unit = TimeUnit.MINUTES)
   public void connectionExecCommandTests() throws IOException, InterruptedException {
+    Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
     agentContainer.start();
     assertTrue(agentContainer.isRunning());
     int port = agentContainer.getMappedPort(SSH_PORT);
     String host = agentContainer.getHost();
-    try (SshClient client = getSshClient()) {
+    try (SshClient client = getSshClient(); ByteArrayOutputStream baOut = new ByteArrayOutputStream()) {
       client.start();
       try (ClientSession session = getClientSession(client, USER, host, port, timeout, PASSWORD)) {
-        session.executeRemoteCommand("sleep 600s", System.out, System.err, StandardCharsets.UTF_8);
+        session.executeRemoteCommand("sleep 600s", baOut, baOut, StandardCharsets.UTF_8);
         for (int i = 0; i < 300; i++) {
           Thread.sleep(1000);
+          logger.info(baOut.toString());
           assertTrue(session.isOpen());
         }
       }
@@ -112,6 +116,7 @@ public class ClientRSA512ConnectionTest {
   @Test
   @Timeout(value = 15, unit = TimeUnit.MINUTES)
   public void connectionChannelTests() throws IOException, InterruptedException {
+    Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
     agentContainer.start();
     assertTrue(agentContainer.isRunning());
     int port = agentContainer.getMappedPort(SSH_PORT);
@@ -120,17 +125,16 @@ public class ClientRSA512ConnectionTest {
     try (SshClient client = getSshClient()) {
       client.start();
       try (ClientSession session = getClientSession(client, USER, host, port, timeout, PASSWORD)) {
-        try (ChannelExec channel = session.createExecChannel("sleep 600s\n")) {
-          // session.setSessionHeartbeat(SessionHeartbeatController.HeartbeatType.IGNORE,
-          // Duration.ofMillis(timeout));
-          channel.setOut(System.out);
-          channel.setIn(System.in);
+        try (ChannelExec channel = session.createExecChannel("sleep 600s\n");
+            ByteArrayOutputStream baOut = new ByteArrayOutputStream();
+            NullInputStream nullIn  = new NullInputStream()) {
+          channel.setOut(baOut);
+          channel.setIn(nullIn);
           channel.open().verify(timeout, TimeUnit.MILLISECONDS);
-          // channel.addChannelListener(channelListener);
           channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), timeout);
-
           for (int i = 0; i < 300; i++) {
             Thread.sleep(1000);
+            logger.info(baOut.toString());
             assertTrue(session.isOpen());
           }
         }
