@@ -13,8 +13,8 @@
   <packaging>hpi</packaging>
 
   <name>SSH Build Agents plugin</name>
-  <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
   <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
+  <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
 
   <licenses>
     <license>
@@ -23,14 +23,6 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-
-  <properties>
-    <revision>3</revision>
-    <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.baseline>2.479</jenkins.baseline>
-    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
-    <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-  </properties>
 
   <developers>
     <developer>
@@ -80,23 +72,17 @@
   <scm>
     <connection>scm:git:https://github.com/jenkinsci/ssh-agents-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/ssh-agents-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
     <tag>${scmTag}</tag>
+    <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
   </scm>
 
-  <repositories>
-    <repository>
-      <id>repo.jenkins-ci.org</id>
-      <url>https://repo.jenkins-ci.org/public/</url>
-    </repository>
-  </repositories>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>repo.jenkins-ci.org</id>
-      <url>https://repo.jenkins-ci.org/public/</url>
-    </pluginRepository>
-  </pluginRepositories>
+  <properties>
+    <revision>3</revision>
+    <changelist>999999-SNAPSHOT</changelist>
+    <jenkins.baseline>2.479</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
+    <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
+  </properties>
 
   <dependencyManagement>
     <dependencies>
@@ -106,14 +92,32 @@
         <version>4862.vc32a_71c3e731</version>
         <type>pom</type>
         <scope>import</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>trilead-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
     </dependencies>
   </dependencyManagement>
 
   <dependencies>
     <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>trilead-api</artifactId>
+      <groupId>io.jenkins.plugins</groupId>
+      <artifactId>eddsa-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
+      <artifactId>mina-sshd-api-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
+      <artifactId>mina-sshd-api-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
+      <artifactId>mina-sshd-api-scp</artifactId>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
@@ -122,10 +126,26 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>ssh-credentials</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jenkins-ci.plugins</groupId>
+          <artifactId>trilead-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- TODO remove in future versions -->
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>trilead-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jenkins-ci.modules</groupId>
-      <artifactId>sshd</artifactId>
+      <groupId>io.jenkins</groupId>
+      <artifactId>configuration-as-code</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.configuration-as-code</groupId>
+      <artifactId>test-harness</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -140,16 +160,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>io.jenkins</groupId>
-      <artifactId>configuration-as-code</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.jenkins.configuration-as-code</groupId>
-      <artifactId>test-harness</artifactId>
-      <scope>test</scope>
-    </dependency>
     <!-- Jupiter/JUnit 5 testcontainers https://java.testcontainers.org/test_framework_integration/junit_5/ -->
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -157,5 +167,90 @@
       <version>1.21.1</version>
       <scope>test</scope>
     </dependency>
+    <!--
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>bouncycastle-api</artifactId>
+    </dependency>-->
   </dependencies>
+
+  <repositories>
+    <repository>
+      <id>repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
+    </pluginRepository>
+  </pluginRepositories>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>2.43.0</version>
+        <configuration>
+          <java>
+            <includes>
+              <include>src/main/java/io/jenkins/plugins/sshbuildagents/ssh/**/*.java</include>
+              <include>src/test/java/io/jenkins/plugins/sshbuildagents/ssh/**/*.java</include>
+            </includes>
+            <importOrder>
+              <order>java,javax,org,com,io,hudson,jenkins,\\#</order>
+            </importOrder>
+            <removeUnusedImports />
+            <trimTrailingWhitespace />
+            <endWithNewline />
+            <googleJavaFormat>
+              <version>1.17.0</version>
+              <style>GOOGLE</style>
+              <reflowLongStrings>true</reflowLongStrings>
+            </googleJavaFormat>
+            <formatAnnotations />
+            <indent>
+              <spaces>true</spaces>
+              <spacesPerTab>4</spacesPerTab>
+            </indent>
+          </java>
+          <encoding>UTF-8</encoding>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <configuration>
+          <loggers>
+            <hudson.remoting>FINE</hudson.remoting>
+            <hudson.slaves>FINE</hudson.slaves>
+            <io.jenkins.plugins.sshbuildagents>FINE</io.jenkins.plugins.sshbuildagents>
+            <org.apache.sshd.common.io.nio2>FINE</org.apache.sshd.common.io.nio2>
+            <org.apache.sshd>FINE</org.apache.sshd>
+          </loggers>
+          <minimumJavaVersion>${java.level}</minimumJavaVersion>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <java.util.logging.config.file>src/test/resources/remoting_logger.properties</java.util.logging.config.file>
+            <hudson.remoting.Launcher.pingIntervalSec>-1</hudson.remoting.Launcher.pingIntervalSec>
+            <hudson.slaves.ChannelPinger.pingIntervalSeconds>-1</hudson.slaves.ChannelPinger.pingIntervalSeconds>
+            <jenkins.test.timeout>-1</jenkins.test.timeout>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
