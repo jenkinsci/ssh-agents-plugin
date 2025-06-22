@@ -16,7 +16,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import hudson.Functions;
 import io.jenkins.plugins.sshbuildagents.ssh.Connection;
 import io.jenkins.plugins.sshbuildagents.ssh.FakeSSHKeyCredential;
 import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
@@ -67,7 +66,7 @@ public class ClientRSA512ConnectionTest {
 
     @BeforeAll
     static void beforeAll() {
-        assumeFalse(Functions.isWindows());
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
         assumeTrue(SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX);
         assumeTrue(DockerClientFactory.instance().isDockerAvailable());
     }
@@ -106,7 +105,7 @@ public class ClientRSA512ConnectionTest {
                 ByteArrayOutputStream baOut = new ByteArrayOutputStream()) {
             client.start();
             try (ClientSession session = getClientSession(client, USER, host, port, timeout, PASSWORD)) {
-                session.executeRemoteCommand("sleep 600s", baOut, baOut, StandardCharsets.UTF_8);
+                session.executeRemoteCommand("sleep 300s", baOut, baOut, StandardCharsets.UTF_8);
                 for (int i = 0; i < 300; i++) {
                     Thread.sleep(1000);
                     logger.info(baOut.toString());
@@ -129,7 +128,7 @@ public class ClientRSA512ConnectionTest {
         try (SshClient client = getSshClient()) {
             client.start();
             try (ClientSession session = getClientSession(client, USER, host, port, timeout, PASSWORD)) {
-                try (ChannelExec channel = session.createExecChannel("sleep 600s\n");
+                try (ChannelExec channel = session.createExecChannel("sleep 300s\n");
                         ByteArrayOutputStream baOut = new ByteArrayOutputStream();
                         NullInputStream nullIn = new NullInputStream()) {
                     channel.setOut(baOut);
@@ -158,7 +157,7 @@ public class ClientRSA512ConnectionTest {
             StandardUsernameCredentials credentials = new FakeSSHKeyCredential();
             connection.setCredentials(credentials);
             try (ShellChannel shellChannel = connection.shellChannel()) {
-                shellChannel.execCommand("sleep 500s");
+                shellChannel.execCommand("sleep 300s");
                 for (int i = 0; i < 300; i++) {
                     Thread.sleep(1000);
                     assertTrue(connection.isOpen());

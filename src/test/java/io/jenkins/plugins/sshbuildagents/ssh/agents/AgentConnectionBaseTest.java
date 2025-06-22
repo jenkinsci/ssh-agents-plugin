@@ -10,7 +10,6 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import hudson.Functions;
 import hudson.model.Descriptor;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Node;
@@ -62,7 +61,7 @@ public abstract class AgentConnectionBaseTest {
 
     @BeforeAll
     static void beforeAll() {
-        assumeFalse(Functions.isWindows());
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
         assumeTrue(SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX);
         assumeTrue(DockerClientFactory.instance().isDockerAvailable());
     }
