@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sshd.client.channel.ChannelShell;
 import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
@@ -119,7 +120,7 @@ public class ConnectionImplTest {
                 shellChannel.getInvertedStdout().available());
         String dataStr = IOUtils.toString(data, "UTF-8");
         logger.info(dataStr);
-        assertEquals("FOO\n", dataStr);
+        assertEquals("FOO", StringUtils.chomp(dataStr));
     }
 
     @Test

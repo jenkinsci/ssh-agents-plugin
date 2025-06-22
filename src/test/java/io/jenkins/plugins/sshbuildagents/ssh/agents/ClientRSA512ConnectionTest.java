@@ -11,12 +11,11 @@ import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.HEARTBEA
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.HEARTBEAT_MAX_RETRY;
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.IDLE_SESSION_TIMEOUT;
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.WINDOW_SIZE;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-
 import hudson.Functions;
 import io.jenkins.plugins.sshbuildagents.ssh.Connection;
 import io.jenkins.plugins.sshbuildagents.ssh.FakeSSHKeyCredential;
@@ -40,9 +39,9 @@ import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.input.NullInputStream;
 import org.apache.sshd.core.CoreModuleProperties;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -98,7 +97,6 @@ public class ClientRSA512ConnectionTest {
     @Test
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
     public void connectionExecCommandTests() throws IOException, InterruptedException {
-        assumeFalse(Functions.isWindows());
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
         agentContainer.start();
         assertTrue(agentContainer.isRunning());
@@ -122,7 +120,6 @@ public class ClientRSA512ConnectionTest {
     @Test
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
     public void connectionChannelTests() throws IOException, InterruptedException {
-        assumeFalse(Functions.isWindows());
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
         agentContainer.start();
         assertTrue(agentContainer.isRunning());
@@ -153,7 +150,6 @@ public class ClientRSA512ConnectionTest {
     @Test
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
     public void testRunLongConnection() throws IOException, InterruptedException {
-        assumeFalse(Functions.isWindows());
         agentContainer.start();
         assertTrue(agentContainer.isRunning());
         int port = agentContainer.getMappedPort(SSH_PORT);
