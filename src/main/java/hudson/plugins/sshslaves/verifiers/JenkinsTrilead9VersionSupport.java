@@ -3,12 +3,11 @@ package hudson.plugins.sshslaves.verifiers;
 import com.trilead.ssh2.signature.KeyAlgorithm;
 import com.trilead.ssh2.signature.KeyAlgorithmManager;
 import hudson.plugins.sshslaves.Messages;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * @author Michael Clarke
@@ -34,7 +33,8 @@ class JenkinsTrilead9VersionSupport extends TrileadVersionSupportManager.Trilead
                     return new HostKey(algorithm, keyValue);
                 }
             } catch (IOException ex) {
-                throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
+                throw new KeyParseException(
+                        Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
             }
         }
         throw new KeyParseException("Unexpected key algorithm: " + algorithm);

@@ -1,13 +1,13 @@
 package hudson.plugins.sshslaves;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import hudson.model.Node;
 import hudson.slaves.SlaveComputer;
 import io.jenkins.plugins.casc.misc.junit.jupiter.AbstractRoundTripTest;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @WithJenkins
 class SSHLauncherCasCRoundTripTest extends AbstractRoundTripTest {

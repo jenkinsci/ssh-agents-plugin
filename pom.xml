@@ -13,8 +13,8 @@
   <packaging>hpi</packaging>
 
   <name>SSH Build Agents plugin</name>
-  <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
   <description>Allows to launch agents over SSH, using a Java implementation of the SSH protocol</description>
+  <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
 
   <licenses>
     <license>
@@ -23,14 +23,6 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-
-  <properties>
-    <revision>3</revision>
-    <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.baseline>2.479</jenkins.baseline>
-    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
-    <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-  </properties>
 
   <developers>
     <developer>
@@ -80,23 +72,18 @@
   <scm>
     <connection>scm:git:https://github.com/jenkinsci/ssh-agents-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/ssh-agents-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
     <tag>${scmTag}</tag>
+    <url>https://github.com/jenkinsci/ssh-agents-plugin</url>
   </scm>
 
-  <repositories>
-    <repository>
-      <id>repo.jenkins-ci.org</id>
-      <url>https://repo.jenkins-ci.org/public/</url>
-    </repository>
-  </repositories>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>repo.jenkins-ci.org</id>
-      <url>https://repo.jenkins-ci.org/public/</url>
-    </pluginRepository>
-  </pluginRepositories>
+  <properties>
+    <revision>3</revision>
+    <changelist>999999-SNAPSHOT</changelist>
+    <jenkins.baseline>2.479</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
+    <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
+    <spotless.check.skip>false</spotless.check.skip>
+  </properties>
 
   <dependencyManagement>
     <dependencies>
@@ -113,15 +100,25 @@
   <dependencies>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>trilead-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>ssh-credentials</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>trilead-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins</groupId>
+      <artifactId>configuration-as-code</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.configuration-as-code</groupId>
+      <artifactId>test-harness</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.modules</groupId>
@@ -140,16 +137,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>io.jenkins</groupId>
-      <artifactId>configuration-as-code</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.jenkins.configuration-as-code</groupId>
-      <artifactId>test-harness</artifactId>
-      <scope>test</scope>
-    </dependency>
     <!-- Jupiter/JUnit 5 testcontainers https://java.testcontainers.org/test_framework_integration/junit_5/ -->
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -158,4 +145,18 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <repositories>
+    <repository>
+      <id>repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
+    </pluginRepository>
+  </pluginRepositories>
 </project>

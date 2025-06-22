@@ -29,14 +29,13 @@ import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
 import hudson.slaves.SlaveComputer;
-import jenkins.model.Jenkins;
-
 import java.io.IOException;
+import jenkins.model.Jenkins;
 
 /**
  * A method for verifying the host key provided by the remote host during the
  * initiation of each connection.
- * 
+ *
  * @author Michael Clarke
  * @since 1.13
  */
@@ -44,7 +43,7 @@ public abstract class SshHostKeyVerificationStrategy implements Describable<SshH
 
     @Override
     public SshHostKeyVerificationStrategyDescriptor getDescriptor() {
-        return (SshHostKeyVerificationStrategyDescriptor)Jenkins.get().getDescriptorOrDie(getClass());
+        return (SshHostKeyVerificationStrategyDescriptor) Jenkins.get().getDescriptorOrDie(getClass());
     }
 
     /**
@@ -67,11 +66,7 @@ public abstract class SshHostKeyVerificationStrategy implements Describable<SshH
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
         return TrileadVersionSupportManager.getTrileadSupport().getSupportedAlgorithms();
     }
-    
-    public static abstract class SshHostKeyVerificationStrategyDescriptor extends Descriptor<SshHostKeyVerificationStrategy> {
-        
-    }
-    
 
-    
+    public abstract static class SshHostKeyVerificationStrategyDescriptor
+            extends Descriptor<SshHostKeyVerificationStrategy> {}
 }

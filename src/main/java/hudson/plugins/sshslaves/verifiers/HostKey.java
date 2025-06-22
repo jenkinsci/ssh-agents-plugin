@@ -23,10 +23,9 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import com.trilead.ssh2.KnownHosts;
 import java.io.Serializable;
 import java.util.Arrays;
-
-import com.trilead.ssh2.KnownHosts;
 
 /**
  * A representation of the SSH key provided by a remote host to verify itself
@@ -78,20 +77,14 @@ public final class HostKey implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
         HostKey other = (HostKey) obj;
         if (algorithm == null) {
-            if (other.algorithm != null)
-                return false;
-        } else if (!algorithm.equals(other.algorithm))
-            return false;
-        if (!Arrays.equals(key, other.key))
-            return false;
+            if (other.algorithm != null) return false;
+        } else if (!algorithm.equals(other.algorithm)) return false;
+        if (!Arrays.equals(key, other.key)) return false;
         return true;
     }
 }

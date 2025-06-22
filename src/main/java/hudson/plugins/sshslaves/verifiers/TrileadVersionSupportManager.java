@@ -3,12 +3,11 @@ package hudson.plugins.sshslaves.verifiers;
 import com.trilead.ssh2.signature.DSASHA1Verify;
 import com.trilead.ssh2.signature.RSASHA1Verify;
 import hudson.plugins.sshslaves.Messages;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * An abstraction layer to allow handling of feature changes (e.g. new key types) between different Trilead versions.
@@ -48,9 +47,10 @@ final class TrileadVersionSupportManager {
     }
 
     private static TrileadVersionSupport createVersion9Instance() throws ReflectiveOperationException {
-        return (TrileadVersionSupport) TrileadVersionSupportManager.class.getClassLoader()
-                .loadClass("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport").newInstance();
-
+        return (TrileadVersionSupport) TrileadVersionSupportManager.class
+                .getClassLoader()
+                .loadClass("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport")
+                .newInstance();
     }
 
     public abstract static class TrileadVersionSupport {
@@ -80,7 +80,7 @@ final class TrileadVersionSupportManager {
 
         @Override
         public String[] getSupportedAlgorithms() {
-            return new String[]{"ssh-rsa", "ssh-dss"};
+            return new String[] {"ssh-rsa", "ssh-dss"};
         }
 
         @Override
@@ -94,11 +94,11 @@ final class TrileadVersionSupportManager {
                     throw new KeyParseException("Key algorithm should be one of ssh-rsa or ssh-dss");
                 }
             } catch (IOException | StringIndexOutOfBoundsException ex) {
-                throw new KeyParseException(Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
+                throw new KeyParseException(
+                        Messages.ManualKeyProvidedHostKeyVerifier_KeyValueDoesNotParse(algorithm), ex);
             }
 
             return new HostKey(algorithm, keyValue);
         }
     }
-
 }

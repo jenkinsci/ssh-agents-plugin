@@ -23,28 +23,27 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
+import hudson.XmlFile;
+import hudson.model.Computer;
+import hudson.model.Node;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.WeakHashMap;
-
-import hudson.XmlFile;
-import hudson.model.Computer;
-import hudson.model.Node;
 import jenkins.model.Jenkins;
 
 /**
  * Helper methods to allow loading and saving of host keys for a computer. Verifiers
  * don't have a reference to the Node or Computer that they're running for at the point
  * they're created, so can only load the existing key to run comparisons against at the
- * point the verifier is invoked during the connection attempt. 
+ * point the verifier is invoked during the connection attempt.
  * @author Michael Clarke
  * @since 1.13
  */
 public final class HostKeyHelper {
 
     private static final HostKeyHelper INSTANCE = new HostKeyHelper();
-    
+
     private final Map<Computer, HostKey> cache = new WeakHashMap<>();
 
     private HostKeyHelper() {
@@ -54,7 +53,6 @@ public final class HostKeyHelper {
     public static HostKeyHelper getInstance() {
         return INSTANCE;
     }
-
 
     /**
      * Retrieve the currently trusted host key for the requested computer, or null if
@@ -78,7 +76,6 @@ public final class HostKeyHelper {
         return key;
     }
 
-    
     /**
      * Persists an SSH key to disk for the requested host. This effectively marks
      * the requested key as trusted for all future connections to the host, until
@@ -92,18 +89,18 @@ public final class HostKeyHelper {
         xmlHostKeyFile.write(hostKey);
         cache.put(host, hostKey);
     }
-    
+
     private File getSshHostKeyFile(Node node) throws IOException {
         return new File(getNodeDirectory(node), "ssh-host-key.xml");
     }
-    
+
     private File getNodeDirectory(Node node) throws IOException {
         if (null == node) {
             throw new IOException("Could not load key for the requested node");
         }
         return new File(getNodesDirectory(), node.getNodeName());
     }
-    
+
     private File getNodesDirectory() throws IOException {
         // jenkins.model.Nodes#getNodesDirectory() is private, so we have to duplicate it here.
         File nodesDir = new File(Jenkins.get().getRootDir(), "nodes");

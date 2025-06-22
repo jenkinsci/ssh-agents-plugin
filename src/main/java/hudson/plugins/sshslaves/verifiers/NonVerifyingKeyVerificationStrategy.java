@@ -24,13 +24,12 @@
 package hudson.plugins.sshslaves.verifiers;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import hudson.Extension;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * A verifier that performs no action on the host key, thereby allowing all connections. To
@@ -49,7 +48,8 @@ public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationS
 
     @Override
     public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
-        listener.getLogger().println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
+        listener.getLogger()
+                .println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
         return true;
     }
 
@@ -61,7 +61,5 @@ public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationS
         public String getDisplayName() {
             return Messages.NonVerifyingHostKeyVerifier_DescriptorDisplayName();
         }
-
     }
-
 }

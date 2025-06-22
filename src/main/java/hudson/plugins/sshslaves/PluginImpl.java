@@ -23,13 +23,12 @@
  */
 package hudson.plugins.sshslaves;
 
+import com.trilead.ssh2.Connection;
+import hudson.Plugin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.trilead.ssh2.Connection;
-import hudson.Plugin;
 
 /**
  * Entry point of the plugin.
@@ -66,8 +65,9 @@ public class PluginImpl extends Plugin {
      */
     private static synchronized void closeRegisteredConnections() {
         for (Connection connection : activeConnections) {
-            LOGGER.log(Level.INFO, "Forcing connection to {0}:{1} closed.",
-                    new Object[]{connection.getHostname(), connection.getPort()});
+            LOGGER.log(Level.INFO, "Forcing connection to {0}:{1} closed.", new Object[] {
+                connection.getHostname(), connection.getPort()
+            });
             // force closed just in case
             connection.close();
         }
