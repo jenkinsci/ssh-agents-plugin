@@ -1,5 +1,8 @@
 package hudson.plugins.sshslaves.verifiers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -9,12 +12,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * @author Michael Clarke
@@ -28,7 +27,9 @@ class TrileadVersionSupportManagerTest {
         classloader.block("com.trilead.ssh2.signature.KeyAlgorithmManager");
 
         Object trileadSupport = invokeGetTrileadSupport(classloader);
-        assertEquals("hudson.plugins.sshslaves.verifiers.TrileadVersionSupportManager$LegacyTrileadVersionSupport", trileadSupport.getClass().getName());
+        assertEquals(
+                "hudson.plugins.sshslaves.verifiers.TrileadVersionSupportManager$LegacyTrileadVersionSupport",
+                trileadSupport.getClass().getName());
     }
 
     @Test
@@ -39,12 +40,16 @@ class TrileadVersionSupportManagerTest {
         classloader.block("com.trilead.ssh2.signature.KeyAlgorithm");
 
         Object trileadSupport = invokeGetTrileadSupport(classloader);
-        assertEquals("hudson.plugins.sshslaves.verifiers.TrileadVersionSupportManager$LegacyTrileadVersionSupport", trileadSupport.getClass().getName());
+        assertEquals(
+                "hudson.plugins.sshslaves.verifiers.TrileadVersionSupportManager$LegacyTrileadVersionSupport",
+                trileadSupport.getClass().getName());
     }
 
     @Test
     void testCurrentInstance() {
-        assertEquals(JenkinsTrilead9VersionSupport.class, TrileadVersionSupportManager.getTrileadSupport().getClass());
+        assertEquals(
+                JenkinsTrilead9VersionSupport.class,
+                TrileadVersionSupportManager.getTrileadSupport().getClass());
     }
 
     @Test
@@ -53,13 +58,16 @@ class TrileadVersionSupportManagerTest {
         BlockingClassloader classloader = newBlockingClassloader();
         Object trileadSupport = invokeGetTrileadSupport(classloader);
 
-        assertEquals("hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport", trileadSupport.getClass().getName());
+        assertEquals(
+                "hudson.plugins.sshslaves.verifiers.JenkinsTrilead9VersionSupport",
+                trileadSupport.getClass().getName());
         assertNotEquals(JenkinsTrilead9VersionSupport.class, trileadSupport.getClass());
     }
 
     private static Object invokeGetTrileadSupport(ClassLoader classloader) {
         try {
-            Class<?> clz = Class.forName("hudson.plugins.sshslaves.verifiers.TrileadVersionSupportManager", true, classloader);
+            Class<?> clz =
+                    Class.forName("hudson.plugins.sshslaves.verifiers.TrileadVersionSupportManager", true, classloader);
             Method method = clz.getDeclaredMethod("getTrileadSupport");
             method.setAccessible(true);
             return method.invoke(null);
@@ -69,18 +77,17 @@ class TrileadVersionSupportManagerTest {
     }
 
     private static BlockingClassloader newBlockingClassloader() {
-        BlockingClassloader classloader = new BlockingClassloader(TrileadVersionSupportManagerTest.class.getClassLoader());
+        BlockingClassloader classloader =
+                new BlockingClassloader(TrileadVersionSupportManagerTest.class.getClassLoader());
         classloader.inspectPackage("hudson.plugins.sshslaves");
         return classloader;
     }
-
 
     private static class BlockingClassloader extends URLClassLoader {
 
         private final ClassLoader parent;
 
         private final Set<String> blockingClasses = new HashSet<>();
-
 
         public BlockingClassloader(ClassLoader parent) {
             super(new URL[0], parent);

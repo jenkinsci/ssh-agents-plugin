@@ -23,6 +23,10 @@
  */
 package hudson.plugins.sshslaves;
 
+import static hudson.Util.fixEmpty;
+import static hudson.Util.fixEmptyAndTrim;
+import static hudson.plugins.sshslaves.SSHLauncher.*;
+
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
@@ -31,27 +35,21 @@ import com.trilead.ssh2.Connection;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
+import hudson.model.Computer;
 import hudson.model.ItemGroup;
 import hudson.model.TaskListener;
 import hudson.plugins.sshslaves.verifiers.SshHostKeyVerificationStrategy;
 import hudson.security.ACL;
+import hudson.security.AccessControlled;
 import hudson.slaves.ComputerConnector;
 import hudson.slaves.ComputerConnectorDescriptor;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import java.util.Collections;
-
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
-
-import static hudson.Util.fixEmpty;
-import static hudson.Util.fixEmptyAndTrim;
-import static hudson.plugins.sshslaves.SSHLauncher.*;
-
-import hudson.model.Computer;
-import hudson.security.AccessControlled;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -152,9 +150,17 @@ public class SSHConnector extends ComputerConnector {
      * @param retryWaitTime The number of seconds to wait between retries
      * @param sshHostKeyVerificationStrategy Host key verification method selected.
      */
-    public SSHConnector(int port, String credentialsId, String jvmOptions, String javaPath,
-                        String prefixStartSlaveCmd, String suffixStartSlaveCmd, Integer launchTimeoutSeconds,
-                        Integer maxNumRetries, Integer retryWaitTime, SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+    public SSHConnector(
+            int port,
+            String credentialsId,
+            String jvmOptions,
+            String javaPath,
+            String prefixStartSlaveCmd,
+            String suffixStartSlaveCmd,
+            Integer launchTimeoutSeconds,
+            Integer maxNumRetries,
+            Integer retryWaitTime,
+            SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
         setJvmOptions(jvmOptions);
         setPort(port);
         this.credentialsId = credentialsId;
@@ -171,45 +177,55 @@ public class SSHConnector extends ComputerConnector {
 
     @Override
     public SSHLauncher launch(@NonNull String host, TaskListener listener) {
-        SSHLauncher sshLauncher = new SSHLauncher(host, port, credentialsId, jvmOptions, javaPath, prefixStartSlaveCmd,
-                suffixStartSlaveCmd, launchTimeoutSeconds, maxNumRetries, retryWaitTime, sshHostKeyVerificationStrategy);
+        SSHLauncher sshLauncher = new SSHLauncher(
+                host,
+                port,
+                credentialsId,
+                jvmOptions,
+                javaPath,
+                prefixStartSlaveCmd,
+                suffixStartSlaveCmd,
+                launchTimeoutSeconds,
+                maxNumRetries,
+                retryWaitTime,
+                sshHostKeyVerificationStrategy);
         sshLauncher.setWorkDir(workDir);
         sshLauncher.setTcpNoDelay(getTcpNoDelay());
         return sshLauncher;
     }
 
     @DataBoundSetter
-    public void setJvmOptions(String value){
+    public void setJvmOptions(String value) {
         this.jvmOptions = fixEmpty(value);
     }
 
     @DataBoundSetter
-    public void setJavaPath(String value){
+    public void setJavaPath(String value) {
         this.javaPath = fixEmpty(value);
     }
 
     @DataBoundSetter
-    public void setPrefixStartSlaveCmd(String value){
+    public void setPrefixStartSlaveCmd(String value) {
         this.prefixStartSlaveCmd = fixEmpty(value);
     }
 
     @DataBoundSetter
-    public void setSuffixStartSlaveCmd(String value){
+    public void setSuffixStartSlaveCmd(String value) {
         this.suffixStartSlaveCmd = fixEmpty(value);
     }
 
     @DataBoundSetter
-    public void setMaxNumRetries(Integer value){
+    public void setMaxNumRetries(Integer value) {
         this.maxNumRetries = value != null && value >= 0 ? value : DEFAULT_MAX_NUM_RETRIES;
     }
 
     @DataBoundSetter
-    public void setLaunchTimeoutSeconds(Integer value){
+    public void setLaunchTimeoutSeconds(Integer value) {
         this.launchTimeoutSeconds = value == null || value <= 0 ? DEFAULT_LAUNCH_TIMEOUT_SECONDS : value;
     }
 
     @DataBoundSetter
-    public void setRetryWaitTime(Integer value){
+    public void setRetryWaitTime(Integer value) {
         this.retryWaitTime = value != null && value >= 0 ? value : DEFAULT_RETRY_WAIT_TIME;
     }
 
@@ -218,7 +234,7 @@ public class SSHConnector extends ComputerConnector {
         this.sshHostKeyVerificationStrategy = value;
     }
 
-    public void setPort(int value){
+    public void setPort(int value) {
         this.port = value == 0 ? DEFAULT_SSH_PORT : value;
     }
 
@@ -228,7 +244,7 @@ public class SSHConnector extends ComputerConnector {
     }
 
     public SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategy() {
-    	return sshHostKeyVerificationStrategy;
+        return sshHostKeyVerificationStrategy;
     }
 
     @DataBoundSetter
@@ -293,11 +309,12 @@ public class SSHConnector extends ComputerConnector {
         }
 
         @RequirePOST
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String credentialsId) {
-            AccessControlled _context = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.get());
+        public ListBoxModel doFillCredentialsIdItems(
+                @AncestorInPath ItemGroup context, @QueryParameter String credentialsId) {
+            AccessControlled _context =
+                    (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.get());
             if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
-                return new StandardUsernameListBoxModel()
-                        .includeCurrentValue(credentialsId);
+                return new StandardUsernameListBoxModel().includeCurrentValue(credentialsId);
             }
             return new StandardUsernameListBoxModel()
                     .includeMatchingAs(
@@ -305,20 +322,21 @@ public class SSHConnector extends ComputerConnector {
                             context,
                             StandardUsernameCredentials.class,
                             Collections.singletonList(SSHLauncher.SSH_SCHEME),
-                            SSHAuthenticator.matcher(Connection.class)
-                    )
+                            SSHAuthenticator.matcher(Connection.class))
                     .includeCurrentValue(credentialsId);
         }
 
         @RequirePOST
-        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
-                                                   @QueryParameter String value) {
+        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context, @QueryParameter String value) {
             AccessControlled _context =
                     (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.get());
             if (_context == null || !_context.hasPermission(Computer.CONFIGURE)) {
                 return FormValidation.ok(); // no need to alarm a user that cannot configure
             }
-            for (ListBoxModel.Option o : CredentialsProvider.listCredentialsInItemGroup(StandardUsernameCredentials.class, context, ACL.SYSTEM2,
+            for (ListBoxModel.Option o : CredentialsProvider.listCredentialsInItemGroup(
+                    StandardUsernameCredentials.class,
+                    context,
+                    ACL.SYSTEM2,
                     Collections.singletonList(SSHLauncher.SSH_SCHEME),
                     SSHAuthenticator.matcher(Connection.class))) {
                 if (StringUtils.equals(value, o.value)) {
@@ -340,6 +358,5 @@ public class SSHConnector extends ComputerConnector {
                 return FormValidation.error(Messages.SSHConnector_LaunchTimeoutMustBeANumber());
             }
         }
-
     }
 }

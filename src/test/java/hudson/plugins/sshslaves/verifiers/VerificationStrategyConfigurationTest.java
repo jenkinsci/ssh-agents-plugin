@@ -23,12 +23,7 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import org.junit.jupiter.api.Test;
-import org.jvnet.hudson.test.JenkinsRule;
 
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -36,8 +31,11 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-
 import hudson.plugins.sshslaves.SSHConnector;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 @WithJenkins
@@ -55,11 +53,11 @@ class VerificationStrategyConfigurationTest {
 
     @Test
     void testConfigureRoundTripManualProvidedVerifyingStrategy(JenkinsRule jenkins) throws Exception {
-        String key = "AAAAB3NzaC1yc2EAAAADAQABAAABAQC1oF3jpBkexmWgKh7kwMGFjb9L7+/mvY7TNMiobWC4JK8T" +
-                "7fv/gRNMSfY6Fg9INZosfxD+9oktnVl1/9Nc5Qqp3/ia7qtyccXzab6WuNbuos+Ggb14vqLe0SD+" +
-                "Edc1TpBRMg8w70L41uTlgrhHqwzt96BbPe9hG1cfgZ5Lx9JTMZUyXgGaJmShE9Fsa+CJV5bW/Nqc" +
-                "8G/Z8fLKBlUwiX7hQHkG4xVNQve60kDvDVJpozd+XAiZrQVgwCLTg3ik2aDdR9U+VCC7q1s3SgFF" +
-                "f8jh5Z5QAJ2MA+A6oq2rJJoCIfXJnBdXEgHggJf3d1tl1vBI1pOVxDa9BWBjr4KvwgwL";
+        String key = "AAAAB3NzaC1yc2EAAAADAQABAAABAQC1oF3jpBkexmWgKh7kwMGFjb9L7+/mvY7TNMiobWC4JK8T"
+                + "7fv/gRNMSfY6Fg9INZosfxD+9oktnVl1/9Nc5Qqp3/ia7qtyccXzab6WuNbuos+Ggb14vqLe0SD+"
+                + "Edc1TpBRMg8w70L41uTlgrhHqwzt96BbPe9hG1cfgZ5Lx9JTMZUyXgGaJmShE9Fsa+CJV5bW/Nqc"
+                + "8G/Z8fLKBlUwiX7hQHkG4xVNQve60kDvDVJpozd+XAiZrQVgwCLTg3ik2aDdR9U+VCC7q1s3SgFF"
+                + "f8jh5Z5QAJ2MA+A6oq2rJJoCIfXJnBdXEgHggJf3d1tl1vBI1pOVxDa9BWBjr4KvwgwL";
         testConfigureRoundTrip(jenkins, new ManuallyProvidedKeyVerificationStrategy("ssh-rsa " + key));
     }
 
@@ -68,8 +66,10 @@ class VerificationStrategyConfigurationTest {
         testConfigureRoundTrip(jenkins, new KnownHostsFileKeyVerificationStrategy());
     }
 
-    private static void testConfigureRoundTrip(JenkinsRule jenkins, SshHostKeyVerificationStrategy strategy) throws Exception {
-        StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "dummyUser", "dummyPassword");
+    private static void testConfigureRoundTrip(JenkinsRule jenkins, SshHostKeyVerificationStrategy strategy)
+            throws Exception {
+        StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
+                CredentialsScope.SYSTEM, "dummyCredentialId", null, "dummyUser", "dummyPassword");
 
         List<Credentials> credentialsList = new ArrayList<>();
         credentialsList.add(credentials);
@@ -90,5 +90,4 @@ class VerificationStrategyConfigurationTest {
         assertNotSame(connector, output);
         jenkins.assertEqualDataBoundBeans(connector, output);
     }
-
 }

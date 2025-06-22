@@ -23,18 +23,7 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.StringTokenizer;
-
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.interceptor.RequirePOST;
-import org.kohsuke.stapler.QueryParameter;
-
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
@@ -42,8 +31,17 @@ import hudson.plugins.sshslaves.Messages;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
+import java.util.StringTokenizer;
 import jenkins.model.Jenkins;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * Checks a key provided by a remote hosts matches a key specified as being required by the
@@ -77,10 +75,12 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     @Override
     public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) throws Exception {
         if (key.equals(hostKey)) {
-            listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger()
+                    .println(Messages.ManualKeyProvidedHostKeyVerifier_KeyTrusted(SSHLauncher.getTimestamp()));
             return true;
         } else {
-            listener.getLogger().println(Messages.ManualKeyProvidedHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
+            listener.getLogger()
+                    .println(Messages.ManualKeyProvidedHostKeyVerifier_KeyNotTrusted(SSHLauncher.getTimestamp()));
             return false;
         }
     }
@@ -88,7 +88,8 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     @Override
     public String[] getPreferredKeyAlgorithms(SlaveComputer computer) throws IOException {
         String[] unsortedAlgorithms = super.getPreferredKeyAlgorithms(computer);
-        List<String> sortedAlgorithms = new ArrayList<>(unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.emptyList());
+        List<String> sortedAlgorithms = new ArrayList<>(
+                unsortedAlgorithms != null ? Arrays.asList(unsortedAlgorithms) : Collections.emptyList());
 
         sortedAlgorithms.remove(key.getAlgorithm());
         sortedAlgorithms.add(0, key.getAlgorithm());
@@ -111,7 +112,8 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
     }
 
     @Extension
-    public static class ManuallyProvidedKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
+    public static class ManuallyProvidedKeyVerificationStrategyDescriptor
+            extends SshHostKeyVerificationStrategyDescriptor {
 
         @NonNull
         @Override
@@ -125,11 +127,9 @@ public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificat
             try {
                 ManuallyProvidedKeyVerificationStrategy.parseKey(key);
                 return FormValidation.ok();
-            } catch (KeyParseException|IllegalArgumentException ex) {
+            } catch (KeyParseException | IllegalArgumentException ex) {
                 return FormValidation.error(ex.getMessage());
             }
         }
-
     }
-
 }

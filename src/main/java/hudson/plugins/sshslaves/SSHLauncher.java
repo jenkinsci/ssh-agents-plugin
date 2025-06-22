@@ -23,13 +23,16 @@
  */
 package hudson.plugins.sshslaves;
 
+import static hudson.Util.fixEmpty;
+import static java.util.logging.Level.WARNING;
+
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
-import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
@@ -64,30 +67,17 @@ import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.NamingThreadFactory;
-import java.util.Collections;
-import jenkins.model.Jenkins;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.Symbol;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.interceptor.RequirePOST;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.InterruptedException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -101,9 +91,17 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static hudson.Util.fixEmpty;
-import static java.util.logging.Level.WARNING;
+import jenkins.model.Jenkins;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * A computer launcher that tries to start a linux agent by opening an SSH connection and trying to find java.
@@ -114,6 +112,7 @@ public class SSHLauncher extends ComputerLauncher {
      * The scheme requirement.
      */
     public static final SchemeRequirement SSH_SCHEME = new SchemeRequirement("ssh");
+
     public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
     public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
     public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = 60;
@@ -227,7 +226,6 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private String workDir;
 
-
     private class ServerHostKeyVerifierImpl implements ServerHostKeyVerifier {
 
         private final SlaveComputer computer;
@@ -239,7 +237,8 @@ public class SSHLauncher extends ComputerLauncher {
         }
 
         @Override
-        public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey) throws Exception {
+        public boolean verifyServerHostKey(
+                String hostname, int port, String serverHostKeyAlgorithm, byte[] serverHostKey) throws Exception {
 
             final HostKey key = new HostKey(serverHostKeyAlgorithm, serverHostKey);
 
@@ -262,10 +261,18 @@ public class SSHLauncher extends ComputerLauncher {
      * @param retryWaitTime The number of seconds to wait between retries
      * @param sshHostKeyVerificationStrategy Host key verification method selected.
      */
-    public SSHLauncher(@NonNull String host, int port, String credentialsId,
-             String jvmOptions, String javaPath, String prefixStartSlaveCmd, String suffixStartSlaveCmd,
-             Integer launchTimeoutSeconds, Integer maxNumRetries, Integer retryWaitTime,
-             @CheckForNull SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
+    public SSHLauncher(
+            @NonNull String host,
+            int port,
+            String credentialsId,
+            String jvmOptions,
+            String javaPath,
+            String prefixStartSlaveCmd,
+            String suffixStartSlaveCmd,
+            Integer launchTimeoutSeconds,
+            Integer maxNumRetries,
+            Integer retryWaitTime,
+            @CheckForNull SshHostKeyVerificationStrategy sshHostKeyVerificationStrategy) {
         setHost(host);
         setJvmOptions(jvmOptions);
         setPort(port);
@@ -299,28 +306,26 @@ public class SSHLauncher extends ComputerLauncher {
 
     public static StandardUsernameCredentials lookupSystemCredentials(String credentialsId) {
         return CredentialsMatchers.firstOrNull(
-                CredentialsProvider
-                        .lookupCredentialsInItemGroup(StandardUsernameCredentials.class, Jenkins.get(), ACL.SYSTEM2,
-                                List.of(SSH_SCHEME)),
-                CredentialsMatchers.withId(credentialsId)
-        );
+                CredentialsProvider.lookupCredentialsInItemGroup(
+                        StandardUsernameCredentials.class, Jenkins.get(), ACL.SYSTEM2, List.of(SSH_SCHEME)),
+                CredentialsMatchers.withId(credentialsId));
     }
 
-    public Object readResolve(){
-        if(tcpNoDelay == null){
+    public Object readResolve() {
+        if (tcpNoDelay == null) {
             tcpNoDelay = true;
         }
 
-        //JENKINS-58589 we include 210 seconds because it was the default value before 1.30.3
-        if(this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 || launchTimeoutSeconds == 210){
+        // JENKINS-58589 we include 210 seconds because it was the default value before 1.30.3
+        if (this.launchTimeoutSeconds == null || launchTimeoutSeconds <= 0 || launchTimeoutSeconds == 210) {
             this.launchTimeoutSeconds = DEFAULT_LAUNCH_TIMEOUT_SECONDS;
         }
 
-        if(this.maxNumRetries == null){
+        if (this.maxNumRetries == null) {
             this.maxNumRetries = DEFAULT_MAX_NUM_RETRIES;
         }
 
-        if(this.retryWaitTime == null){
+        if (this.retryWaitTime == null) {
             this.retryWaitTime = DEFAULT_RETRY_WAIT_TIME;
         }
         return this;
@@ -333,8 +338,8 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             // only ever want from the system
             // lookup every time so that we always have the latest
-            StandardUsernameCredentials credentials = credentialsId != null ?
-                    SSHLauncher.lookupSystemCredentials(credentialsId) : null;
+            StandardUsernameCredentials credentials =
+                    credentialsId != null ? SSHLauncher.lookupSystemCredentials(credentialsId) : null;
             if (credentials != null) {
                 this.credentials = credentials;
                 return credentials;
@@ -417,18 +422,19 @@ public class SSHLauncher extends ComputerLauncher {
         final int port = this.port;
         checkConfig();
         synchronized (this) {
-            if(connection != null){
+            if (connection != null) {
                 listener.getLogger().println(Messages.SSHLauncher_alreadyConnected());
                 return;
             }
             connection = new Connection(host, port);
-            launcherExecutorService = Executors.newSingleThreadExecutor(
-                    new NamingThreadFactory(Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
+            launcherExecutorService = Executors.newSingleThreadExecutor(new NamingThreadFactory(
+                    Executors.defaultThreadFactory(), "SSHLauncher.launch for '" + computer.getName() + "' node"));
             Set<Callable<Boolean>> callables = new HashSet<>();
             callables.add(() -> {
                 Boolean rval = Boolean.FALSE;
                 try {
-                    String[] preferredKeyAlgorithms = getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
+                    String[] preferredKeyAlgorithms =
+                            getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
                     if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
                         connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
                     } else {
@@ -450,7 +456,7 @@ public class SSHLauncher extends ComputerLauncher {
 
                     String java = "java";
                     if (StringUtils.isNotBlank(javaPath)) {
-                      java = expandExpression(computer, javaPath);
+                        java = expandExpression(computer, javaPath);
                     }
 
                     copyAgentJar(listener, workingDirectory);
@@ -459,9 +465,9 @@ public class SSHLauncher extends ComputerLauncher {
 
                     PluginImpl.register(connection);
                     rval = Boolean.TRUE;
-                } catch (RuntimeException|Error e) {
+                } catch (RuntimeException | Error e) {
                     String msg = Messages.SSHLauncher_UnexpectedError();
-                    if(StringUtils.isNotBlank(e.getMessage())){
+                    if (StringUtils.isNotBlank(e.getMessage())) {
                         msg = e.getMessage();
                     }
                     e.printStackTrace(listener.error(msg));
@@ -474,13 +480,14 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             });
 
-            final String nodeName = node != null ? node.getNodeName(): "unknown";
+            final String nodeName = node != null ? node.getNodeName() : "unknown";
             try {
                 long time = System.currentTimeMillis();
                 List<Future<Boolean>> results;
                 final ExecutorService srv = launcherExecutorService;
                 if (srv == null) {
-                    throw new IllegalStateException("Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
+                    throw new IllegalStateException(
+                            "Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
                 }
 
                 results = srv.invokeAll(callables);
@@ -502,7 +509,7 @@ public class SSHLauncher extends ComputerLauncher {
             } catch (InterruptedException e) {
                 LOGGER.warning(() -> Messages.SSHLauncher_LaunchFailed(nodeName, host));
             } finally {
-              shutdownAndAwaitTerminationOfLauncher();
+                shutdownAndAwaitTerminationOfLauncher();
             }
         }
         if (node != null && getTrackCredentials()) {
@@ -510,29 +517,29 @@ public class SSHLauncher extends ComputerLauncher {
         }
     }
 
-  /**
-   * try to run the Java command in the PATH ad report its version.
-   * @param listener lister to print the output of the java command.
-   */
-  private void checkJavaIsInPath(TaskListener listener) {
-    String msg = "Java is not in the PATH nor configured with the javaPath setting,"
-                 + " Jenkins will try to guess where is Java, "
-                 + "this guess will be removed in the future. :"
-                 + getDescriptor().getDisplayName();
-    int ret = 0;
-    try {
-      listener.getLogger().println("Checking Java version in the PATH");
-      ret = connection.exec("java -version", listener.getLogger());
-    } catch (Exception e){
-      ret = -1;
+    /**
+     * try to run the Java command in the PATH ad report its version.
+     * @param listener lister to print the output of the java command.
+     */
+    private void checkJavaIsInPath(TaskListener listener) {
+        String msg = "Java is not in the PATH nor configured with the javaPath setting,"
+                + " Jenkins will try to guess where is Java, "
+                + "this guess will be removed in the future. :"
+                + getDescriptor().getDisplayName();
+        int ret = 0;
+        try {
+            listener.getLogger().println("Checking Java version in the PATH");
+            ret = connection.exec("java -version", listener.getLogger());
+        } catch (Exception e) {
+            ret = -1;
+        }
+        if (ret != 0) {
+            LOGGER.log(WARNING, msg);
+            listener.getLogger().println(msg);
+        }
     }
-    if(ret != 0){
-      LOGGER.log(WARNING, msg);
-      listener.getLogger().println(msg);
-    }
-  }
 
-  /**
+    /**
      * Called to terminate the SSH connection. Used liberally when we back out from an error.
      */
     private void cleanupConnection(TaskListener listener) {
@@ -593,16 +600,16 @@ public class SSHLauncher extends ComputerLauncher {
      */
     private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        connection.exec("exit 0",baos);
+        connection.exec("exit 0", baos);
         final String s;
-        //TODO: Seems we need to retrieve the encoding from the connection destination
+        // TODO: Seems we need to retrieve the encoding from the connection destination
         try {
             s = baos.toString(Charset.defaultCharset().name());
         } catch (UnsupportedEncodingException ex) { // Should not happen
             throw new IOException("Default encoding is unsupported", ex);
         }
 
-        if (s.length()!=0) {
+        if (s.length() != 0) {
             listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
             listener.getLogger().println(s);
             throw new AbortException();
@@ -619,14 +626,14 @@ public class SSHLauncher extends ComputerLauncher {
      *
      * @throws IOException If something goes wrong.
      */
-    private void startAgent(SlaveComputer computer, final TaskListener listener, String java,
-                            String workingDirectory) throws IOException {
+    private void startAgent(SlaveComputer computer, final TaskListener listener, String java, String workingDirectory)
+            throws IOException {
         session = connection.openSession();
-        expandChannelBufferSize(session,listener);
-        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR +
-                     getWorkDirParam(workingDirectory);
+        expandChannelBufferSize(session, listener);
+        String cmd = "cd \"" + workingDirectory + "\" && " + java + " " + getJvmOptions() + " -jar " + AGENT_JAR
+                + getWorkDirParam(workingDirectory);
 
-        //This will wrap the cmd with prefix commands and suffix commands if they are set.
+        // This will wrap the cmd with prefix commands and suffix commands if they are set.
         cmd = getPrefixStartSlaveCmd() + cmd + getSuffixStartSlaveCmd();
 
         listener.getLogger().println(Messages.SSHLauncher_StartingAgentProcess(getTimestamp(), cmd));
@@ -643,7 +650,7 @@ public class SSHLauncher extends ComputerLauncher {
             try {
                 // often times error this early means the JVM has died, so let's see if we can capture all stderr
                 // and exit code
-                throw new AbortException(getSessionOutcomeMessage(session,false));
+                throw new AbortException(getSessionOutcomeMessage(session, false));
             } catch (InterruptedException x) {
                 throw new IOException(e);
             }
@@ -651,13 +658,14 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private void expandChannelBufferSize(Session session, TaskListener listener) {
-            // see hudson.remoting.Channel.PIPE_WINDOW_SIZE for the discussion of why 1MB is in the right ball park
-            // but this particular session is where all the controller/agent communication will happen, so
-            // it's worth using a bigger buffer to really better utilize bandwidth even when the latency is even larger
-            // (and since we are draining this pipe very rapidly, it's unlikely that we'll actually accumulate this much data)
-            int sz = 4;
-            session.setWindowSize(sz*1024*1024);
-            listener.getLogger().println("Expanded the channel window size to "+sz+"MB");
+        // see hudson.remoting.Channel.PIPE_WINDOW_SIZE for the discussion of why 1MB is in the right ball park
+        // but this particular session is where all the controller/agent communication will happen, so
+        // it's worth using a bigger buffer to really better utilize bandwidth even when the latency is even larger
+        // (and since we are draining this pipe very rapidly, it's unlikely that we'll actually accumulate this much
+        // data)
+        int sz = 4;
+        session.setWindowSize(sz * 1024 * 1024);
+        listener.getLogger().println("Expanded the channel window size to " + sz + "MB");
     }
 
     /**
@@ -678,9 +686,9 @@ public class SSHLauncher extends ComputerLauncher {
 
             try {
                 SFTPv3FileAttributes fileAttributes = sftpClient._stat(workingDirectory);
-                if (fileAttributes==null) {
-                    listener.getLogger().println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(),
-                            workingDirectory));
+                if (fileAttributes == null) {
+                    listener.getLogger()
+                            .println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
                     sftpClient.mkdirs(workingDirectory, 0700);
                 } else if (fileAttributes.isRegularFile()) {
                     throw new IOException(Messages.SSHLauncher_RemoteFSIsAFile(workingDirectory));
@@ -693,9 +701,12 @@ public class SSHLauncher extends ComputerLauncher {
                 boolean overwrite = true;
                 if (sftpClient.exists(fileName)) {
                     String sourceAgentHash = getMd5Hash(agentJar);
-                    String existingAgentHash = getMd5Hash(readInputStreamIntoByteArrayAndClose(sftpClient.read(fileName)));
-                    listener.getLogger().println(MessageFormat.format( "Source agent hash is {0}. "
-                      + "Installed agent hash is {1}", sourceAgentHash, existingAgentHash));
+                    String existingAgentHash =
+                            getMd5Hash(readInputStreamIntoByteArrayAndClose(sftpClient.read(fileName)));
+                    listener.getLogger()
+                            .println(MessageFormat.format(
+                                    "Source agent hash is {0}. " + "Installed agent hash is {1}",
+                                    sourceAgentHash, existingAgentHash));
 
                     overwrite = !sourceAgentHash.equals(existingAgentHash);
                 }
@@ -712,13 +723,13 @@ public class SSHLauncher extends ComputerLauncher {
                     try (OutputStream os = sftpClient.writeToFile(fileName)) {
                         os.write(agentJar);
                         listener.getLogger()
-                          .println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
+                                .println(Messages.SSHLauncher_CopiedXXXBytes(getTimestamp(), agentJar.length));
                     } catch (Error error) {
                         throw error;
                     } catch (Throwable e) {
                         throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarTo(fileName), e);
                     }
-                }else{
+                } else {
                     listener.getLogger().println("Verified agent jar. No update is necessary.");
                 }
             } catch (Error error) {
@@ -764,7 +775,7 @@ public class SSHLauncher extends ComputerLauncher {
             }
 
             hash = r.toString().toUpperCase();
-        }catch (NoSuchAlgorithmException e){
+        } catch (NoSuchAlgorithmException e) {
             throw e;
         }
         return hash;
@@ -781,14 +792,14 @@ public class SSHLauncher extends ComputerLauncher {
     static byte[] readInputStreamIntoByteArrayAndClose(InputStream inputStream) throws IOException {
 
         byte[] bytes = null;
-        try{
+        try {
             bytes = IOUtils.toByteArray(inputStream);
-        }catch(IOException e){
+        } catch (IOException e) {
             throw e;
         } finally {
             IOUtils.closeQuietly(inputStream);
-            if(bytes==null) {
-                bytes = new byte[ 1 ];
+            if (bytes == null) {
+                bytes = new byte[1];
             }
         }
 
@@ -804,16 +815,17 @@ public class SSHLauncher extends ComputerLauncher {
      * @throws IOException If something goes wrong.
      * @throws InterruptedException If something goes wrong.
      */
-    private void copySlaveJarUsingSCP(TaskListener listener, String workingDirectory) throws IOException, InterruptedException {
+    private void copySlaveJarUsingSCP(TaskListener listener, String workingDirectory)
+            throws IOException, InterruptedException {
         SCPClient scp = new SCPClient(connection);
         try {
             // check if the working directory exists
-            if (connection.exec("test -d " + workingDirectory ,listener.getLogger())!=0) {
-                listener.getLogger().println(
-                        Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
+            if (connection.exec("test -d " + workingDirectory, listener.getLogger()) != 0) {
+                listener.getLogger()
+                        .println(Messages.SSHLauncher_RemoteFSDoesNotExist(getTimestamp(), workingDirectory));
                 // working directory doesn't exist, lets make it.
-                if (connection.exec("mkdir -p " + workingDirectory, listener.getLogger())!=0) {
-                    listener.getLogger().println("Failed to create "+workingDirectory);
+                if (connection.exec("mkdir -p " + workingDirectory, listener.getLogger()) != 0) {
+                    listener.getLogger().println("Failed to create " + workingDirectory);
                 }
             }
 
@@ -830,10 +842,11 @@ public class SSHLauncher extends ComputerLauncher {
 
     protected void reportEnvironment(TaskListener listener) throws IOException, InterruptedException {
         listener.getLogger().println(Messages._SSHLauncher_RemoteUserEnvironment(getTimestamp()));
-        connection.exec("set",listener.getLogger());
+        connection.exec("set", listener.getLogger());
     }
 
-    protected void openConnection(final TaskListener listener, final SlaveComputer computer) throws IOException, InterruptedException {
+    protected void openConnection(final TaskListener listener, final SlaveComputer computer)
+            throws IOException, InterruptedException {
         PrintStream logger = listener.getLogger();
         logger.println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(getTcpNoDelay());
@@ -841,9 +854,11 @@ public class SSHLauncher extends ComputerLauncher {
         int maxNumRetries = getMaxNumRetries();
         for (int i = 0; i <= maxNumRetries; i++) {
             try {
-                int launchTimeoutMillis = (int)getLaunchTimeoutMillis();
-                connection.connect(new ServerHostKeyVerifierImpl(computer, listener),
-                        launchTimeoutMillis, 0 /*read timeout - JENKINS-48618*/,
+                int launchTimeoutMillis = (int) getLaunchTimeoutMillis();
+                connection.connect(
+                        new ServerHostKeyVerifierImpl(computer, listener),
+                        launchTimeoutMillis,
+                        0 /*read timeout - JENKINS-48618*/,
                         (int) (launchTimeoutMillis + TimeUnit.SECONDS.toMillis(5)));
                 break;
             } catch (Exception ex) {
@@ -852,7 +867,7 @@ public class SSHLauncher extends ComputerLauncher {
                 if (cause != null) {
                     message = cause.getMessage();
                     logger.println(message);
-                } else if(ex.getMessage() != null){
+                } else if (ex.getMessage() != null) {
                     message = ex.getMessage();
                     logger.println(message);
                 }
@@ -861,8 +876,8 @@ public class SSHLauncher extends ComputerLauncher {
 
                 if (maxNumRetries - i > 0) {
                     logger.println("SSH Connection failed with IOException: \"" + message
-                            + "\", retrying in " + getRetryWaitTime() + " seconds." +
-                            " There are " + (maxNumRetries - i) + " more retries left.");
+                            + "\", retrying in " + getRetryWaitTime() + " seconds." + " There are "
+                            + (maxNumRetries - i) + " more retries left.");
                 }
             }
             Thread.sleep(TimeUnit.SECONDS.toMillis(getRetryWaitTime()));
@@ -882,7 +897,7 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private void checkConfig() throws InterruptedException {
-        //JENKINS-58340 some plugins does not implement Descriptor
+        // JENKINS-58340 some plugins does not implement Descriptor
         Descriptor descriptorOrg = Jenkins.get().getDescriptor(this.getClass());
         if (!(descriptorOrg instanceof DescriptorImpl)) {
             return;
@@ -895,22 +910,23 @@ public class SSHLauncher extends ComputerLauncher {
         String port = String.valueOf(this.port);
         FormValidation validatePort = descriptor.doCheckPort(port);
         FormValidation validateHost = descriptor.doCheckHost(this.host);
-        FormValidation validateCredentials = descriptor.doCheckCredentialsId(Jenkins.get(), Jenkins.get(), this.host, port, this.credentialsId);
+        FormValidation validateCredentials =
+                descriptor.doCheckCredentialsId(Jenkins.get(), Jenkins.get(), this.host, port, this.credentialsId);
 
-        if(validatePort.kind == FormValidation.Kind.ERROR){
+        if (validatePort.kind == FormValidation.Kind.ERROR) {
             isValid = false;
             message += validatePort.getMessage() + "\n";
         }
-        if(validateHost.kind == FormValidation.Kind.ERROR){
+        if (validateHost.kind == FormValidation.Kind.ERROR) {
             isValid = false;
             message += validateHost.getMessage() + "\n";
         }
-        if(validateCredentials.kind == FormValidation.Kind.ERROR){
+        if (validateCredentials.kind == FormValidation.Kind.ERROR) {
             isValid = false;
             message += validateCredentials.getMessage() + "\n";
         }
 
-        if(!isValid){
+        if (!isValid) {
             throw new InterruptedException(message);
         }
     }
@@ -928,14 +944,19 @@ public class SSHLauncher extends ComputerLauncher {
 
         if (tearingDownConnection) {
             // tear down operation is in progress, do not even try to synchronize the call.
-            //TODO: what if reconnect attempts collide? It should not be possible due to locks, but maybe it worth investigation
-            LOGGER.log(Level.FINE, "There is already a tear down operation in progress for connection {0}. Skipping the call", connection);
+            // TODO: what if reconnect attempts collide? It should not be possible due to locks, but maybe it worth
+            // investigation
+            LOGGER.log(
+                    Level.FINE,
+                    "There is already a tear down operation in progress for connection {0}. Skipping the call",
+                    connection);
             return;
         }
         tearDownConnection(slaveComputer, listener);
     }
 
-    private synchronized void tearDownConnection(@NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
+    private synchronized void tearDownConnection(
+            @NonNull SlaveComputer slaveComputer, final @NonNull TaskListener listener) {
         if (connection != null) {
             tearDownConnectionImpl(slaveComputer, listener);
         }
@@ -945,13 +966,13 @@ public class SSHLauncher extends ComputerLauncher {
         try {
             tearingDownConnection = true;
             boolean connectionLost = reportTransportLoss(connection, listener);
-            if (session!=null) {
+            if (session != null) {
                 // give the process 3 seconds to write out its dying message before we cut the loss
                 // and give up on this process. if the agent process had JVM crash, OOME, or any other
                 // critical problem, this will allow us to capture that.
                 // exit code is also an useful info to figure out why the process has died.
                 try {
-                    listener.getLogger().println(getSessionOutcomeMessage(session,connectionLost));
+                    listener.getLogger().println(getSessionOutcomeMessage(session, connectionLost));
                     session.getStdout().close();
                     session.close();
                 } catch (Throwable t) {
@@ -968,27 +989,27 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private void shutdownAndAwaitTerminationOfLauncher() {
-      ExecutorService srv = launcherExecutorService;
-      if (srv == null) {
-          return;
-      }
-      srv.shutdown(); // Disable new tasks from being submitted
-      launcherExecutorService = null;
-      try {
-          // Wait a while for existing tasks to terminate
-          if (!srv.awaitTermination(10, TimeUnit.SECONDS)) {
-              srv.shutdownNow(); // Cancel currently executing tasks
-              // Wait a while for tasks to respond to being cancelled
-              if (!srv.awaitTermination(10, TimeUnit.SECONDS)) {
-                  LOGGER.log(WARNING, "launcherExecutorService thread pool did not terminate cleanly");
-              }
-          }
-      } catch (InterruptedException ie) {
-        // (Re-)Cancel if current thread also interrupted
-        srv.shutdownNow();
-        // Preserve interrupt status
-        Thread.currentThread().interrupt();
-      }
+        ExecutorService srv = launcherExecutorService;
+        if (srv == null) {
+            return;
+        }
+        srv.shutdown(); // Disable new tasks from being submitted
+        launcherExecutorService = null;
+        try {
+            // Wait a while for existing tasks to terminate
+            if (!srv.awaitTermination(10, TimeUnit.SECONDS)) {
+                srv.shutdownNow(); // Cancel currently executing tasks
+                // Wait a while for tasks to respond to being cancelled
+                if (!srv.awaitTermination(10, TimeUnit.SECONDS)) {
+                    LOGGER.log(WARNING, "launcherExecutorService thread pool did not terminate cleanly");
+                }
+            }
+        } catch (InterruptedException ie) {
+            // (Re-)Cancel if current thread also interrupted
+            srv.shutdownNow();
+            // Preserve interrupt status
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**
@@ -1010,15 +1031,12 @@ public class SSHLauncher extends ComputerLauncher {
         session.waitForCondition(ChannelCondition.EXIT_STATUS | ChannelCondition.EXIT_SIGNAL, 3000);
 
         Integer exitCode = session.getExitStatus();
-        if (exitCode != null)
-            return "Agent JVM has terminated. Exit code=" + exitCode;
+        if (exitCode != null) return "Agent JVM has terminated. Exit code=" + exitCode;
 
         String sig = session.getExitSignal();
-        if (sig != null)
-            return "Agent JVM has terminated. Exit signal=" + sig;
+        if (sig != null) return "Agent JVM has terminated. Exit signal=" + sig;
 
-        if (isConnectionLost)
-            return "Agent JVM has not reported exit code before the socket was lost";
+        if (isConnectionLost) return "Agent JVM has not reported exit code before the socket was lost";
 
         return "Agent JVM has not reported exit code. Is it still running?";
     }
@@ -1034,7 +1052,9 @@ public class SSHLauncher extends ComputerLauncher {
 
     @NonNull
     SshHostKeyVerificationStrategy getSshHostKeyVerificationStrategyDefaulted() {
-        return sshHostKeyVerificationStrategy != null ? sshHostKeyVerificationStrategy : new NonVerifyingKeyVerificationStrategy();
+        return sshHostKeyVerificationStrategy != null
+                ? sshHostKeyVerificationStrategy
+                : new NonVerifyingKeyVerificationStrategy();
     }
 
     @DataBoundSetter
@@ -1043,45 +1063,45 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     @DataBoundSetter
-    public void setJvmOptions(String value){
+    public void setJvmOptions(String value) {
         this.jvmOptions = fixEmpty(value);
     }
 
     @DataBoundSetter
-    public void setJavaPath(String value){
+    public void setJavaPath(String value) {
         this.javaPath = fixEmpty(value);
     }
 
     @DataBoundSetter
-    public void setPrefixStartSlaveCmd(String value){
+    public void setPrefixStartSlaveCmd(String value) {
         this.prefixStartSlaveCmd = fixEmpty(value);
     }
 
     @DataBoundSetter
-    public void setSuffixStartSlaveCmd(String value){
+    public void setSuffixStartSlaveCmd(String value) {
         this.suffixStartSlaveCmd = fixEmpty(value);
     }
 
     @DataBoundSetter
-    public void setMaxNumRetries(Integer value){
+    public void setMaxNumRetries(Integer value) {
         this.maxNumRetries = value != null && value >= 0 ? value : DEFAULT_MAX_NUM_RETRIES;
     }
 
     @DataBoundSetter
-    public void setLaunchTimeoutSeconds(Integer value){
+    public void setLaunchTimeoutSeconds(Integer value) {
         this.launchTimeoutSeconds = value == null || value <= 0 ? DEFAULT_LAUNCH_TIMEOUT_SECONDS : value;
     }
 
     @DataBoundSetter
-    public void setRetryWaitTime(Integer value){
+    public void setRetryWaitTime(Integer value) {
         this.retryWaitTime = value != null && value >= 0 ? value : DEFAULT_RETRY_WAIT_TIME;
     }
 
-    public void setPort(int value){
+    public void setPort(int value) {
         this.port = value == 0 ? DEFAULT_SSH_PORT : value;
     }
 
-    public void setHost(String value){
+    public void setHost(String value) {
         this.host = Util.fixEmptyAndTrim(value);
     }
 
@@ -1102,8 +1122,6 @@ public class SSHLauncher extends ComputerLauncher {
     public int getPort() {
         return port;
     }
-
-
 
     public Connection getConnection() {
         return connection;
@@ -1130,8 +1148,9 @@ public class SSHLauncher extends ComputerLauncher {
     }
 
     private long getLaunchTimeoutMillis() {
-        return launchTimeoutSeconds == null || launchTimeoutSeconds < 0 ? DEFAULT_LAUNCH_TIMEOUT_SECONDS : TimeUnit.SECONDS.toMillis
-                (launchTimeoutSeconds);
+        return launchTimeoutSeconds == null || launchTimeoutSeconds < 0
+                ? DEFAULT_LAUNCH_TIMEOUT_SECONDS
+                : TimeUnit.SECONDS.toMillis(launchTimeoutSeconds);
     }
 
     /**
@@ -1192,12 +1211,13 @@ public class SSHLauncher extends ComputerLauncher {
      */
     @NonNull
     @Restricted(NoExternalUse.class)
-    public String getWorkDirParam(@NonNull String workingDirectory){
+    public String getWorkDirParam(@NonNull String workingDirectory) {
         String ret;
-        if(getSuffixStartSlaveCmd().contains(WORK_DIR_PARAM) || getSuffixStartSlaveCmd().contains(JAR_CACHE_PARAM)){
-            //the parameter is already set on suffixStartSlaveCmd
+        if (getSuffixStartSlaveCmd().contains(WORK_DIR_PARAM)
+                || getSuffixStartSlaveCmd().contains(JAR_CACHE_PARAM)) {
+            // the parameter is already set on suffixStartSlaveCmd
             ret = "";
-        } else if (StringUtils.isNotBlank(getWorkDir())){
+        } else if (StringUtils.isNotBlank(getWorkDir())) {
             ret = WORK_DIR_PARAM + getWorkDir() + JAR_CACHE_PARAM + getWorkDir() + JAR_CACHE_DIR;
         } else {
             ret = WORK_DIR_PARAM + workingDirectory + JAR_CACHE_PARAM + workingDirectory + JAR_CACHE_DIR;
@@ -1227,20 +1247,21 @@ public class SSHLauncher extends ComputerLauncher {
         @Override
         public String getHelpFile(String fieldName) {
             String n = super.getHelpFile(fieldName);
-            if (n==null)
+            if (n == null)
                 n = Jenkins.get().getDescriptorOrDie(SSHConnector.class).getHelpFile(fieldName);
             return n;
         }
 
         @RequirePOST
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath AccessControlled context,
-                                                     @QueryParameter String host,
-                                                     @QueryParameter String port,
-                                                     @QueryParameter String credentialsId) {
+        public ListBoxModel doFillCredentialsIdItems(
+                @AncestorInPath AccessControlled context,
+                @QueryParameter String host,
+                @QueryParameter String port,
+                @QueryParameter String credentialsId) {
             Jenkins jenkins = Jenkins.get();
-            if ((context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (context != jenkins && !context.hasPermission(Computer.CONFIGURE))) {
-                return new StandardUsernameListBoxModel()
-                        .includeCurrentValue(credentialsId);
+            if ((context == jenkins && !jenkins.hasPermission(Computer.CREATE))
+                    || (context != jenkins && !context.hasPermission(Computer.CONFIGURE))) {
+                return new StandardUsernameListBoxModel().includeCurrentValue(credentialsId);
             }
             try {
                 int portValue = Integer.parseInt(port);
@@ -1249,35 +1270,35 @@ public class SSHLauncher extends ComputerLauncher {
                                 ACL.SYSTEM2,
                                 jenkins,
                                 StandardUsernameCredentials.class,
-                                Collections.singletonList(
-                                        new HostnamePortRequirement(host, portValue)
-                                ),
+                                Collections.singletonList(new HostnamePortRequirement(host, portValue)),
                                 SSHAuthenticator.matcher(Connection.class))
-                        .includeCurrentValue(credentialsId); // always add the current value last in case already present
+                        .includeCurrentValue(
+                                credentialsId); // always add the current value last in case already present
             } catch (NumberFormatException ex) {
-                return new StandardUsernameListBoxModel()
-                        .includeCurrentValue(credentialsId);
+                return new StandardUsernameListBoxModel().includeCurrentValue(credentialsId);
             }
         }
 
         @RequirePOST
-        public FormValidation doCheckCredentialsId(@AncestorInPath ItemGroup context,
-                                                   @AncestorInPath AccessControlled _context,
-                                                   @QueryParameter String host,
-                                                   @QueryParameter String port,
-                                                   @QueryParameter String value) {
+        public FormValidation doCheckCredentialsId(
+                @AncestorInPath ItemGroup context,
+                @AncestorInPath AccessControlled _context,
+                @QueryParameter String host,
+                @QueryParameter String port,
+                @QueryParameter String value) {
             Jenkins jenkins = Jenkins.get();
-            if ((_context == jenkins && !jenkins.hasPermission(Computer.CREATE)) || (_context != jenkins && !_context.hasPermission(Computer.CONFIGURE))) {
+            if ((_context == jenkins && !jenkins.hasPermission(Computer.CREATE))
+                    || (_context != jenkins && !_context.hasPermission(Computer.CONFIGURE))) {
                 return FormValidation.ok(); // no need to alarm a user that cannot configure
             }
             try {
                 int portValue = Integer.parseInt(port);
-                for (ListBoxModel.Option o : CredentialsProvider
-                        .listCredentialsInItemGroup(StandardUsernameCredentials.class, context, ACL.SYSTEM2,
-                                Collections.singletonList(
-                                        new HostnamePortRequirement(host, portValue)
-                                ),
-                                SSHAuthenticator.matcher(Connection.class))) {
+                for (ListBoxModel.Option o : CredentialsProvider.listCredentialsInItemGroup(
+                        StandardUsernameCredentials.class,
+                        context,
+                        ACL.SYSTEM2,
+                        Collections.singletonList(new HostnamePortRequirement(host, portValue)),
+                        SSHAuthenticator.matcher(Connection.class))) {
                     if (StringUtils.equals(value, o.value)) {
                         return FormValidation.ok();
                     }
@@ -1322,10 +1343,10 @@ public class SSHLauncher extends ComputerLauncher {
         public FormValidation doCheckJavaPath(@QueryParameter String value) {
             Jenkins.get().checkPermission(Computer.CONFIGURE);
             FormValidation ret = FormValidation.ok();
-            if (value != null && value.contains(" ")
-                && !(value.startsWith("\"") && value.endsWith("\""))
-                && !(value.startsWith("'") && value.endsWith("'"))
-            ) {
+            if (value != null
+                    && value.contains(" ")
+                    && !(value.startsWith("\"") && value.endsWith("\""))
+                    && !(value.startsWith("'") && value.endsWith("'"))) {
                 return FormValidation.warning(Messages.SSHLauncher_JavaPathHasWhiteSpaces());
             }
             return ret;
@@ -1379,8 +1400,11 @@ public class SSHLauncher extends ComputerLauncher {
         sb.append(", launchTimeoutSeconds=").append(getLaunchTimeoutSeconds());
         sb.append(", maxNumRetries=").append(getMaxNumRetries());
         sb.append(", retryWaitTime=").append(getRetryWaitTime());
-        sb.append(", sshHostKeyVerificationStrategy=").append(sshHostKeyVerificationStrategy != null ?
-                                                              sshHostKeyVerificationStrategy.getClass().getName() : "None");
+        sb.append(", sshHostKeyVerificationStrategy=")
+                .append(
+                        sshHostKeyVerificationStrategy != null
+                                ? sshHostKeyVerificationStrategy.getClass().getName()
+                                : "None");
         sb.append(", tcpNoDelay=").append(getTcpNoDelay());
         sb.append(", trackCredentials=").append(getTrackCredentials());
         sb.append('}');

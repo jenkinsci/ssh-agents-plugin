@@ -23,20 +23,17 @@
  */
 package hudson.plugins.sshslaves.verifiers;
 
-import java.io.IOException;
-
-import jakarta.servlet.ServletException;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.kohsuke.stapler.StaplerRequest2;
-import org.kohsuke.stapler.StaplerResponse2;
-import org.kohsuke.stapler.interceptor.RequirePOST;
-
 import hudson.model.Computer;
 import hudson.model.TaskAction;
 import hudson.plugins.sshslaves.Messages;
 import hudson.security.ACL;
 import hudson.security.Permission;
+import jakarta.servlet.ServletException;
+import java.io.IOException;
+import org.kohsuke.stapler.StaplerRequest2;
+import org.kohsuke.stapler.StaplerResponse2;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * An action that prompts a user with Computer.CONFIGURE privileges to trust a public key
@@ -46,7 +43,7 @@ import hudson.security.Permission;
  * @author Michael Clarke
  * @since 1.13
  */
-public class TrustHostKeyAction extends TaskAction  {
+public class TrustHostKeyAction extends TaskAction {
 
     private static int keyNumber = 0;
     private final HostKey hostKey;
@@ -55,7 +52,8 @@ public class TrustHostKeyAction extends TaskAction  {
 
     private boolean complete;
 
-    @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD",
+    @SuppressFBWarnings(
+            value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD",
             justification = "Need a static counter of all instances that have been created")
     TrustHostKeyAction(Computer computer, HostKey hostKey) {
         super();
