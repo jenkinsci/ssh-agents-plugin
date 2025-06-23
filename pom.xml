@@ -104,15 +104,6 @@
   </dependencyManagement>
 
   <dependencies>
-    <!--
-    <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>bouncycastle-api</artifactId>
-    </dependency>-->
-    <dependency>
-      <groupId>io.jenkins.plugins</groupId>
-      <artifactId>eddsa-api</artifactId>
-    </dependency>
     <dependency>
       <groupId>io.jenkins.plugins</groupId>
       <artifactId>eddsa-api</artifactId>
@@ -123,19 +114,7 @@
     </dependency>
     <dependency>
       <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
-      <artifactId>mina-sshd-api-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
       <artifactId>mina-sshd-api-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
-      <artifactId>mina-sshd-api-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
-      <artifactId>mina-sshd-api-scp</artifactId>
     </dependency>
     <dependency>
       <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
@@ -156,10 +135,6 @@
       </exclusions>
     </dependency>
     <!-- TODO remove in future versions -->
-    <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>trilead-api</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>trilead-api</artifactId>
@@ -198,11 +173,6 @@
       <version>1.21.2</version>
       <scope>test</scope>
     </dependency>
-    <!--
-    <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>bouncycastle-api</artifactId>
-    </dependency>-->
   </dependencies>
 
   <repositories>
