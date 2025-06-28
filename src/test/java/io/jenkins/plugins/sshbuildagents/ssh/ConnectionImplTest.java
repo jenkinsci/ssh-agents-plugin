@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
@@ -39,19 +41,19 @@ import org.apache.sshd.server.auth.pubkey.AcceptAllPublickeyAuthenticator;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.shell.InteractiveProcessShellFactory;
 import org.apache.sshd.server.shell.ProcessShellCommandFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.io.TempDir;
 
 public class ConnectionImplTest {
     private SshServer sshd;
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @TempDir
+    public Path tempFolder;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         Logger.getLogger("org.apache.sshd").setLevel(Level.FINE);
         Logger.getLogger("io.jenkins.plugins.sshbuildagents").setLevel(Level.FINE);
@@ -71,7 +73,7 @@ public class ConnectionImplTest {
         sshd.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException {
         sshd.stop();
     }
@@ -99,68 +101,73 @@ public class ConnectionImplTest {
 
     @Test
     public void testCopyFile() throws IOException, FormException {
-        final File tempFile = tempFolder.newFile("tempFile.txt");
-        Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-        StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
-                CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
-        connection.setCredentials(credentials);
-        String data = IOUtils.toString(getClass().getResourceAsStream("/fakeAgentJar.txt"), StandardCharsets.UTF_8);
-        connection.copyFile(tempFile.getAbsolutePath(), data.getBytes(StandardCharsets.UTF_8), true, true);
-        String dataUpload = FileUtils.readFileToString(tempFile, StandardCharsets.UTF_8);
-        assertEquals(data, dataUpload);
+        final File tempFile =
+                Files.createFile(tempFolder.resolve("tempFile.txt")).toFile();
+        try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
+            StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
+                    CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
+            connection.setCredentials(credentials);
+            String data = IOUtils.toString(getClass().getResourceAsStream("/fakeAgentJar.txt"), StandardCharsets.UTF_8);
+            connection.copyFile(tempFile.getAbsolutePath(), data.getBytes(StandardCharsets.UTF_8), true, true);
+            String dataUpload = FileUtils.readFileToString(tempFile, StandardCharsets.UTF_8);
+            assertEquals(data, dataUpload);
+        }
     }
 
     @Test
     public void testShellChannel() throws IOException, FormException {
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
-        Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-        StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
-                CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
-        connection.setCredentials(credentials);
-        ShellChannel shellChannel = connection.shellChannel();
-        shellChannel.execCommand("echo FOO");
-        byte[] data = IOUtils.readFully(
-                shellChannel.getInvertedStdout(),
-                shellChannel.getInvertedStdout().available());
-        String dataStr = IOUtils.toString(data, "UTF-8");
-        logger.info(dataStr);
-        assertEquals("FOO", StringUtils.chomp(dataStr));
+        try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
+            StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
+                    CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
+            connection.setCredentials(credentials);
+            ShellChannel shellChannel = connection.shellChannel();
+            shellChannel.execCommand("echo FOO");
+            byte[] data = IOUtils.readFully(
+                    shellChannel.getInvertedStdout(),
+                    shellChannel.getInvertedStdout().available());
+            String dataStr = IOUtils.toString(data, "UTF-8");
+            logger.info(dataStr);
+            assertEquals("FOO", StringUtils.chomp(dataStr));
+        }
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "LONG_CONNECTION_TEST", matches = "")
     public void testRunLongConnection() throws IOException, InterruptedException {
-        Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-        StandardUsernameCredentials credentials = new FakeSSHKeyCredential();
-        connection.setCredentials(credentials);
-        ShellChannel shellChannel = connection.shellChannel();
-        shellChannel.execCommand("sleep 500s");
-        for (int i = 0; i < 300; i++) {
-            Thread.sleep(1000);
-            assertTrue(connection.isOpen());
+        try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
+            StandardUsernameCredentials credentials = new FakeSSHKeyCredential();
+            connection.setCredentials(credentials);
+            ShellChannel shellChannel = connection.shellChannel();
+            shellChannel.execCommand("sleep 500s");
+            for (int i = 0; i < 300; i++) {
+                Thread.sleep(1000);
+                assertTrue(connection.isOpen());
+            }
         }
-        connection.close();
     }
 
     @Test
     public void testShellChannel2() throws IOException, FormException {
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
-        Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-        StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
-                CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
-        connection.setCredentials(credentials);
-        try (ClientSession session = connection.connect();
-                PipedOutputStream pipedIn = new PipedOutputStream();
-                InputStream inPipe = new PipedInputStream(pipedIn);
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            try (ChannelShell channel = session.createShellChannel()) {
-                channel.setOut(new NoCloseOutputStream(out));
-                channel.setErr(new NoCloseOutputStream(out));
-                channel.setIn(inPipe);
-                channel.open().verify(5L, TimeUnit.SECONDS);
-                pipedIn.write(("echo BAR\n").getBytes(StandardCharsets.UTF_8));
-                pipedIn.flush();
-                channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), 10000);
-                logger.info(out.toString("UTF-8"));
+        try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
+            StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
+                    CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
+            connection.setCredentials(credentials);
+            try (ClientSession session = connection.connect();
+                    PipedOutputStream pipedIn = new PipedOutputStream();
+                    InputStream inPipe = new PipedInputStream(pipedIn);
+                    ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                try (ChannelShell channel = session.createShellChannel()) {
+                    channel.setOut(new NoCloseOutputStream(out));
+                    channel.setErr(new NoCloseOutputStream(out));
+                    channel.setIn(inPipe);
+                    channel.open().verify(5L, TimeUnit.SECONDS);
+                    pipedIn.write(("echo BAR\n").getBytes(StandardCharsets.UTF_8));
+                    pipedIn.flush();
+                    channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), 10000);
+                    logger.info(out.toString("UTF-8"));
+                }
             }
         }
     }
@@ -168,42 +175,43 @@ public class ConnectionImplTest {
     @Test
     public void testClient() throws Exception {
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
-        Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
-        StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
-                CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
-        connection.setCredentials(credentials);
-        try (ClientSession session = connection.connect();
-                ClientChannel channel = session.createShellChannel();
-                ByteArrayOutputStream sent = new ByteArrayOutputStream();
-                PipedOutputStream pipedIn = new PipedOutputStream();
-                PipedInputStream pipedOut = new PipedInputStream(pipedIn);
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
+            StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
+                    CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
+            connection.setCredentials(credentials);
+            try (ClientSession session = connection.connect();
+                    ClientChannel channel = session.createShellChannel();
+                    ByteArrayOutputStream sent = new ByteArrayOutputStream();
+                    PipedOutputStream pipedIn = new PipedOutputStream();
+                    PipedInputStream pipedOut = new PipedInputStream(pipedIn);
+                    ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            channel.setIn(pipedOut);
-            channel.setOut(out);
-            channel.setErr(out);
-            channel.open();
+                channel.setIn(pipedOut);
+                channel.setOut(out);
+                channel.setErr(out);
+                channel.open();
 
-            pipedIn.write("touch /tmp/FOO\n".getBytes(StandardCharsets.UTF_8));
-            pipedIn.flush();
+                pipedIn.write("touch /tmp/FOO\n".getBytes(StandardCharsets.UTF_8));
+                pipedIn.flush();
 
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 1000; i++) {
-                sb.append("echo FOO\n");
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < 1000; i++) {
+                    sb.append("echo FOO\n");
+                }
+                sb.append('\n');
+                pipedIn.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+
+                pipedIn.write("exit\n".getBytes(StandardCharsets.UTF_8));
+                pipedIn.flush();
+                logger.info(out.toString());
+                channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), 10000);
+
+                channel.close(false);
+                connection.close();
+
+            } finally {
+                connection.close();
             }
-            sb.append('\n');
-            pipedIn.write(sb.toString().getBytes(StandardCharsets.UTF_8));
-
-            pipedIn.write("exit\n".getBytes(StandardCharsets.UTF_8));
-            pipedIn.flush();
-            logger.info(out.toString());
-            channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), 10000);
-
-            channel.close(false);
-            connection.close();
-
-        } finally {
-            connection.close();
         }
     }
 }

@@ -6,18 +6,12 @@ package io.jenkins.plugins.sshbuildagents.ssh.agents;
 
 import static hudson.plugins.sshslaves.tags.TestTags.AGENT_SSH_TEST;
 import static hudson.plugins.sshslaves.tags.TestTags.SSH_KEX_TEST;
-import static io.jenkins.plugins.sshbuildagents.ssh.agents.AgentConnectionBaseTest.AGENTS_RESOURCES_PATH;
-import static io.jenkins.plugins.sshbuildagents.ssh.agents.AgentConnectionBaseTest.DOCKERFILE;
-import static io.jenkins.plugins.sshbuildagents.ssh.agents.AgentConnectionBaseTest.SSH_AUTHORIZED_KEYS;
 import static io.jenkins.plugins.sshbuildagents.ssh.agents.AgentConnectionBaseTest.SSH_PORT;
-import static io.jenkins.plugins.sshbuildagents.ssh.agents.AgentConnectionBaseTest.SSH_SSHD_CONFIG;
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.HEARTBEAT_INTERVAL;
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.HEARTBEAT_MAX_RETRY;
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.IDLE_SESSION_TIMEOUT;
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.WINDOW_SIZE;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import io.jenkins.plugins.sshbuildagents.ssh.Connection;
@@ -32,7 +26,6 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ChannelExec;
 import org.apache.sshd.client.channel.ClientChannelEvent;
@@ -41,14 +34,13 @@ import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.input.NullInputStream;
 import org.apache.sshd.core.CoreModuleProperties;
-import org.junit.Before;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.testcontainers.DockerClientFactory;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -59,6 +51,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Tag(AGENT_SSH_TEST)
 @Tag(SSH_KEX_TEST)
 @Testcontainers(disabledWithoutDocker = true)
+@DisabledOnOs(OS.WINDOWS)
 public class ClientRSA512ConnectionTest {
     public static final String SSH_AGENT_NAME = "ssh-agent-rsa512";
     public static final String SSH_KEY_PATH = "ssh/rsa-512-key";
@@ -67,30 +60,14 @@ public class ClientRSA512ConnectionTest {
     public static final String PASSWORD = "password";
     public static final long timeout = 30000L;
 
-    @BeforeAll
-    static void beforeAll() {
-        assumeFalse(SystemUtils.IS_OS_WINDOWS);
-        assumeTrue(SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX);
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
-    }
-
+    @SuppressWarnings("resource")
     @Container
-    private static final GenericContainer<?> agentContainer = new GenericContainer<>(new ImageFromDockerfile(
-                            SSH_AGENT_NAME, false)
-                    .withFileFromClasspath(
-                            SSH_AUTHORIZED_KEYS,
-                            AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_AUTHORIZED_KEYS)
-                    .withFileFromClasspath(
-                            SSH_KEY_PATH, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PATH)
-                    .withFileFromClasspath(
-                            SSH_KEY_PUB_PATH, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PUB_PATH)
-                    .withFileFromClasspath(
-                            SSH_SSHD_CONFIG, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_SSHD_CONFIG)
-                    .withFileFromClasspath(DOCKERFILE, AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + DOCKERFILE))
+    private static final GenericContainer<?> agentContainer = new GenericContainer<>(
+                    AgentConnectionBaseTest.newImageFromDockerfile(SSH_AGENT_NAME, SSH_KEY_PATH, SSH_KEY_PUB_PATH))
             .withExposedPorts(SSH_PORT);
 
-    @Before
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         Logger.getLogger("org.apache.sshd").setLevel(Level.FINE);
         Logger.getLogger("io.jenkins.plugins.sshbuildagents").setLevel(Level.FINE);
         Logger.getLogger("org.apache.sshd.common.io.nio2").setLevel(Level.FINE);

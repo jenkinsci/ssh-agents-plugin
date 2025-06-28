@@ -5,8 +5,6 @@
 package io.jenkins.plugins.sshbuildagents.ssh.agents;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -25,15 +23,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.SystemUtils;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
-import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -43,6 +41,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Timeout(value = 10, unit = TimeUnit.MINUTES)
 @WithJenkins
 @Testcontainers(disabledWithoutDocker = true)
+@DisabledOnOs(OS.WINDOWS)
 public abstract class AgentConnectionBaseTest {
 
     public static final String USER = "jenkins";
@@ -52,7 +51,10 @@ public abstract class AgentConnectionBaseTest {
     protected static final String SSH_SSHD_CONFIG = "ssh/sshd_config";
     protected static final String DOCKERFILE = "Dockerfile";
     protected static final String SSH_AUTHORIZED_KEYS = "ssh/authorized_keys";
-    protected static final String AGENTS_RESOURCES_PATH = "/hudson/plugins/sshslaves/agents/";
+    // protected static final String AGENTS_RESOURCES_PATH = "/hudson/plugins/sshslaves/agents/";
+
+    protected static final String AGENTS_RESOURCES_PATH = "/io/jenkins/plugins/sshbuildagents/ssh/agents/";
+    public static final String LOGGING_PROPERTIES = "remoting_logger.properties";
 
     protected JenkinsRule j;
 
@@ -60,13 +62,6 @@ public abstract class AgentConnectionBaseTest {
     void beforeEach(JenkinsRule j) {
         this.j = j;
         this.j.timeout = 0;
-    }
-
-    @BeforeAll
-    static void beforeAll() {
-        assumeFalse(SystemUtils.IS_OS_WINDOWS);
-        assumeTrue(SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX);
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
     }
 
     @Test
@@ -157,5 +152,17 @@ public abstract class AgentConnectionBaseTest {
         SystemCredentialsProvider.getInstance()
                 .getDomainCredentialsMap()
                 .put(Domain.global(), Collections.singletonList(credentials));
+    }
+
+    public static ImageFromDockerfile newImageFromDockerfile(
+            String agentName, String sshKeyPath, String sshKeyPubPath) {
+        return new ImageFromDockerfile(agentName, false)
+                .withFileFromClasspath(
+                        SSH_AUTHORIZED_KEYS, AGENTS_RESOURCES_PATH + "/" + agentName + "/" + SSH_AUTHORIZED_KEYS)
+                .withFileFromClasspath(sshKeyPath, AGENTS_RESOURCES_PATH + "/" + agentName + "/" + sshKeyPath)
+                .withFileFromClasspath(sshKeyPubPath, AGENTS_RESOURCES_PATH + "/" + agentName + "/" + sshKeyPubPath)
+                .withFileFromClasspath(SSH_SSHD_CONFIG, AGENTS_RESOURCES_PATH + "/" + agentName + "/" + SSH_SSHD_CONFIG)
+                .withFileFromClasspath(DOCKERFILE, AGENTS_RESOURCES_PATH + "/" + agentName + "/" + DOCKERFILE)
+                .withFileFromClasspath("ssh/" + LOGGING_PROPERTIES, "/" + LOGGING_PROPERTIES);
     }
 }
