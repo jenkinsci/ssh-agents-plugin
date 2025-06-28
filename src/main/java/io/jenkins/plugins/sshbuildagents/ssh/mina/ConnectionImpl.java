@@ -182,8 +182,9 @@ public class ConnectionImpl implements Connection {
         try (ClientSession session = connect()) {
             DefaultScpClient scp = new DefaultScpClient(session);
             List<PosixFilePermission> permissions = new ArrayList<>();
-            permissions.add(PosixFilePermission.GROUP_READ);
-            permissions.add(PosixFilePermission.OWNER_WRITE);
+            // TODO document the permissions the file needs and how to set the umask
+            // TODO verify if the file exists and if the content is the same
+            // TODO verify if the file is a directory
             scp.upload(bytes, remotePath, permissions, null);
         }
     }
@@ -242,6 +243,7 @@ public class ConnectionImpl implements Connection {
      * @throws IOException in case of error.
      */
     private ClientSession connectAndAuthenticate() throws IOException {
+        // TODO reuse the authentiction implemented at https://github.com/jenkinsci/mina-sshd-api-plugin/blob/main/mina-sshd-api-core/src/main/java/io/jenkins/plugins/mina_sshd_api/core/authenticators/MinaSSHPasswordKeyAuthenticator.java
         ConnectFuture connectionFuture = client.connect(this.credentials.getUsername(), this.host, this.port);
         connectionFuture.verify(this.timeoutMillis);
         session = connectionFuture.getSession();

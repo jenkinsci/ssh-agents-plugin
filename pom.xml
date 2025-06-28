@@ -104,6 +104,7 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- TODO remove eddsa-api library ans us the new feature of Apache Mina SSH https://github.com/apache/mina-sshd/pull/639 -->
     <dependency>
       <groupId>io.jenkins.plugins</groupId>
       <artifactId>eddsa-api</artifactId>

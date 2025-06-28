@@ -22,6 +22,7 @@ import org.apache.sshd.common.config.keys.loader.pem.ECDSAPEMResourceKeyPairPars
 import org.apache.sshd.common.config.keys.loader.pem.PKCS8PEMResourceKeyPairParser;
 import org.apache.sshd.common.config.keys.loader.pem.RSAPEMResourceKeyPairParser;
 import org.apache.sshd.common.util.security.bouncycastle.BouncyCastleKeyPairResourceParser;
+// TODO Get rid of net.i2p.crypto.eddsa with using BC
 import org.apache.sshd.common.util.security.eddsa.Ed25519PEMResourceKeyParser;
 
 /**
