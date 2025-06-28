@@ -51,7 +51,6 @@ abstract class AgentConnectionBaseTest {
     protected static final String SSH_AUTHORIZED_KEYS = "ssh/authorized_keys";
     protected static final String AGENTS_RESOURCES_PATH = "/io/jenkins/plugins/sshbuildagents/ssh/agents/";
 
-
     protected JenkinsRule j;
 
     @BeforeEach
@@ -132,7 +131,8 @@ abstract class AgentConnectionBaseTest {
     }
 
     private void createSshKeyCredentials(String id, String keyResourcePath, String passphrase) throws IOException {
-        String privateKey = IOUtils.toString(getClass().getResourceAsStream(AGENTS_RESOURCES_PATH+keyResourcePath), StandardCharsets.UTF_8);
+        String privateKey = IOUtils.toString(
+                getClass().getResourceAsStream(AGENTS_RESOURCES_PATH + keyResourcePath), StandardCharsets.UTF_8);
         BasicSSHUserPrivateKey.DirectEntryPrivateKeySource privateKeySource =
                 new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(privateKey);
         BasicSSHUserPrivateKey credentials = new BasicSSHUserPrivateKey(
