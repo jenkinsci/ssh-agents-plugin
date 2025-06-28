@@ -46,12 +46,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
+// Because we use the SSHAuthenticator class, we need to have a Jenkins instance running if not the extension list is
+// empty and there is no factories to process the authentication.
+// TODO  think about remove this class and make only tests of the whole launcher.
+@WithJenkins
 public class ConnectionImplTest {
     private SshServer sshd;
 
     @TempDir
     public Path tempFolder;
+
+    protected JenkinsRule j;
+
+    @BeforeEach
+    void beforeEach(JenkinsRule j) {
+        this.j = j;
+        this.j.timeout = 0;
+    }
 
     @BeforeEach
     public void setup() throws IOException {

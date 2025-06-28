@@ -5,28 +5,22 @@
 
 package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import hudson.util.Secret;
+import hudson.model.TaskListener;
 import io.jenkins.plugins.sshbuildagents.ssh.Connection;
 import io.jenkins.plugins.sshbuildagents.ssh.ServerHostKeyVerifier;
 import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.PosixFilePermission;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.sshd.client.SshClient;
-import org.apache.sshd.client.future.AuthFuture;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.core.CoreModuleProperties;
@@ -117,33 +111,6 @@ public class ConnectionImpl implements Connection {
     @Override
     public ShellChannel shellChannel() throws IOException {
         return new ShellChannelImpl(connect());
-    }
-
-    /**
-     * It adds the authentication details configured to the SSH session.
-     *
-     * @throws IOException in case of error.
-     */
-    private void addAuthentication() throws IOException {
-        try {
-            if (credentials instanceof StandardUsernamePasswordCredentials) {
-                StandardUsernamePasswordCredentials userCredentials =
-                        (StandardUsernamePasswordCredentials) this.credentials;
-                session.addPasswordIdentity(userCredentials.getPassword().getPlainText());
-            } else if (credentials instanceof SSHUserPrivateKey) {
-                SSHUserPrivateKey userCredentials = (SSHUserPrivateKey) this.credentials;
-                Secret secretPassPhrase = userCredentials.getPassphrase();
-                String passphrase = secretPassPhrase == null ? null : secretPassPhrase.getPlainText();
-
-                PrivateKeyParser parser = new PrivateKeyParser();
-                for (String key : userCredentials.getPrivateKeys()) {
-                    Collection<KeyPair> keys = parser.parseKey(key, passphrase);
-                    keys.forEach(it -> session.addPublicKeyIdentity(it));
-                }
-            }
-        } catch (GeneralSecurityException | URISyntaxException e) {
-            throw new IOException(e);
-        }
     }
 
     /** {@inheritDoc} */
@@ -242,16 +209,14 @@ public class ConnectionImpl implements Connection {
      *
      * @return Returns a ClientSession connected and authenticated.
      * @throws IOException in case of error.
+     * @throws InterruptedException
      */
-    private ClientSession connectAndAuthenticate() throws IOException {
-        // TODO reuse the authentiction implemented at
-        // https://github.com/jenkinsci/mina-sshd-api-plugin/blob/main/mina-sshd-api-core/src/main/java/io/jenkins/plugins/mina_sshd_api/core/authenticators/MinaSSHPasswordKeyAuthenticator.java
+    private ClientSession connectAndAuthenticate() throws IOException, InterruptedException {
         ConnectFuture connectionFuture = client.connect(this.credentials.getUsername(), this.host, this.port);
         connectionFuture.verify(this.timeoutMillis);
         session = connectionFuture.getSession();
-        addAuthentication();
-        AuthFuture auth = session.auth();
-        auth.verify(this.timeoutMillis);
+        var authenticator = SSHAuthenticator.newInstance(session, credentials);
+        authenticator.authenticate(TaskListener.NULL);
         return session;
     }
 
@@ -265,6 +230,8 @@ public class ConnectionImpl implements Connection {
             CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofSeconds(HEARTBEAT_INTERVAL));
             CoreModuleProperties.HEARTBEAT_NO_REPLY_MAX.set(client, HEARTBEAT_MAX_RETRY);
             CoreModuleProperties.IDLE_TIMEOUT.set(client, Duration.ofMinutes(IDLE_SESSION_TIMEOUT));
+            // TODO set the host verifier
+            // client.setServerKeyVerifier(hostKeyVerifier);
         }
         if (client.isStarted() == false) {
             client.start();
