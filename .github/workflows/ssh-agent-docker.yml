@@ -3,6 +3,11 @@
 name: ssh-agent-docker
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - src/test/resources/io/jenkins/plugins/sshbuildagents/ssh/agents/ssh-agent-base/*
 
 permissions:
   contents: read
@@ -50,7 +55,7 @@ jobs:
         uses: docker/build-push-action@v6
         id: build
         with:
-          context: src/test/resources/hudson/plugins/sshslaves/agents/ssh-agent-base
+          context: src/test/resources/io/jenkins/plugins/sshbuildagents/ssh/agents/ssh-agent-base
           platforms: linux/amd64,linux/arm64
           push: true
           sbom: true

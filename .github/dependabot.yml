@@ -9,6 +9,6 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "docker"
-    directory: /src/test/resources/hudson/plugins/sshslaves/agents
+    directory: /src/test/resources/io/jenkins/plugins/sshbuildagents/ssh/agents
     schedule:
       interval: "daily"
