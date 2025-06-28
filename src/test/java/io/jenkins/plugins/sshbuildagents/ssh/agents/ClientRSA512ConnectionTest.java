@@ -1,3 +1,7 @@
+/*
+ * Copyright The Original Author or Authors
+ * SPDX-License-Identifier: MIT
+ */
 package io.jenkins.plugins.sshbuildagents.ssh.agents;
 
 import static hudson.plugins.sshslaves.tags.TestTags.AGENT_SSH_TEST;
@@ -51,7 +55,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Connect to a remote SSH Server with a plain Apache Mina SSHD client.
  *
- * @author Kuisathaverat
  */
 @Tag(AGENT_SSH_TEST)
 @Tag(SSH_KEX_TEST)

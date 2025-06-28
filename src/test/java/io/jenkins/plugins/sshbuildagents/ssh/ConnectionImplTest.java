@@ -1,3 +1,7 @@
+/*
+ * Copyright The Original Author or Authors
+ * SPDX-License-Identifier: MIT
+ */
 package io.jenkins.plugins.sshbuildagents.ssh;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

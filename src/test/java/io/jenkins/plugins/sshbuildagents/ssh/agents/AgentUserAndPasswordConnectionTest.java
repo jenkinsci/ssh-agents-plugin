@@ -1,3 +1,7 @@
+/*
+ * Copyright The Original Author or Authors
+ * SPDX-License-Identifier: MIT
+ */
 package io.jenkins.plugins.sshbuildagents.ssh.agents;
 
 import static hudson.plugins.sshslaves.tags.TestTags.AGENT_SSH_TEST;
@@ -10,7 +14,6 @@ import org.testcontainers.junit.jupiter.Container;
 /**
  * Connect to a remote SSH Agent
  *
- * @author Kuisathaverat
  */
 @Tag(AGENT_SSH_TEST)
 public class AgentUserAndPasswordConnectionTest extends AgentConnectionBaseTest {

@@ -1,3 +1,8 @@
+/*
+ * Copyright The Original Author or Authors
+ * SPDX-License-Identifier: MIT
+ */
+
 package io.jenkins.plugins.sshbuildagents.ssh.mina;
 
 import java.io.ByteArrayInputStream;
@@ -10,6 +15,7 @@ import org.apache.sshd.common.util.io.resource.URIResource;
 /**
  * A fake URI resource that simulates a URI with a key as its content. This is used for testing
  * purposes to provide a simple way to create a resource that contains a key string.
+ *
  */
 public class FakeURI extends URIResource {
     private final String key;

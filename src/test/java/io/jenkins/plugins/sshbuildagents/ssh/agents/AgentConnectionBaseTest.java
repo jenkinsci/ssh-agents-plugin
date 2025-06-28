@@ -1,3 +1,7 @@
+/*
+ * Copyright The Original Author or Authors
+ * SPDX-License-Identifier: MIT
+ */
 package io.jenkins.plugins.sshbuildagents.ssh.agents;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,7 +39,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Base class to test connections to a remote SSH Agent
  *
- * @author Kuisathaverat
  */
 @Timeout(value = 10, unit = TimeUnit.MINUTES)
 @WithJenkins
