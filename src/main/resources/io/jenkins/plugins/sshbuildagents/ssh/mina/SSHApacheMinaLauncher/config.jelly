@@ -13,7 +13,9 @@
       <c:select checkMethod="post"/>
   </f:entry>
 
+<!-- TODO not implemented yet
   <f:dropdownDescriptorSelector title="${%Host Key Verification Strategy}" field="sshHostKeyVerificationStrategy"/>
+-->
 
   <f:advanced>
       <f:entry title="${%Port}" field="port">
