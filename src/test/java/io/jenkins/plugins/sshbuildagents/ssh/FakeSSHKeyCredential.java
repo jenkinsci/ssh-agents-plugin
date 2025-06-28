@@ -4,6 +4,8 @@
  */
 package io.jenkins.plugins.sshbuildagents.ssh;
 
+import static io.jenkins.plugins.sshbuildagents.ssh.agents.AgentConnectionBaseTest.AGENTS_RESOURCES_PATH;
+
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BaseSSHUser;
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -16,7 +18,6 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 
 public class FakeSSHKeyCredential extends BaseSSHUser implements SSHUserPrivateKey {
-    public static final String ROOT_PATH = "/hudson/plugins/sshslaves/agents";
     public static final String SSH_AGENT_NAME = "ssh-agent-rsa512";
     public static final String SSH_KEY_PATH = "ssh/rsa-512-key";
     public static final String SSH_KEY_PUB_PATH = "ssh/rsa-512-key.pub";
@@ -28,7 +29,7 @@ public class FakeSSHKeyCredential extends BaseSSHUser implements SSHUserPrivateK
     public FakeSSHKeyCredential() throws IOException {
         super(CredentialsScope.SYSTEM, ID, USERNAME, "Fake credentials.");
         String privateKey = IOUtils.toString(
-                getClass().getResourceAsStream(ROOT_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PATH),
+                getClass().getResourceAsStream(AGENTS_RESOURCES_PATH + "/" + SSH_AGENT_NAME + "/" + SSH_KEY_PATH),
                 StandardCharsets.UTF_8);
         keys.add(privateKey);
     }

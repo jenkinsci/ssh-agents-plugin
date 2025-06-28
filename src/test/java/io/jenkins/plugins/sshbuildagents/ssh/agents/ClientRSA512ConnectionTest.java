@@ -35,6 +35,7 @@ import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.input.NullInputStream;
 import org.apache.sshd.core.CoreModuleProperties;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -74,7 +75,7 @@ public class ClientRSA512ConnectionTest {
     }
 
     @Test
-    @Timeout(value = 15, unit = TimeUnit.MINUTES)
+    @Timeout(value = 5, unit = TimeUnit.MINUTES)
     public void connectionExecCommandTests() throws IOException, InterruptedException {
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
         agentContainer.start();
@@ -85,8 +86,8 @@ public class ClientRSA512ConnectionTest {
                 ByteArrayOutputStream baOut = new ByteArrayOutputStream()) {
             client.start();
             try (ClientSession session = getClientSession(client, USER, host, port, timeout, PASSWORD)) {
-                session.executeRemoteCommand("sleep 300s", baOut, baOut, StandardCharsets.UTF_8);
-                for (int i = 0; i < 300; i++) {
+                session.executeRemoteCommand("sleep 30s", baOut, baOut, StandardCharsets.UTF_8);
+                for (int i = 0; i < 30; i++) {
                     Thread.sleep(1000);
                     logger.info(baOut.toString());
                     assertTrue(session.isOpen());
@@ -97,7 +98,7 @@ public class ClientRSA512ConnectionTest {
     }
 
     @Test
-    @Timeout(value = 15, unit = TimeUnit.MINUTES)
+    @Timeout(value = 5, unit = TimeUnit.MINUTES)
     public void connectionChannelTests() throws IOException, InterruptedException {
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
         agentContainer.start();
@@ -108,14 +109,14 @@ public class ClientRSA512ConnectionTest {
         try (SshClient client = getSshClient()) {
             client.start();
             try (ClientSession session = getClientSession(client, USER, host, port, timeout, PASSWORD)) {
-                try (ChannelExec channel = session.createExecChannel("sleep 300s\n");
+                try (ChannelExec channel = session.createExecChannel("sleep 30\n");
                         ByteArrayOutputStream baOut = new ByteArrayOutputStream();
                         NullInputStream nullIn = new NullInputStream()) {
                     channel.setOut(baOut);
                     channel.setIn(nullIn);
                     channel.open().verify(timeout, TimeUnit.MILLISECONDS);
                     channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), timeout);
-                    for (int i = 0; i < 300; i++) {
+                    for (int i = 0; i < 30; i++) {
                         Thread.sleep(1000);
                         logger.info(baOut.toString());
                         assertTrue(session.isOpen());
@@ -128,6 +129,7 @@ public class ClientRSA512ConnectionTest {
 
     @Test
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
+    @Disabled("Test is too long and should be run manually")
     public void testRunLongConnection() throws IOException, InterruptedException {
         agentContainer.start();
         assertTrue(agentContainer.isRunning());

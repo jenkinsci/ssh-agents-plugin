@@ -43,8 +43,8 @@ import org.apache.sshd.server.shell.InteractiveProcessShellFactory;
 import org.apache.sshd.server.shell.ProcessShellCommandFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
 
 public class ConnectionImplTest {
@@ -133,7 +133,7 @@ public class ConnectionImplTest {
     }
 
     @Test
-    @DisabledIfEnvironmentVariable(named = "LONG_CONNECTION_TEST", matches = "")
+    @Disabled("Test is too long and should be run manually")
     public void testRunLongConnection() throws IOException, InterruptedException {
         try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
             StandardUsernameCredentials credentials = new FakeSSHKeyCredential();

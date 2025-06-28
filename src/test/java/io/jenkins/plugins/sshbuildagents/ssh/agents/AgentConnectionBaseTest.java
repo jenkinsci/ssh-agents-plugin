@@ -46,14 +46,12 @@ public abstract class AgentConnectionBaseTest {
 
     public static final String USER = "jenkins";
     public static final String PASSWORD = "password";
-    protected static final String AGENT_WORK_DIR = "/home/jenkins";
-    protected static final int SSH_PORT = 22;
-    protected static final String SSH_SSHD_CONFIG = "ssh/sshd_config";
-    protected static final String DOCKERFILE = "Dockerfile";
-    protected static final String SSH_AUTHORIZED_KEYS = "ssh/authorized_keys";
-    // protected static final String AGENTS_RESOURCES_PATH = "/hudson/plugins/sshslaves/agents/";
-
-    protected static final String AGENTS_RESOURCES_PATH = "/io/jenkins/plugins/sshbuildagents/ssh/agents/";
+    public static final String AGENT_WORK_DIR = "/home/jenkins";
+    public static final int SSH_PORT = 22;
+    public static final String SSH_SSHD_CONFIG = "ssh/sshd_config";
+    public static final String DOCKERFILE = "Dockerfile";
+    public static final String SSH_AUTHORIZED_KEYS = "ssh/authorized_keys";
+    public static final String AGENTS_RESOURCES_PATH = "/io/jenkins/plugins/sshbuildagents/ssh/agents/";
     public static final String LOGGING_PROPERTIES = "remoting_logger.properties";
 
     protected JenkinsRule j;
