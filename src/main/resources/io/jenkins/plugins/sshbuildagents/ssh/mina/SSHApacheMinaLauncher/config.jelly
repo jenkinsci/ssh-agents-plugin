@@ -1,6 +1,10 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+  <div class="jenkins-alert jenkins-alert-danger">
+    The SSH Apache Mina Launcher is in early state of development and is not recommended for production use.
+  </div>
+
   <f:entry title="${%Host}" field="host">
     <f:textbox checkMethod="post"/>
   </f:entry>
