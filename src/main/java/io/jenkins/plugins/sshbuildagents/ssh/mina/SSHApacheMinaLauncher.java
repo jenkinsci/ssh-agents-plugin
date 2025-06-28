@@ -55,7 +55,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import jenkins.util.SystemProperties;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.output.NoCloseOutputStream;
@@ -849,8 +848,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      * @see <a href= "https://issues.jenkins-ci.org/browse/JENKINS-49235">JENKINS-49235</a>
      */
     public boolean getTrackCredentials() {
-        String trackCredentials = SystemProperties.getString(
-                SSHApacheMinaLauncher.class.getName() + ".trackCredentials", "true");
+        String trackCredentials =
+                SystemProperties.getString(SSHApacheMinaLauncher.class.getName() + ".trackCredentials", "true");
         return !"false".equalsIgnoreCase(trackCredentials);
     }
 
