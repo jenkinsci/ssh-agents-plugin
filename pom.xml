@@ -125,18 +125,6 @@
       <artifactId>sshd</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.jenkins-ci.test</groupId>
-      <artifactId>docker-fixtures</artifactId>
-      <version>200.v22a_e8766731c</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <!-- Jupiter/JUnit 5 testcontainers https://java.testcontainers.org/test_framework_integration/junit_5/ -->
     <dependency>
       <groupId>org.testcontainers</groupId>

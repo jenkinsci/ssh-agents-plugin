@@ -29,11 +29,11 @@ import static hudson.plugins.sshslaves.SSHLauncher.WORK_DIR_PARAM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -55,32 +55,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Collections;
-import org.apache.commons.io.IOUtils;
 import org.htmlunit.html.HtmlPage;
-import org.jenkinsci.test.acceptance.docker.DockerRule;
-import org.jenkinsci.test.acceptance.docker.fixtures.JavaContainer;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class SSHLauncherTest {
+@WithJenkins
+class SSHLauncherTest {
 
-    @ClassRule
-    public static BuildWatcher buildWatcher = new BuildWatcher();
+    @TempDir
+    private File temporaryFolder;
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    private JenkinsRule j;
 
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
-
-    @Rule
-    public DockerRule<JavaContainer> javaContainer = new DockerRule<>(JavaContainer.class);
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        j = rule;
+    }
 
     private void checkRoundTrip(String host) throws Exception {
         SystemCredentialsProvider.getInstance()
@@ -92,7 +86,8 @@ public class SSHLauncherTest {
         SSHLauncher launcher = new SSHLauncher(host, 123, "dummyCredentialId");
         launcher.setSshHostKeyVerificationStrategy(new KnownHostsFileKeyVerificationStrategy());
         assertEquals(host.trim(), launcher.getHost());
-        DumbSlave agent = new DumbSlave("agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
+        DumbSlave agent =
+                new DumbSlave("agent", newFolder(temporaryFolder, "junit").getAbsolutePath(), launcher);
         j.jenkins.addNode(agent);
 
         HtmlPage p = j.createWebClient().getPage(agent, "configure");
@@ -105,12 +100,12 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void configurationRoundTrip() throws Exception {
+    void configurationRoundTrip() throws Exception {
         checkRoundTrip("localhost");
     }
 
     @Test
-    public void fillCredentials() {
+    void fillCredentials() {
         SystemCredentialsProvider.getInstance()
                 .getDomainCredentialsMap()
                 .put(
@@ -138,7 +133,7 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void checkJavaPathWhiteSpaces() {
+    void checkJavaPathWhiteSpaces() {
         SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
         assertEquals(FormValidation.ok(), desc.doCheckJavaPath("/usr/lib/jdk/bin/java"));
         assertEquals(FormValidation.ok(), desc.doCheckJavaPath("\"/usr/lib/jdk/bin/java\""));
@@ -149,7 +144,7 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void checkHost() {
+    void checkHost() {
         SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
         assertEquals(FormValidation.ok(), desc.doCheckHost("hostname"));
         assertEquals(FormValidation.Kind.ERROR, desc.doCheckHost("").kind);
@@ -157,7 +152,7 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void checkPort() {
+    void checkPort() {
         SSHLauncher.DescriptorImpl desc = (SSHLauncher.DescriptorImpl) j.jenkins.getDescriptorOrDie(SSHLauncher.class);
         assertEquals(FormValidation.ok(), desc.doCheckPort("22"));
         assertEquals(FormValidation.Kind.ERROR, desc.doCheckPort("").kind);
@@ -167,7 +162,7 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void trimWhiteSpace() throws Exception {
+    void trimWhiteSpace() throws Exception {
         checkRoundTrip("   localhost");
         checkRoundTrip("localhost    ");
         checkRoundTrip("   localhost    ");
@@ -175,7 +170,7 @@ public class SSHLauncherTest {
 
     @Issue("JENKINS-38832")
     @Test
-    public void trackCredentialsWithUsernameAndPassword() throws Exception {
+    void trackCredentialsWithUsernameAndPassword() throws Exception {
         UsernamePasswordCredentialsImpl credentials =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "dummyCredentialId", null, "user", "pass");
         SystemCredentialsProvider.getInstance()
@@ -185,7 +180,8 @@ public class SSHLauncherTest {
         launcher.setLaunchTimeoutSeconds(5);
         launcher.setRetryWaitTime(5);
         launcher.setMaxNumRetries(2);
-        DumbSlave agent = new DumbSlave("agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
+        DumbSlave agent =
+                new DumbSlave("agent", newFolder(temporaryFolder, "junit").getAbsolutePath(), launcher);
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -202,7 +198,7 @@ public class SSHLauncherTest {
 
     @Issue("JENKINS-38832")
     @Test
-    public void trackCredentialsWithUsernameAndPrivateKey() throws Exception {
+    void trackCredentialsWithUsernameAndPrivateKey() throws Exception {
         BasicSSHUserPrivateKey credentials =
                 new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "dummyCredentialId", "user", null, "", "desc");
         SystemCredentialsProvider.getInstance()
@@ -212,7 +208,8 @@ public class SSHLauncherTest {
         launcher.setLaunchTimeoutSeconds(5);
         launcher.setRetryWaitTime(5);
         launcher.setMaxNumRetries(2);
-        DumbSlave agent = new DumbSlave("agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
+        DumbSlave agent =
+                new DumbSlave("agent", newFolder(temporaryFolder, "junit").getAbsolutePath(), launcher);
 
         Fingerprint fingerprint = CredentialsProvider.getFingerprintOf(credentials);
         assertThat("No fingerprint created until use", fingerprint, nullValue());
@@ -229,7 +226,7 @@ public class SSHLauncherTest {
 
     @Issue("JENKINS-44111")
     @Test
-    public void workDirTest() {
+    void workDirTest() {
         String rootFS = "/home/user";
         String anotherWorkDir = "/another/workdir";
 
@@ -246,7 +243,7 @@ public class SSHLauncherTest {
                 15,
                 new NonVerifyingKeyVerificationStrategy());
         // use rootFS
-        Assert.assertEquals(
+        assertEquals(
                 WORK_DIR_PARAM + rootFS + JAR_CACHE_PARAM + rootFS + JAR_CACHE_DIR, launcher.getWorkDirParam(rootFS));
 
         launcher = new SSHLauncher(
@@ -262,10 +259,10 @@ public class SSHLauncherTest {
                 15,
                 new NonVerifyingKeyVerificationStrategy());
         // if worDir is in suffix return ""
-        Assert.assertEquals("", launcher.getWorkDirParam(rootFS));
+        assertEquals("", launcher.getWorkDirParam(rootFS));
         // if worDir is in suffix return "", even do you set workDir in configuration
         launcher.setWorkDir(anotherWorkDir);
-        Assert.assertEquals("", launcher.getWorkDirParam(rootFS));
+        assertEquals("", launcher.getWorkDirParam(rootFS));
 
         launcher = new SSHLauncher(
                 "Hostname",
@@ -281,13 +278,13 @@ public class SSHLauncherTest {
                 new NonVerifyingKeyVerificationStrategy());
         // user the workDir set in configuration
         launcher.setWorkDir(anotherWorkDir);
-        Assert.assertEquals(
+        assertEquals(
                 WORK_DIR_PARAM + anotherWorkDir + JAR_CACHE_PARAM + anotherWorkDir + JAR_CACHE_DIR,
                 launcher.getWorkDirParam(rootFS));
     }
 
     @Test
-    public void timeoutAndRetrySettings() {
+    void timeoutAndRetrySettings() {
         final SSHLauncher launcher = new SSHLauncher(
                 "Hostname",
                 22,
@@ -307,7 +304,7 @@ public class SSHLauncherTest {
 
     @Issue("JENKINS-54934")
     @Test
-    public void timeoutAndRetrySettingsAllowZero() {
+    void timeoutAndRetrySettingsAllowZero() {
         final SSHLauncher launcher = new SSHLauncher(
                 "Hostname",
                 22,
@@ -325,7 +322,7 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void timeoutAndRetrySettingsSetDefaultsIfOutOfRange() {
+    void timeoutAndRetrySettingsSetDefaultsIfOutOfRange() {
         final SSHLauncher launcher = new SSHLauncher(
                 "Hostname",
                 22,
@@ -360,41 +357,27 @@ public class SSHLauncherTest {
     }
 
     @Test
-    public void getMd5Hash() {
-
-        try {
-            byte[] bytes = "Leave me alone!".getBytes();
-            String result = SSHLauncher.getMd5Hash(bytes);
-            assertEquals("1EB226C8E950BAC1494BE197E84A264C", result);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    void getMd5Hash() throws Exception {
+        byte[] bytes = "Leave me alone!".getBytes();
+        String result = SSHLauncher.getMd5Hash(bytes);
+        assertEquals("1EB226C8E950BAC1494BE197E84A264C", result);
     }
 
     @Test
-    public void readInputStreamIntoByteArrayAndClose() {
-
-        InputStream inputStream = null;
-        File testFile;
-        try {
-
-            testFile = new File("target" + File.separator + "test-classes", "readInputStreamIntoByteArrayTestFile.txt");
+    void readInputStreamIntoByteArrayAndClose() throws Exception {
+        File testFile =
+                new File("target" + File.separator + "test-classes", "readInputStreamIntoByteArrayTestFile.txt");
+        try (InputStream inputStream = new FileInputStream(testFile)) {
             assertTrue(testFile.exists());
-            inputStream = new FileInputStream(testFile);
             byte[] bytes = SSHLauncher.readInputStreamIntoByteArrayAndClose(inputStream);
             assertNotNull(bytes);
             assertTrue(bytes.length > 0);
             assertEquals("Don't change me or add newlines!", new String(bytes));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            IOUtils.closeQuietly(inputStream);
         }
     }
 
     @Test
-    public void retryTest() throws IOException, InterruptedException, Descriptor.FormException {
+    void retryTest() throws IOException, InterruptedException, Descriptor.FormException {
         DumbSlave agent = getPermanentAgentHostNotExist();
         j.jenkins.addNode(agent);
         String log = "";
@@ -411,6 +394,14 @@ public class SSHLauncherTest {
         assertFalse(log.contains("There are 4 more retries left."));
     }
 
+    @Test
+    void knownHostsFileDefaultConfig() {
+        String defaultPath = Paths.get(System.getProperty("user.home"), ".ssh", "known_hosts")
+                .toString();
+        KnownHostsFileKeyVerificationStrategy khvs = new KnownHostsFileKeyVerificationStrategy();
+        assertEquals(khvs.getKnownHostsFile().getPath(), defaultPath);
+    }
+
     private DumbSlave getPermanentAgentHostNotExist() throws Descriptor.FormException, IOException {
         fakeCredentials("dummyCredentialId");
         final SSHLauncher launcher = new SSHLauncher("HostNotExists", 22, "dummyCredentialId");
@@ -418,7 +409,7 @@ public class SSHLauncherTest {
         launcher.setLaunchTimeoutSeconds(5);
         launcher.setRetryWaitTime(1);
         launcher.setMaxNumRetries(3);
-        return new DumbSlave("agent", temporaryFolder.newFolder().getAbsolutePath(), launcher);
+        return new DumbSlave("agent", newFolder(temporaryFolder, "junit").getAbsolutePath(), launcher);
     }
 
     private void fakeCredentials(String id) {
@@ -429,11 +420,10 @@ public class SSHLauncherTest {
                 .put(Domain.global(), Collections.singletonList(credentials));
     }
 
-    @Test
-    public void KnownHostsFileDefaultConfig() {
-        String defaultPath = Paths.get(System.getProperty("user.home"), ".ssh", "known_hosts")
-                .toString();
-        KnownHostsFileKeyVerificationStrategy khvs = new KnownHostsFileKeyVerificationStrategy();
-        assertEquals(khvs.getKnownHostsFile().getPath(), defaultPath);
+    private static File newFolder(File root, String... subDirs) {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        assertFalse(!result.exists() && !result.mkdirs(), "Couldn't create folders " + result);
+        return result;
     }
 }
