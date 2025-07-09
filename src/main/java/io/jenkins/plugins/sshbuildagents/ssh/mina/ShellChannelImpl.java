@@ -21,6 +21,7 @@ import org.apache.sshd.client.session.ClientSession;
  * https://github.com/apache/mina-sshd
  *
  */
+// TODO think to rename to ShellRunner or something like that, there are classes in Mina with a similar name
 public class ShellChannelImpl implements ShellChannel {
 
     /** Time between session heartbeat probes. */
@@ -32,6 +33,10 @@ public class ShellChannelImpl implements ShellChannel {
     /** Shell channel to execute the process. */
     private ChannelSession channel;
 
+// FIXME use the getInverted methods 
+// https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedErr()
+// https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedIn()
+// https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedOut()
     /** Standard output of the channel. the process output is write in it. */
     private OutputStream out = new PipedOutputStream();
 

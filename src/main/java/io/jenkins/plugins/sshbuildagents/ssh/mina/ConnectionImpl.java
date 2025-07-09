@@ -99,6 +99,7 @@ public class ConnectionImpl implements Connection {
 
     /** {@inheritDoc} */
     @Override
+// FIXME review, it does not return the exit code as it is said in the javadoc
     public int execCommand(String command) throws IOException {
         try (ClientSession session = connect()) {
             session.executeRemoteCommand(command, stdout, stderr, StandardCharsets.UTF_8);
@@ -146,6 +147,7 @@ public class ConnectionImpl implements Connection {
     public void copyFile(String remotePath, byte[] bytes, boolean overwrite, boolean checkSameContent)
             throws IOException {
         try (ClientSession session = connect()) {
+// TODO set access/modification time to be the same as the source
             DefaultScpClient scp = new DefaultScpClient(session);
             List<PosixFilePermission> permissions = new ArrayList<>();
             // TODO document the permissions the file needs and how to set the umask
@@ -177,6 +179,7 @@ public class ConnectionImpl implements Connection {
                 } catch (Exception ex) {
                     String message = getExMessage(ex);
                     if (maxNumRetries - i > 0) {
+// FIXME send these logs to the TaskListener  of the computer launcher
                         println(
                                 stderr,
                                 "SSH Connection failed with IOException: \""
@@ -215,6 +218,7 @@ public class ConnectionImpl implements Connection {
         connectionFuture.verify(this.timeoutMillis);
         session = connectionFuture.getSession();
         var authenticator = SSHAuthenticator.newInstance(session, credentials);
+// FIXME send these logs to the TaskListener of the computer launcher
         authenticator.authenticate(TaskListener.NULL);
         return session;
     }
@@ -326,12 +330,14 @@ public class ConnectionImpl implements Connection {
 
     /** {@inheritDoc} */
     @Override
+// FIXME rename for Stderr
     public void setStdErr(OutputStream stderr) {
         this.stderr = stderr;
     }
 
     /** {@inheritDoc} */
     @Override
+// FIXME rename to Stdout
     public void setStdOut(OutputStream stdout) {
         this.stdout = stdout;
     }

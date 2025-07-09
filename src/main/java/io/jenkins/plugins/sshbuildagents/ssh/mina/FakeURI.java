@@ -14,6 +14,7 @@ import org.apache.sshd.common.util.io.resource.URIResource;
 
 /**
  * A fake URI resource that simulates a URI with a key as its content. This is used for testing
+ * FIXME move this class to tests
  * purposes to provide a simple way to create a resource that contains a key string.
  *
  */
