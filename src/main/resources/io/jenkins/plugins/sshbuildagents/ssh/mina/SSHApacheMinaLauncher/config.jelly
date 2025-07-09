@@ -1,0 +1,62 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+  <div class="jenkins-alert jenkins-alert-danger">
+    The SSH Apache Mina Launcher is in early state of development and is not recommended for production use.
+  </div>
+
+  <f:entry title="${%Host}" field="host">
+    <f:textbox placeholder="ssh.example.com" class="required"/>
+  </f:entry>
+
+  <f:entry title="${%Credentials}" field="credentialsId">
+      <c:select/>
+  </f:entry>
+
+<!-- TODO not implemented yet
+  <f:dropdownDescriptorSelector title="${%Host Key Verification Strategy}" field="sshHostKeyVerificationStrategy"/>
+-->
+
+  <f:advanced>
+      <f:entry title="${%Port}" field="port">
+          <f:number min="1" max="65535" step="1" clazz="required number" default="22"/>
+      </f:entry>
+
+      <f:entry title="${%JavaPath}" field="javaPath">
+          <f:textbox placeholder="/usr/local/java/21/bin/java/"/>
+      </f:entry>
+
+      <f:entry title="${%JVM Options}" field="jvmOptions">
+          <f:textbox/>
+      </f:entry>
+
+      <f:entry title="${%Prefix Start Agent Command}" field="prefixStartAgentCmd">
+          <f:textbox/>
+      </f:entry>
+
+      <f:entry title="${%Suffix Start Agent Command}" field="suffixStartAgentCmd">
+          <f:textbox/>
+      </f:entry>
+
+      <f:entry title="${%Connection Timeout in Seconds}" field="launchTimeoutSeconds">
+          <f:number name="launchTimeoutSeconds" clazz="required positive-number" min="1" max="65535" step="1" default="60"/>
+      </f:entry>
+
+      <f:entry title="${%Maximum Number of Retries}" field="maxNumRetries">
+          <f:number name="maxNumRetries" min="1" max="65535" step="1" clazz="required positive-number" default="10"/>
+      </f:entry>
+
+      <f:entry title="${%Seconds To Wait Between Retries}" field="retryWaitTime">
+          <f:number name="retryWaitTime" min="1" max="65535" step="1" clazz="required positive-number" default="15"/>
+      </f:entry>
+
+      <f:entry title="${%Use TCP_NODELAY flag on the SSH connection}" field="tcpNoDelay">
+          <f:checkbox name="tcpNoDelay" default="true"/>
+      </f:entry>
+
+      <f:entry title="${%Remoting Work directory}" field="workDir">
+          <f:textbox name="workDir" placeholder="/home/jenkins" />
+      </f:entry>
+
+  </f:advanced>
+</j:jelly>
