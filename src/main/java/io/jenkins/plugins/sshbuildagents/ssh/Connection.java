@@ -45,6 +45,7 @@ public interface Connection extends AutoCloseable {
      * Copy a file to the host by SCP. It does not create folders, so the folders of the path must
      * exist prior to calling this.
      * FIXME The remote file should be relative to the working directory.
+     * FIXME use SHA instead of MD5 to check the content of the file, it is no longer in the JDK.
      * @param remoteFile Full path to the remote file.
      * @param data Array of bytes with the data to write.
      * @param overwrite @{code true} to overwrite the file if it already exists.  If @{false} and the file exists an @{code IOException} will be thrown.

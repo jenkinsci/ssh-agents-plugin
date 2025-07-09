@@ -17,6 +17,7 @@ import org.testcontainers.junit.jupiter.Container;
  */
 @Tag(AGENT_SSH_TEST)
 @Tag(SSH_KEX_TEST)
+// FIXME verify log output some messages from the verifier are printed in the Jenkins Controller log
 public class AgentRSA512ConnectionTest extends AgentConnectionBaseTest {
     public static final String SSH_AGENT_NAME = "ssh-agent-rsa512";
     public static final String SSH_KEY_PATH = "ssh/rsa-512-key";

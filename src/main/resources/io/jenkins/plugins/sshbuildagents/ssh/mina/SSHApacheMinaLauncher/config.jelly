@@ -6,11 +6,11 @@
   </div>
 
   <f:entry title="${%Host}" field="host">
-    <f:textbox checkMethod="post"/>
+    <f:textbox placeholder="ssh.example.com" class="required"/>
   </f:entry>
 
   <f:entry title="${%Credentials}" field="credentialsId">
-      <c:select checkMethod="post"/>
+      <c:select/>
   </f:entry>
 
 <!-- TODO not implemented yet
@@ -31,23 +31,23 @@
       </f:entry>
 
       <f:entry title="${%Prefix Start Agent Command}" field="prefixStartAgentCmd">
-          <f:textbox />
+          <f:textbox/>
       </f:entry>
 
       <f:entry title="${%Suffix Start Agent Command}" field="suffixStartAgentCmd">
-          <f:textbox checkMethod="post"/>
+          <f:textbox/>
       </f:entry>
 
       <f:entry title="${%Connection Timeout in Seconds}" field="launchTimeoutSeconds">
-          <f:number name="launchTimeoutSeconds" clazz="clazz="positive-number"/>
+          <f:number name="launchTimeoutSeconds" clazz="required positive-number" min="1" max="65535" step="1" default="60"/>
       </f:entry>
 
       <f:entry title="${%Maximum Number of Retries}" field="maxNumRetries">
-          <f:textbox name="maxNumRetries" checkMethod="post"/>
+          <f:number name="maxNumRetries" min="1" max="65535" step="1" clazz="required positive-number" default="10"/>
       </f:entry>
 
       <f:entry title="${%Seconds To Wait Between Retries}" field="retryWaitTime">
-          <f:textbox name="retryWaitTime" checkMethod="post"/>
+          <f:number name="retryWaitTime" min="1" max="65535" step="1" clazz="required positive-number" default="15"/>
       </f:entry>
 
       <f:entry title="${%Use TCP_NODELAY flag on the SSH connection}" field="tcpNoDelay">
@@ -55,7 +55,7 @@
       </f:entry>
 
       <f:entry title="${%Remoting Work directory}" field="workDir">
-          <f:textbox name="workDir" checkMethod="post"/>
+          <f:textbox name="workDir" placeholder="/home/jenkins" />
       </f:entry>
 
   </f:advanced>
