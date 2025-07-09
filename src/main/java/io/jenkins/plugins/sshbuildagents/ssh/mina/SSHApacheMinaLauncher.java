@@ -531,6 +531,9 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
         DescriptorImpl descriptor = (DescriptorImpl) Jenkins.get().getDescriptor(SSHApacheMinaLauncher.class);
         String message = "Validate configuration:\n";
         boolean isValid = true;
+        if (descriptor == null) {
+            throw new InterruptedException("Descriptor for SSHApacheMinaLauncher is not available.");
+        }
 
         String port = String.valueOf(this.port);
         FormValidation validatePort = descriptor.doCheckPort(port);
