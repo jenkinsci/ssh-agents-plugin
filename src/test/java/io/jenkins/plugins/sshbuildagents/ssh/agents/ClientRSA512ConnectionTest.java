@@ -7,9 +7,9 @@ package io.jenkins.plugins.sshbuildagents.ssh.agents;
 import static hudson.plugins.sshslaves.tags.TestTags.AGENT_SSH_TEST;
 import static hudson.plugins.sshslaves.tags.TestTags.SSH_KEX_TEST;
 import static io.jenkins.plugins.sshbuildagents.ssh.agents.AgentConnectionBaseTest.SSH_PORT;
-import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.HEARTBEAT_INTERVAL;
+import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.HEARTBEAT_INTERVAL_SECONDS;
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.HEARTBEAT_MAX_RETRY;
-import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.IDLE_SESSION_TIMEOUT;
+import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.IDLE_SESSION_TIMEOUT_MINUTES;
 import static io.jenkins.plugins.sshbuildagents.ssh.mina.ConnectionImpl.WINDOW_SIZE;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -130,7 +130,7 @@ public class ClientRSA512ConnectionTest {
     @Test
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
     @Disabled("Test is too long and should be run manually")
-    public void testRunLongConnection() throws IOException, InterruptedException {
+    public void testRunLongConnection() throws Exception, InterruptedException {
         agentContainer.start();
         assertTrue(agentContainer.isRunning());
         int port = agentContainer.getMappedPort(SSH_PORT);
@@ -168,9 +168,9 @@ public class ClientRSA512ConnectionTest {
         CoreModuleProperties.WINDOW_SIZE.set(client, WINDOW_SIZE);
         CoreModuleProperties.TCP_NODELAY.set(client, true);
         CoreModuleProperties.HEARTBEAT_REQUEST.set(client, "keepalive@jenkins.io");
-        CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofSeconds(HEARTBEAT_INTERVAL));
+        CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofSeconds(HEARTBEAT_INTERVAL_SECONDS));
         CoreModuleProperties.HEARTBEAT_NO_REPLY_MAX.set(client, HEARTBEAT_MAX_RETRY);
-        CoreModuleProperties.IDLE_TIMEOUT.set(client, Duration.ofMinutes(IDLE_SESSION_TIMEOUT));
+        CoreModuleProperties.IDLE_TIMEOUT.set(client, Duration.ofMinutes(IDLE_SESSION_TIMEOUT_MINUTES));
         return client;
     }
 }

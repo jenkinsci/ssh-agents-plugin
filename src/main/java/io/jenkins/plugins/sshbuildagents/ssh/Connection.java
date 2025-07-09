@@ -41,13 +41,10 @@ public interface Connection extends AutoCloseable {
      */
     int getPort();
 
-    /** Close the connections and resources associated. */
-    void close();
-
     /**
      * Copy a file to the host by SCP. It does not create folders, so the folders of the path must
      * exist prior to calling this.
-     *
+     * FIXME The remote file should be relative to the working directory.
      * @param remoteFile Full path to the remote file.
      * @param data Array of bytes with the data to write.
      * @param overwrite @{code true} to overwrite the file if it already exists.  If @{false} and the file exists an @{code IOException} will be thrown.
@@ -55,13 +52,6 @@ public interface Connection extends AutoCloseable {
      * @throws IOException
      */
     void copyFile(String remoteFile, byte[] data, boolean overwrite, boolean checkSameContent) throws IOException;
-
-    /**
-     * Set server host key Algorithms.
-     *
-     * @param algorithms Array of Host Key Algorithms.
-     */
-    void setServerHostKeyAlgorithms(String[] algorithms);
 
     /**
      * Set the TCP_NODELAY flag on connections.

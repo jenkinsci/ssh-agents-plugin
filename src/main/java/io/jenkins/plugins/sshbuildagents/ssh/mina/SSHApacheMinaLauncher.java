@@ -46,8 +46,7 @@ import io.jenkins.plugins.sshbuildagents.ssh.ShellChannel;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -80,7 +79,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     public static final Integer DEFAULT_MAX_NUM_RETRIES = 10;
 
     /** Default wait time between retries in seconds. */
-    public static final Integer DEFAULT_RETRY_WAIT_TIME = 15;
+    public static final Integer DEFAULT_RETRY_WAIT_TIME_SECONDS = 15;
 
     /** Default launch timeout in seconds. */
     public static final Integer DEFAULT_LAUNCH_TIMEOUT_SECONDS = 60;
@@ -115,13 +114,13 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     private String suffixStartAgentCmd;
 
     /** Field launchTimeoutSeconds. */
-    private Integer launchTimeoutSeconds;
+    private int launchTimeoutSeconds;
 
     /** Field maxNumRetries. */
-    private Integer maxNumRetries;
+    private int maxNumRetries;
 
     /** Field retryWaitTime (seconds). */
-    private Integer retryWaitTime;
+    private int retryWaitTime;
 
     /** Field host */
     private String host;
@@ -178,7 +177,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
 
         this.launchTimeoutSeconds = DEFAULT_LAUNCH_TIMEOUT_SECONDS;
         this.maxNumRetries = DEFAULT_MAX_NUM_RETRIES;
-        this.retryWaitTime = DEFAULT_RETRY_WAIT_TIME;
+        this.retryWaitTime = DEFAULT_RETRY_WAIT_TIME_SECONDS;
     }
 
     /**
@@ -356,25 +355,10 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      * @return The environment variables for the computer.
      */
     private EnvVars getEnvVars(SlaveComputer computer) {
-        final EnvVars global = getEnvVars(Jenkins.get());
-
-        final Node node = computer.getNode();
-        final EnvVars local = node != null ? getEnvVars(node) : null;
-
-        if (global != null) {
-            if (local != null) {
-                final EnvVars merged = new EnvVars(global);
-                merged.overrideAll(local);
-
-                return merged;
-            } else {
-                return global;
-            }
-        } else if (local != null) {
-            return local;
-        } else {
-            return new EnvVars();
-        }
+        final EnvVars envVars = new EnvVars();
+        envVars.overrideAll(getEnvVars(Jenkins.get()));
+        envVars.overrideAll(getEnvVars(computer.getNode()));
+        return envVars;
     }
 
     /**
@@ -393,7 +377,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      * @return The environment variables for the node.
      */
     private EnvVars getEnvVars(Node n) {
-        return getEnvVars(n.getNodeProperties());
+        return n == null ? new EnvVars() : getEnvVars(n.getNodeProperties());
     }
 
     /**
@@ -405,31 +389,25 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     private EnvVars getEnvVars(DescribableList<NodeProperty<?>, NodePropertyDescriptor> dl) {
         final EnvironmentVariablesNodeProperty evnp = dl.get(EnvironmentVariablesNodeProperty.class);
         if (evnp == null) {
-            return null;
+            return new EnvVars();
         }
-
         return evnp.getEnvVars();
     }
 
     /**
-     * Makes sure that SSH connection won't produce any unwanted text, which will interfere with sftp
+     * Makes sure that SSH connection won't produce any unwanted text, which will interfere with scp
      * execution. TODO review if it is needed or move to the SSH Provider.
      */
     private void verifyNoHeaderJunk(TaskListener listener) throws IOException, InterruptedException {
-
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            connection.execCommand("exit 0");
-            final String s;
-            // TODO: Seems we need to retrieve the encoding from the connection destination
-            s = baos.toString(Charset.defaultCharset().name());
-            if (s.length() != 0) {
-                listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
-                listener.getLogger().println(s);
-                throw new AbortException();
-            }
-        } catch (UnsupportedEncodingException ex) { // Should not happen
-            throw new IOException("Default encoding is unsupported", ex);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        connection.execCommand("exit 0");
+        final String s;
+        // TODO: Seems we need to retrieve the encoding from the connection destination
+        s = baos.toString(StandardCharsets.UTF_8.name());
+        if (s.length() != 0) {
+            listener.getLogger().println(Messages.SSHLauncher_SSHHeaderJunkDetected());
+            listener.getLogger().println(s);
+            throw new AbortException();
         }
     }
 
@@ -520,7 +498,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
             final TaskListener listener, final SlaveComputer computer, final String workingDirectory)
             throws IOException {
         if (StringUtils.isBlank(workingDirectory)) {
-            String msg = "Cannot get the working directory for " + computer;
+            String msg = "the 'working directory' has not been configured for '" + computer + "' and is required";
             listener.error(msg);
             throw new AbortException(msg);
         }
@@ -529,13 +507,6 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
             throw new AbortException("Cannot find SSH User credentials with id: " + credentialsId);
         }
         // TODO implement verifiers.
-        String[] preferredKeyAlgorithms =
-                getSshHostKeyVerificationStrategyDefaulted().getPreferredKeyAlgorithms(computer);
-        if (preferredKeyAlgorithms != null && preferredKeyAlgorithms.length > 0) { // JENKINS-44832
-            connection.setServerHostKeyAlgorithms(preferredKeyAlgorithms);
-        } else {
-            listener.getLogger().println("Warning: no key algorithms provided; JENKINS-42959 disabled");
-        }
         PrintStream logger = listener.getLogger();
         logger.println(Messages.SSHLauncher_OpeningSSHConnection(getTimestamp(), host + ":" + port));
         connection.setTCPNoDelay(getTcpNoDelay());
@@ -557,12 +528,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      */
     private void checkConfig() throws InterruptedException {
         // JENKINS-58340 some plugins does not implement Descriptor
-        Descriptor descriptorOrg = Jenkins.get().getDescriptor(this.getClass());
-        if (!(descriptorOrg instanceof DescriptorImpl)) {
-            return;
-        }
-
-        DescriptorImpl descriptor = (DescriptorImpl) descriptorOrg;
+        DescriptorImpl descriptor = (DescriptorImpl) Jenkins.get().getDescriptor(SSHApacheMinaLauncher.class);
         String message = "Validate configuration:\n";
         boolean isValid = true;
 
@@ -604,8 +570,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
                                 .println("\tException: "
                                         + shellChannel.getLastError().getMessage());
                     }
-                    if (StringUtils.isNotBlank(shellChannel.getLastHint())) {
-                        listener.getLogger().println("\tHint: " + shellChannel.getLastHint());
+                    if (StringUtils.isNotBlank(shellChannel.getLastAttemptedCommand())) {
+                        listener.getLogger().println("\tHint: " + shellChannel.getLastAttemptedCommand());
                     }
                 }
                 close();
@@ -755,8 +721,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      *
      * @return launchTimeoutSeconds
      */
-    @NonNull
-    public Integer getLaunchTimeoutSeconds() {
+    public int getLaunchTimeoutSeconds() {
         return launchTimeoutSeconds;
     }
 
@@ -767,7 +732,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      */
     @DataBoundSetter
     public void setLaunchTimeoutSeconds(Integer value) {
-        this.launchTimeoutSeconds = value == null || value <= 0 ? DEFAULT_LAUNCH_TIMEOUT_SECONDS : value;
+        this.launchTimeoutSeconds = value != null && value > 0 ? value : DEFAULT_LAUNCH_TIMEOUT_SECONDS;
     }
 
     /**
@@ -776,7 +741,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      * @return The launch timeout in milliseconds.
      */
     private long getLaunchTimeoutMillis() {
-        return launchTimeoutSeconds == null || launchTimeoutSeconds < 0
+        return launchTimeoutSeconds < 1
                 ? DEFAULT_LAUNCH_TIMEOUT_SECONDS
                 : TimeUnit.SECONDS.toMillis(launchTimeoutSeconds);
     }
@@ -786,9 +751,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      *
      * @return maxNumRetries
      */
-    @NonNull
-    public Integer getMaxNumRetries() {
-        return maxNumRetries == null || maxNumRetries < 0 ? DEFAULT_MAX_NUM_RETRIES : maxNumRetries;
+    public int getMaxNumRetries() {
+        return maxNumRetries < 1 ? DEFAULT_MAX_NUM_RETRIES : maxNumRetries;
     }
 
     /**
@@ -806,9 +770,8 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      *
      * @return retryWaitTime
      */
-    @NonNull
-    public Integer getRetryWaitTime() {
-        return retryWaitTime == null || retryWaitTime < 0 ? DEFAULT_RETRY_WAIT_TIME : retryWaitTime;
+    public int getRetryWaitTime() {
+        return retryWaitTime < 1 ? DEFAULT_RETRY_WAIT_TIME_SECONDS : retryWaitTime;
     }
 
     /**
@@ -818,7 +781,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
      */
     @DataBoundSetter
     public void setRetryWaitTime(Integer value) {
-        this.retryWaitTime = value != null && value >= 0 ? value : DEFAULT_RETRY_WAIT_TIME;
+        this.retryWaitTime = value != null && value >= 0 ? value : DEFAULT_RETRY_WAIT_TIME_SECONDS;
     }
 
     /**
@@ -924,7 +887,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
     }
 
     @Extension
-    @Symbol({"ssh", "sshMinaLauncher"})
+    @Symbol({"sshMina"})
     public static class DescriptorImpl extends Descriptor<ComputerLauncher> {
 
         /** {@inheritDoc} */
@@ -1066,7 +1029,7 @@ public class SSHApacheMinaLauncher extends ComputerLauncher {
 
         /**
          * Checks if the given java path is valid.
-         *
+         * TODO think about to improve the way we process the Java path
          * @param value The java path to check.
          * @return A FormValidation indicating whether the java path is valid or not.
          */

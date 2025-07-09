@@ -22,10 +22,11 @@ import org.apache.sshd.client.session.ClientSession;
  *
  */
 // TODO think to rename to ShellRunner or something like that, there are classes in Mina with a similar name
+// FIXME this class must be thread-safe, as it can be accessed from multiple threads
 public class ShellChannelImpl implements ShellChannel {
 
     /** Time between session heartbeat probes. */
-    public static final int OPERATION_TIMEOUT = 30000;
+    public static final int OPERATION_TIMEOUT_MILLISECONDS = 30000;
 
     /** SSH Client session. */
     private final ClientSession session;
@@ -33,10 +34,10 @@ public class ShellChannelImpl implements ShellChannel {
     /** Shell channel to execute the process. */
     private ChannelSession channel;
 
-// FIXME use the getInverted methods 
-// https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedErr()
-// https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedIn()
-// https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedOut()
+    // FIXME use the getInverted methods
+    // https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedErr()
+    // https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedIn()
+    // https://javadoc.io/static/org.apache.sshd/sshd-core/2.15.0/org/apache/sshd/client/channel/ClientChannel.html#getInvertedOut()
     /** Standard output of the channel. the process output is write in it. */
     private OutputStream out = new PipedOutputStream();
 
@@ -79,8 +80,9 @@ public class ShellChannelImpl implements ShellChannel {
         this.lastError = null;
         channel.setOut(out);
         channel.setIn(in);
-        channel.open().verify(OPERATION_TIMEOUT, TimeUnit.MILLISECONDS);
-        channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), OPERATION_TIMEOUT);
+        // FIXME add the stderr of the command, pump it to the TaskListener for the computer
+        channel.open().verify(OPERATION_TIMEOUT_MILLISECONDS, TimeUnit.MILLISECONDS);
+        channel.waitFor(Collections.singleton(ClientChannelEvent.CLOSED), OPERATION_TIMEOUT_MILLISECONDS);
         if (channel.getExitStatus() != null && channel.getExitStatus() != 0) {
             this.lastError = new IOException("Command failed with exit status " + channel.getExitStatus());
         }
@@ -106,7 +108,7 @@ public class ShellChannelImpl implements ShellChannel {
 
     /** Returns the last command executed. */
     @Override
-    public String getLastHint() {
+    public String getLastAttemptedCommand() {
         return lastHint;
     }
 
@@ -115,5 +117,9 @@ public class ShellChannelImpl implements ShellChannel {
     public void close() throws IOException {
         channel.close();
         channel = null;
+        out.close();
+        invertedIn.close();
+        in.close();
+        invertedOut.close();
     }
 }

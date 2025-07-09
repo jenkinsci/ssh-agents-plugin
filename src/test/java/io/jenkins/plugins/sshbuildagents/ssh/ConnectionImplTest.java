@@ -27,7 +27,6 @@ import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sshd.client.channel.ChannelShell;
@@ -93,7 +92,7 @@ public class ConnectionImplTest {
     }
 
     @Test
-    public void testRunCommandUserPassword() throws IOException, FormException {
+    public void testRunCommandUserPassword() throws Exception, FormException {
         Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
         StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
                 CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
@@ -104,7 +103,7 @@ public class ConnectionImplTest {
     }
 
     @Test
-    public void testRunCommandSSHKey() throws IOException {
+    public void testRunCommandSSHKey() throws Exception {
         Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort());
         StandardUsernameCredentials credentials = new FakeSSHKeyCredential();
         connection.setCredentials(credentials);
@@ -114,22 +113,22 @@ public class ConnectionImplTest {
     }
 
     @Test
-    public void testCopyFile() throws IOException, FormException {
+    public void testCopyFile() throws Exception, FormException {
         final File tempFile =
                 Files.createFile(tempFolder.resolve("tempFile.txt")).toFile();
         try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
             StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
                     CredentialsScope.SYSTEM, "id", "", AgentConnectionBaseTest.USER, AgentConnectionBaseTest.PASSWORD);
             connection.setCredentials(credentials);
-            String data = IOUtils.toString(getClass().getResourceAsStream("/fakeAgentJar.txt"), StandardCharsets.UTF_8);
+            String data = "Test data";
             connection.copyFile(tempFile.getAbsolutePath(), data.getBytes(StandardCharsets.UTF_8), true, true);
-            String dataUpload = Files.String(tempFile.toPath());
+            String dataUpload = Files.readString(tempFile.toPath());
             assertEquals(data, dataUpload);
         }
     }
 
     @Test
-    public void testShellChannel() throws IOException, FormException {
+    public void testShellChannel() throws Exception, FormException {
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
         try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
             StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
@@ -148,7 +147,7 @@ public class ConnectionImplTest {
 
     @Test
     @Disabled("Test is too long and should be run manually")
-    public void testRunLongConnection() throws IOException, InterruptedException {
+    public void testRunLongConnection() throws Exception, InterruptedException {
         try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
             StandardUsernameCredentials credentials = new FakeSSHKeyCredential();
             connection.setCredentials(credentials);
@@ -162,7 +161,7 @@ public class ConnectionImplTest {
     }
 
     @Test
-    public void testShellChannel2() throws IOException, FormException {
+    public void testShellChannel2() throws Exception, FormException {
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");
         try (Connection connection = new ConnectionImpl(sshd.getHost(), sshd.getPort())) {
             StandardUsernameCredentials credentials = new UsernamePasswordCredentialsImpl(
@@ -186,6 +185,7 @@ public class ConnectionImplTest {
         }
     }
 
+    // FIXME review this test https://github.com/jenkinsci/ssh-agents-plugin/pull/570#discussion_r2194833821
     @Test
     public void testClient() throws Exception {
         Logger logger = Logger.getLogger("io.jenkins.plugins.sshbuildagents.ssh.agents");

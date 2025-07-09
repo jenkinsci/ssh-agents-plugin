@@ -10,6 +10,7 @@ import java.io.OutputStream;
 
 /**
  * Interface to manage non-interactive sessions.
+ * TODO review names for interactive and non-interactive sessions. Mina uses ShellChannel for interactive and ExecChannel for non-interactive.
  *
  */
 public interface ShellChannel extends AutoCloseable {
@@ -39,12 +40,5 @@ public interface ShellChannel extends AutoCloseable {
     /**
      * @return the last command received in the SSH channel.
      */
-    String getLastHint();
-
-    /**
-     * Closses the channel and resources associated.
-     *
-     * @throws IOException in case of error.
-     */
-    void close() throws IOException;
+    String getLastAttemptedCommand();
 }

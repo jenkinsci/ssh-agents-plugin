@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
@@ -31,6 +32,8 @@ import org.apache.sshd.scp.client.DefaultScpClient;
  *
  */
 public class ConnectionImpl implements Connection {
+    private static final java.util.logging.Logger LOGGER =
+            java.util.logging.Logger.getLogger(ConnectionImpl.class.getName());
     /** The number of heartbeat packets lost before closing the connection. */
     public static final int HEARTBEAT_MAX_RETRY = 6;
 
@@ -38,10 +41,10 @@ public class ConnectionImpl implements Connection {
     public static final long WINDOW_SIZE = 4L * 1024 * 1024;
 
     /** The time in seconds to wait before sending a keepalive packet. */
-    public static final int HEARTBEAT_INTERVAL = 10;
+    public static final int HEARTBEAT_INTERVAL_SECONDS = 10;
 
     /** The time in minutes to wait before closing the session if no command is executed. */
-    public static final int IDLE_SESSION_TIMEOUT = 60;
+    public static final int IDLE_SESSION_TIMEOUT_MINUTES = 60;
 
     /** The standard output stream of the channel. */
     private OutputStream stdout = System.out;
@@ -99,7 +102,7 @@ public class ConnectionImpl implements Connection {
 
     /** {@inheritDoc} */
     @Override
-// FIXME review, it does not return the exit code as it is said in the javadoc
+    // FIXME review, it does not return the exit code as it is said in the javadoc
     public int execCommand(String command) throws IOException {
         try (ClientSession session = connect()) {
             session.executeRemoteCommand(command, stdout, stderr, StandardCharsets.UTF_8);
@@ -147,7 +150,7 @@ public class ConnectionImpl implements Connection {
     public void copyFile(String remotePath, byte[] bytes, boolean overwrite, boolean checkSameContent)
             throws IOException {
         try (ClientSession session = connect()) {
-// TODO set access/modification time to be the same as the source
+            // TODO set access/modification time to be the same as the source
             DefaultScpClient scp = new DefaultScpClient(session);
             List<PosixFilePermission> permissions = new ArrayList<>();
             // TODO document the permissions the file needs and how to set the umask
@@ -157,10 +160,6 @@ public class ConnectionImpl implements Connection {
             scp.upload(bytes, remotePath, permissions, null);
         }
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public void setServerHostKeyAlgorithms(String[] algorithms) {}
 
     /** {@inheritDoc} */
     @Override
@@ -179,7 +178,7 @@ public class ConnectionImpl implements Connection {
                 } catch (Exception ex) {
                     String message = getExMessage(ex);
                     if (maxNumRetries - i > 0) {
-// FIXME send these logs to the TaskListener  of the computer launcher
+                        // FIXME send these logs to the TaskListener  of the computer launcher
                         println(
                                 stderr,
                                 "SSH Connection failed with IOException: \""
@@ -218,7 +217,7 @@ public class ConnectionImpl implements Connection {
         connectionFuture.verify(this.timeoutMillis);
         session = connectionFuture.getSession();
         var authenticator = SSHAuthenticator.newInstance(session, credentials);
-// FIXME send these logs to the TaskListener of the computer launcher
+        // FIXME send these logs to the TaskListener of the computer launcher
         authenticator.authenticate(TaskListener.NULL);
         return session;
     }
@@ -230,9 +229,9 @@ public class ConnectionImpl implements Connection {
             CoreModuleProperties.WINDOW_SIZE.set(client, WINDOW_SIZE);
             CoreModuleProperties.TCP_NODELAY.set(client, tcpNoDelay);
             CoreModuleProperties.HEARTBEAT_REQUEST.set(client, "keepalive@jenkins.io");
-            CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofSeconds(HEARTBEAT_INTERVAL));
+            CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, Duration.ofSeconds(HEARTBEAT_INTERVAL_SECONDS));
             CoreModuleProperties.HEARTBEAT_NO_REPLY_MAX.set(client, HEARTBEAT_MAX_RETRY);
-            CoreModuleProperties.IDLE_TIMEOUT.set(client, Duration.ofMinutes(IDLE_SESSION_TIMEOUT));
+            CoreModuleProperties.IDLE_TIMEOUT.set(client, Duration.ofMinutes(IDLE_SESSION_TIMEOUT_MINUTES));
             // TODO set the host verifier
             // client.setServerKeyVerifier(hostKeyVerifier);
         }
@@ -330,14 +329,14 @@ public class ConnectionImpl implements Connection {
 
     /** {@inheritDoc} */
     @Override
-// FIXME rename for Stderr
+    // FIXME rename for Stderr
     public void setStdErr(OutputStream stderr) {
         this.stderr = stderr;
     }
 
     /** {@inheritDoc} */
     @Override
-// FIXME rename to Stdout
+    // FIXME rename to Stdout
     public void setStdOut(OutputStream stdout) {
         this.stdout = stdout;
     }
