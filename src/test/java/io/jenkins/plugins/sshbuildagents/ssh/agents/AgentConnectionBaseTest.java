@@ -89,7 +89,7 @@ public abstract class AgentConnectionBaseTest {
     protected static boolean isSuccessfullyConnected(Node node) throws IOException, InterruptedException {
         boolean ret = false;
         int count = 0;
-        while (count < 30) {
+        while (count < 30 && !ret) {
             Thread.sleep(1000);
             String log = node.toComputer().getLog();
             ret = log.contains("Agent successfully connected and online");

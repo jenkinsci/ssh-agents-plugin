@@ -27,8 +27,7 @@ import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.scp.client.DefaultScpClient;
 
 /**
- * Implements {@link Connection} using the Apache Mina SSHD library
- * https://github.com/apache/mina-sshd
+ * Implements {@link Connection} using the <a href="https://github.com/apache/mina-sshd">Apache Mina SSHD library</a>.
  *
  */
 public class ConnectionImpl implements Connection {
@@ -132,7 +131,7 @@ public class ConnectionImpl implements Connection {
             try {
                 session.close();
             } catch (IOException e) {
-                // NOOP
+                LOGGER.log(Level.FINE, "failed to close session", e);
             }
         }
         if (client != null) {

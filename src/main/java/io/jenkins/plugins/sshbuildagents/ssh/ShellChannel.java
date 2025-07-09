@@ -14,7 +14,7 @@ import java.io.OutputStream;
  */
 public interface ShellChannel extends AutoCloseable {
     /**
-     * Executed a command in a non-interactive session and exit, it does not wait for the result.
+     * Execute a command in a non-interactive session and return without waiting for the command to complete.
      *
      * @param cmd
      * @throws IOException

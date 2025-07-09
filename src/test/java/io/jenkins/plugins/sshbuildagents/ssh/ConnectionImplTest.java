@@ -123,7 +123,7 @@ public class ConnectionImplTest {
             connection.setCredentials(credentials);
             String data = IOUtils.toString(getClass().getResourceAsStream("/fakeAgentJar.txt"), StandardCharsets.UTF_8);
             connection.copyFile(tempFile.getAbsolutePath(), data.getBytes(StandardCharsets.UTF_8), true, true);
-            String dataUpload = FileUtils.readFileToString(tempFile, StandardCharsets.UTF_8);
+            String dataUpload = Files.String(tempFile.toPath());
             assertEquals(data, dataUpload);
         }
     }

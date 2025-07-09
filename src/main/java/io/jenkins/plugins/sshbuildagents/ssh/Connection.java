@@ -15,18 +15,18 @@ import org.apache.sshd.client.session.ClientSession;
  */
 public interface Connection extends AutoCloseable {
     /**
-     * Execute a command and return the error code returned when it finish.
+     * Execute a command and return the exit code returned when it finish.
      *
      * @param command Command to execute.
-     * @return The error code returned by the command.
-     * @throws IOException in case of error.
+     * @return The exit code of the command (if the command ran).
+     * @throws IOException in case of an error launching the command.
      */
     int execCommand(String command) throws IOException;
 
     /**
-     * Create a {@link #shellChannel()} to execute non-interactive commands.
+     * Create a {@link ShellChannel} to execute non-interactive commands.
      *
-     * @return Return a {@link #shellChannel()}
+     * @return Return a {@link ShellChannel}
      * @throws IOException
      */
     ShellChannel shellChannel() throws IOException;
@@ -45,17 +45,16 @@ public interface Connection extends AutoCloseable {
     void close();
 
     /**
-     * Copy a file to the host by SCP. It does not create folders, so the folders of the path should
-     * exist.
+     * Copy a file to the host by SCP. It does not create folders, so the folders of the path must
+     * exist prior to calling this.
      *
      * @param remoteFile Full path to the remote file.
-     * @param bytes Array of bytes with the data to write.
-     * @param overwrite True to overwrite exit files.
-     * @param checkSameContent True to check the md5 of the file before write it and do not update the
-     *     lie if it is the same.
+     * @param data Array of bytes with the data to write.
+     * @param overwrite @{code true} to overwrite the file if it already exists.  If @{false} and the file exists an @{code IOException} will be thrown.
+     * @param checkSameContent if true will calculate and compare the checksum of the remote file and data and if identical will skip writing the file.
      * @throws IOException
      */
-    void copyFile(String remoteFile, byte[] bytes, boolean overwrite, boolean checkSameContent) throws IOException;
+    void copyFile(String remoteFile, byte[] data, boolean overwrite, boolean checkSameContent) throws IOException;
 
     /**
      * Set server host key Algorithms.

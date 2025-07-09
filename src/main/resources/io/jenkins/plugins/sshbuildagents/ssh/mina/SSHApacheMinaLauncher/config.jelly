@@ -19,19 +19,19 @@
 
   <f:advanced>
       <f:entry title="${%Port}" field="port">
-          <f:textbox default="22" checkMethod="post"/>
+          <f:number min="1" max="65535" step="1" clazz="required number" default="22"/>
       </f:entry>
 
       <f:entry title="${%JavaPath}" field="javaPath">
-          <f:textbox checkMethod="post"/>
+          <f:textbox placeholder="/usr/local/java/21/bin/java/"/>
       </f:entry>
 
       <f:entry title="${%JVM Options}" field="jvmOptions">
-          <f:textbox checkMethod="post"/>
+          <f:textbox/>
       </f:entry>
 
       <f:entry title="${%Prefix Start Agent Command}" field="prefixStartAgentCmd">
-          <f:textbox checkMethod="post"/>
+          <f:textbox />
       </f:entry>
 
       <f:entry title="${%Suffix Start Agent Command}" field="suffixStartAgentCmd">
@@ -39,7 +39,7 @@
       </f:entry>
 
       <f:entry title="${%Connection Timeout in Seconds}" field="launchTimeoutSeconds">
-          <f:textbox name="launchTimeoutSeconds" checkMethod="post"/>
+          <f:number name="launchTimeoutSeconds" clazz="clazz="positive-number"/>
       </f:entry>
 
       <f:entry title="${%Maximum Number of Retries}" field="maxNumRetries">
