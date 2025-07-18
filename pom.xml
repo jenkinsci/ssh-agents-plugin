@@ -83,6 +83,7 @@
     <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
     <spotless.check.skip>false</spotless.check.skip>
+    <no-test-jar>false</no-test-jar>
   </properties>
 
   <dependencyManagement>
