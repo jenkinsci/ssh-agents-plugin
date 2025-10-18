@@ -25,7 +25,10 @@ package hudson.plugins.sshslaves.verifiers;
 
 import com.trilead.ssh2.KnownHosts;
 import java.io.Serializable;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * A representation of the SSH key provided by a remote host to verify itself
@@ -63,7 +66,14 @@ public final class HostKey implements Serializable {
     }
 
     public String getFingerprint() {
-        return KnownHosts.createHexFingerprint(getAlgorithm(), getKey());
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(getKey());
+            return "SHA256:" + Base64.getEncoder().encodeToString(digest);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 should always be available, but fallback to MD5 if not
+            return KnownHosts.createHexFingerprint(getAlgorithm(), getKey());
+        }
     }
 
     @Override
