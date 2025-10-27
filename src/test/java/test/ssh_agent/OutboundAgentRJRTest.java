@@ -25,17 +25,17 @@
 package test.ssh_agent;
 
 import hudson.model.Slave;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.RealJenkinsRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.jvnet.hudson.test.junit.jupiter.RealJenkinsExtension;
 
-public final class OutboundAgentRJRTest {
+class OutboundAgentRJRTest {
 
-    @Rule
-    public final RealJenkinsRule rr = new RealJenkinsRule();
+    @RegisterExtension
+    private final RealJenkinsExtension rr = new RealJenkinsExtension();
 
     @Test
-    public void smokes() throws Throwable {
+    void smokes() throws Throwable {
         rr.startJenkins();
         try (var outbountAgent = new OutboundAgent()) {
             rr.runRemotely(OutboundAgent::createAgent, "remote", outbountAgent.start());
