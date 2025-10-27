@@ -82,6 +82,7 @@
     <jenkins.baseline>2.504</jenkins.baseline>
     <jenkins.version>${jenkins.baseline}.1</jenkins.version>
     <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
+    <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
     <spotless.check.skip>false</spotless.check.skip>
     <no-test-jar>false</no-test-jar>
   </properties>
