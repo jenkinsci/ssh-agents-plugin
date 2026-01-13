@@ -50,7 +50,7 @@ import org.testcontainers.containers.GenericContainer;
  */
 public final class OutboundAgent implements AutoCloseable {
 
-    private String image = "jenkins/ssh-agent";
+    private String image = "jenkins/ssh-agent:latest-jdk21";
 
     private SSHAgentContainer container;
 
