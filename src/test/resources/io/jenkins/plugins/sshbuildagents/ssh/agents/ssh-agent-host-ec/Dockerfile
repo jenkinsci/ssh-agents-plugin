@@ -1,4 +1,4 @@
-FROM ghcr.io/jenkinsci/ssh-agents-plugin:baseb2fb086@sha256:2bc6d82ca2b406b0a2b509fd2308c38ae51de9f3e61cb1288e3421f6116bb27c
+FROM ghcr.io/jenkinsci/ssh-agents-plugin:base48d6d44@sha256:5bd4d812910268d9ad217058dcb4190ca8ba6eb36de43ac5cccf776eec510486
 USER root
 
 COPY ssh /home/jenkins/.ssh
