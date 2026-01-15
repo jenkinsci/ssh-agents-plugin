@@ -34,7 +34,7 @@ import hudson.slaves.SlaveComputer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
