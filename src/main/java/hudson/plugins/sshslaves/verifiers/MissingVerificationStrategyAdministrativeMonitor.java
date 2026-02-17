@@ -39,7 +39,9 @@ import jenkins.model.Jenkins;
  * set against them and prompts the admin to update the settings as needed.
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Trilead-specific monitor. Use {@link hudson.plugins.sshslaves.mina.MinaSSHLauncher} instead.
  */
+@Deprecated
 @Extension
 public class MissingVerificationStrategyAdministrativeMonitor extends AdministrativeMonitor {
     private List<String> agentNames;

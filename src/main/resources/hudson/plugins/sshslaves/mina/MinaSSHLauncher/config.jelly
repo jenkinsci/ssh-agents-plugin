@@ -1,0 +1,56 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+  <f:entry title="${%Host}" field="host">
+    <f:textbox checkMethod="post"/>
+  </f:entry>
+
+  <f:entry title="${%Credentials}" field="credentialsId">
+    <c:select checkMethod="post"/>
+  </f:entry>
+
+  <f:dropdownDescriptorSelector field="serverKeyVerificationStrategy" title="${%Host Key Verification Strategy}"/>
+
+  <f:advanced>
+      <f:entry title="${%Port}" field="port">
+          <f:textbox default="22" checkMethod="post"/>
+      </f:entry>
+
+      <f:entry title="${%JavaPath}" field="javaPath">
+          <f:textbox checkMethod="post"/>
+      </f:entry>
+
+      <f:entry title="${%JVM Options}" field="jvmOptions">
+          <f:textbox checkMethod="post"/>
+      </f:entry>
+
+      <f:entry title="${%Prefix Start Agent Command}" field="prefixStartSlaveCmd">
+          <f:textbox checkMethod="post"/>
+      </f:entry>
+
+      <f:entry title="${%Suffix Start Agent Command}" field="suffixStartSlaveCmd">
+          <f:textbox checkMethod="post"/>
+      </f:entry>
+
+      <f:entry title="${%Connection Timeout in Seconds}" field="launchTimeoutSeconds">
+          <f:textbox name="launchTimeoutSeconds" checkMethod="post"/>
+      </f:entry>
+
+      <f:entry title="${%Maximum Number of Retries}" field="maxNumRetries">
+          <f:textbox name="maxNumRetries" checkMethod="post"/>
+      </f:entry>
+
+      <f:entry title="${%Seconds To Wait Between Retries}" field="retryWaitTime">
+          <f:textbox name="retryWaitTime" checkMethod="post"/>
+      </f:entry>
+
+      <f:entry title="${%Use TCP_NODELAY flag on the SSH connection}" field="tcpNoDelay">
+          <f:checkbox name="tcpNoDelay" default="true"/>
+      </f:entry>
+
+      <f:entry title="${%Remoting Work directory}" field="workDir">
+          <f:textbox name="workDir" checkMethod="post"/>
+      </f:entry>
+
+  </f:advanced>
+</j:jelly>

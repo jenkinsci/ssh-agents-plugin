@@ -11,7 +11,9 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * @author Michael Clarke
+ * @deprecated Trilead-specific version support. Use {@link hudson.plugins.sshslaves.mina.MinaSSHLauncher} instead.
  */
+@Deprecated
 @Restricted(NoExternalUse.class)
 class JenkinsTrilead9VersionSupport extends TrileadVersionSupportManager.TrileadVersionSupport {
 

@@ -44,7 +44,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
  *
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Use {@link hudson.plugins.sshslaves.mina.KnownHostsVerificationStrategy} instead.
  */
+@Deprecated
 public class KnownHostsFileKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     public static final String KNOWN_HOSTS_DEFAULT =

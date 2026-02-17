@@ -1,0 +1,13 @@
+jenkins:
+  nodes:
+    - permanent:
+        name: "mina-ssh-agent"
+        remoteFS: "/home/jenkins"
+        launcher:
+          sshMina:
+            host: ssh-host
+            port: 2222
+            credentialsId: "creds"
+            jvmOptions: "-Xmx256m"
+            serverKeyVerificationStrategy:
+              minaBlindlyTrust: {}
