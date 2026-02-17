@@ -38,7 +38,9 @@ import jenkins.model.Jenkins;
  *
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Use {@link hudson.plugins.sshslaves.mina.MinaServerKeyVerificationStrategy} instead.
  */
+@Deprecated
 public abstract class SshHostKeyVerificationStrategy implements Describable<SshHostKeyVerificationStrategy> {
 
     @Override

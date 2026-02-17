@@ -63,7 +63,9 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  * connector and launcher share them.
  *
  * @author Kohsuke Kawaguchi
+ * @deprecated Use {@link hudson.plugins.sshslaves.mina.MinaSSHLauncher} instead.
  */
+@Deprecated
 public class SSHConnector extends ComputerConnector {
     /**
      * Field port
