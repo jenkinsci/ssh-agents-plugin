@@ -105,7 +105,10 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * A computer launcher that tries to start a linux agent by opening an SSH connection and trying to find java.
+ *
+ * @deprecated Use {@link hudson.plugins.sshslaves.mina.MinaSSHLauncher} instead.
  */
+@Deprecated
 public class SSHLauncher extends ComputerLauncher {
 
     /**

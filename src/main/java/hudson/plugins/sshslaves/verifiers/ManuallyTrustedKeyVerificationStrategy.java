@@ -46,7 +46,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
  * key in the known hosts database.
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Use {@link hudson.plugins.sshslaves.mina.TrustOnFirstUseVerificationStrategy} instead.
  */
+@Deprecated
 public class ManuallyTrustedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     private static final Logger LOGGER = Logger.getLogger(ManuallyTrustedKeyVerificationStrategy.class.getName());

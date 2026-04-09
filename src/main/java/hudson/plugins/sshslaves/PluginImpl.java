@@ -34,7 +34,9 @@ import java.util.logging.Logger;
  * Entry point of the plugin.
  *
  * @author Stephen Connolly
+ * @deprecated Trilead SSH connection management. Use {@link hudson.plugins.sshslaves.mina.MinaSSHLauncher} instead.
  */
+@Deprecated
 public class PluginImpl extends Plugin {
 
     /**

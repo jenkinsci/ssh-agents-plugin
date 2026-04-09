@@ -49,7 +49,9 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  * value in their known hosts file before attempting an SSH connection on a Unix/Linux machine.
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Use {@link hudson.plugins.sshslaves.mina.ManualKeyVerificationStrategy} instead.
  */
+@Deprecated
 public class ManuallyProvidedKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     private final HostKey key;

@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2016, Michael Clarke
+ * Copyright (c) 2004-, all the contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,47 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package hudson.plugins.sshslaves.verifiers;
+package hudson.plugins.sshslaves.mina;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
-import hudson.model.TaskListener;
-import hudson.plugins.sshslaves.Messages;
-import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.SlaveComputer;
+import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier;
+import org.apache.sshd.client.keyverifier.ServerKeyVerifier;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
- * A verifier that performs no action on the host key, thereby allowing all connections. To
- * make it clear that no verification is being performed, a message is printed to connection
- * logs to indicate the key is not being checked and a man-in-the-middle attach may therefore
- * be possible against this connection.
- * @author Michael Clarke
- * @since 1.13
- * @deprecated Use {@link hudson.plugins.sshslaves.mina.BlindTrustVerificationStrategy} instead.
+ * Verification strategy that accepts all server host keys without verification.
+ *
+ * <p>This is the least secure option and should only be used in trusted environments.
  */
-@Deprecated
-public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
+public class BlindTrustVerificationStrategy extends MinaServerKeyVerificationStrategy {
 
     @DataBoundConstructor
-    public NonVerifyingKeyVerificationStrategy() {
-        super();
-    }
+    public BlindTrustVerificationStrategy() {}
 
     @Override
-    public boolean verify(SlaveComputer computer, HostKey hostKey, TaskListener listener) {
-        listener.getLogger()
-                .println(Messages.NonVerifyingHostKeyVerifier_NoVerificationWarning(SSHLauncher.getTimestamp()));
-        return true;
+    @NonNull
+    public ServerKeyVerifier createVerifier(SlaveComputer computer, String host) {
+        return AcceptAllServerKeyVerifier.INSTANCE;
     }
 
     @Extension
-    public static class NonVerifyingKeyVerificationStrategyDescriptor extends SshHostKeyVerificationStrategyDescriptor {
+    @Symbol("minaBlindlyTrust")
+    public static class DescriptorImpl extends MinaServerKeyVerificationStrategyDescriptor {
 
-        @NonNull
         @Override
+        @NonNull
         public String getDisplayName() {
-            return Messages.NonVerifyingHostKeyVerifier_DescriptorDisplayName();
+            return Messages.BlindTrustVerificationStrategy_DisplayName();
         }
     }
 }

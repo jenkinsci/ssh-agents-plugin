@@ -35,7 +35,9 @@ import java.util.Base64;
  * and secure the initial setup of the SSH connection.
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Trilead-specific key representation. Use Apache Mina SSHD {@code java.security.PublicKey} instead.
  */
+@Deprecated
 public final class HostKey implements Serializable {
 
     private static final long serialVersionUID = -5131839381842616910L;

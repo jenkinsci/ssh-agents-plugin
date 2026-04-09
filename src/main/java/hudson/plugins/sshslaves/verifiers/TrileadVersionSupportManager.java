@@ -13,7 +13,9 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * An abstraction layer to allow handling of feature changes (e.g. new key types) between different Trilead versions.
  * @author Michael Clarke
  * @since 1.18
+ * @deprecated Trilead-specific version support. Use {@link hudson.plugins.sshslaves.mina.MinaSSHLauncher} instead.
  */
+@Deprecated
 @Restricted(NoExternalUse.class)
 final class TrileadVersionSupportManager {
 
