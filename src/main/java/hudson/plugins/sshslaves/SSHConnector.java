@@ -347,7 +347,7 @@ public class SSHConnector extends ComputerConnector {
         }
 
         @RequirePOST
-        public FormValidation doCheckLaunchTimeoutSeconds(String value) {
+        public FormValidation doCheckLaunchTimeoutSeconds(@QueryParameter String value) {
             if (StringUtils.isBlank(value)) return FormValidation.ok();
             try {
                 int timeoutValue = Integer.parseInt(value.trim());
