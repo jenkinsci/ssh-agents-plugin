@@ -347,11 +347,16 @@ public class SSHConnector extends ComputerConnector {
         }
 
         @RequirePOST
-        public FormValidation doCheckLaunchTimeoutSeconds(String value) {
+        public FormValidation doCheckLaunchTimeoutSeconds(@QueryParameter String value) {
             if (StringUtils.isBlank(value)) return FormValidation.ok();
             try {
-                if (Integer.parseInt(value.trim()) < 0) {
+                int timeoutValue = Integer.parseInt(value.trim());
+                if (timeoutValue < 0) {
                     return FormValidation.error(Messages.SSHConnector_LaunchTimeoutMustBePositive());
+                }
+                if (timeoutValue > 0 && timeoutValue < DEFAULT_LAUNCH_TIMEOUT_SECONDS) {
+                    return FormValidation.warning(
+                            Messages.SSHConnector_LaunchTimeoutBelowRecommendedMinimum(DEFAULT_LAUNCH_TIMEOUT_SECONDS));
                 }
                 return FormValidation.ok();
             } catch (NumberFormatException e) {
