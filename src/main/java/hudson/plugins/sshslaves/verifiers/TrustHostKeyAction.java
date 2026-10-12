@@ -42,7 +42,9 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  * key.
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Trilead-specific host key trust action. Use {@link hudson.plugins.sshslaves.mina.MinaSSHLauncher} instead.
  */
+@Deprecated
 public class TrustHostKeyAction extends TaskAction {
 
     private static int keyNumber = 0;

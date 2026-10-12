@@ -39,7 +39,9 @@ import jenkins.model.Jenkins;
  * point the verifier is invoked during the connection attempt.
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Trilead-specific host key management. Use {@link hudson.plugins.sshslaves.mina.MinaSSHLauncher} instead.
  */
+@Deprecated
 public final class HostKeyHelper {
 
     private static final HostKeyHelper INSTANCE = new HostKeyHelper();

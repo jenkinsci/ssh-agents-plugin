@@ -38,7 +38,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
  * be possible against this connection.
  * @author Michael Clarke
  * @since 1.13
+ * @deprecated Use {@link hudson.plugins.sshslaves.mina.BlindTrustVerificationStrategy} instead.
  */
+@Deprecated
 public class NonVerifyingKeyVerificationStrategy extends SshHostKeyVerificationStrategy {
 
     @DataBoundConstructor
