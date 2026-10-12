@@ -1,3 +1,9 @@
 <div>
 	Additional arguments for the JVM, such as <code>-Xmx</code> or GC options.
+	<p>
+		For example, if an agent process running out of memory should terminate immediately instead of
+		remaining connected in a broken state and failing every build assigned to it, consider adding
+		<code>-XX:OnOutOfMemoryError="kill -9 %p"</code> or <code>-XX:+ExitOnOutOfMemoryError</code>, so
+		Jenkins detects the disconnect and can retry the launch instead of routing builds to a dead agent.
+	</p>
 </div>
