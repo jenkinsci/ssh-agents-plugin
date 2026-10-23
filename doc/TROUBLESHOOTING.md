@@ -113,6 +113,30 @@ in the Jenkins properties. it can be set in runtime by executing the following c
 System.setProperty("hudson.plugins.sshslaves.SSHLauncher.trackCredentials","false");
 ```
 
+### Agent stuck launching
+
+If the network drops while an agent is being launched, the launch can wait for an answer that never comes.
+The agent log stops at one of the launch steps, for example `[SSH] Copying latest remoting.jar...`, and the thread
+dump shows the launch thread waiting on the connection, for example in:
+
+```
+at com.trilead.ssh2.SFTPv3Client.readBytes(SFTPv3Client.java)
+...
+at hudson.plugins.sshslaves.SSHLauncher.copyAgentJar(SSHLauncher.java)
+```
+
+Every later attempt to launch the agent waits for that launch, so the agent log can even be empty.
+Disconnecting the agent stops the hung launch. To prevent the launch from hanging forever, the launch steps after the
+SSH connection is open (checking the remote environment, copying remoting.jar and starting the agent process) must
+finish within 600 seconds, otherwise the launch is interrupted and fails so it can be retried.
+The timeout can be changed with the property `-Dhudson.plugins.sshslaves.SSHLauncher.agentSetupTimeoutSeconds=600`,
+a value of 0 disables it. It can be changed at runtime by executing the following code in the Jenkins script console,
+but the change is not permanent.
+
+```
+hudson.plugins.sshslaves.SSHLauncher.AGENT_SETUP_TIMEOUT_SECONDS = 600
+```
+
 ### 1.29.0 Breaks compatibility with Cloud plugins that do not use trilead-api plugin as dependency
 
 SSH Build Agents Plugin not longer uses trilead-ssh2 module from the Jenkins core so plugins that depends on SSH Build Agents Plugin it must include trilead-api plugin as dependency until every the plugins change to this dependency. If you find this issue with one of your cloud plugins please report it and downgrade SSH Build Agents Plugin to <1.28.1 until the dependency is added to your cloud plugin.

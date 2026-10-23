@@ -70,6 +70,7 @@ import hudson.util.NamingThreadFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -92,6 +93,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
+import jenkins.util.SystemProperties;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
@@ -122,6 +124,16 @@ public class SSHLauncher extends ComputerLauncher {
     public static final String JAR_CACHE_PARAM = " -jar-cache ";
     public static final String JAR_CACHE_DIR = "/remoting/jarCache";
     public static final int DEFAULT_SSH_PORT = 22;
+
+    /**
+     * Maximum time in seconds for the launch steps after the SSH connection is open: checking the remote environment,
+     * copying remoting.jar and starting the agent process. The connection has no read timeout, so a connection that
+     * silently dies during these steps would otherwise block the launch forever. A value of 0 or less disables it.
+     */
+    @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "Accessible via System Groovy Scripts")
+    @Restricted(NoExternalUse.class)
+    public static int AGENT_SETUP_TIMEOUT_SECONDS =
+            SystemProperties.getInteger(SSHLauncher.class.getName() + ".agentSetupTimeoutSeconds", 600);
 
     /**
      * Field host
@@ -445,9 +457,6 @@ public class SSHLauncher extends ComputerLauncher {
 
                     openConnection(listener, computer);
 
-                    verifyNoHeaderJunk(listener);
-                    reportEnvironment(listener);
-
                     final String workingDirectory = getWorkingDirectory(computer);
                     if (workingDirectory == null) {
                         listener.error("Cannot get the working directory for " + computer);
@@ -459,9 +468,25 @@ public class SSHLauncher extends ComputerLauncher {
                         java = expandExpression(computer, javaPath);
                     }
 
-                    copyAgentJar(listener, workingDirectory);
-
-                    startAgent(computer, listener, java, workingDirectory);
+                    final int setupTimeoutSeconds = AGENT_SETUP_TIMEOUT_SECONDS;
+                    final AgentSetupTimeout setupTimeout = AgentSetupTimeout.start(setupTimeoutSeconds);
+                    boolean setupInTime;
+                    try {
+                        verifyNoHeaderJunk(listener);
+                        reportEnvironment(listener);
+                        copyAgentJar(listener, workingDirectory);
+                        startAgent(computer, listener, java, workingDirectory);
+                    } finally {
+                        setupInTime = setupTimeout.finish();
+                        if (!setupInTime) {
+                            listener.getLogger()
+                                    .println(Messages.SSHLauncher_AgentSetupTimedOut(
+                                            getTimestamp(), String.valueOf(setupTimeoutSeconds)));
+                        }
+                    }
+                    if (!setupInTime) {
+                        return Boolean.FALSE;
+                    }
 
                     PluginImpl.register(connection);
                     rval = Boolean.TRUE;
@@ -738,7 +763,8 @@ public class SSHLauncher extends ComputerLauncher {
                 throw new IOException(Messages.SSHLauncher_ErrorCopyingAgentJarInto(workingDirectory), e);
             }
         } catch (IOException e) {
-            if (sftpClient == null) {
+            // an interrupted launch should not try SCP, the agent is unlikely to answer
+            if (sftpClient == null && !(e instanceof InterruptedIOException)) {
                 e.printStackTrace(listener.error(Messages.SSHLauncher_StartingSCPClient(getTimestamp())));
                 // lets try to recover if the agent doesn't have an SFTP service
                 copySlaveJarUsingSCP(listener, workingDirectory);
