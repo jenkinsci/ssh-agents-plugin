@@ -77,6 +77,9 @@ abstract class AgentConnectionBaseTest {
         assertTrue(isSuccessfullyConnected(node));
     }
 
+    /** Hook to adjust the launcher before the node is added, since adding the node starts the first launch. */
+    protected void customizeLauncher(SSHLauncher launcher) {}
+
     protected abstract String getAgentName();
 
     protected abstract GenericContainer<?> getAgentContainer();
@@ -125,6 +128,7 @@ abstract class AgentConnectionBaseTest {
 
         final SSHLauncher launcher = new SSHLauncher(host, sshPort, credId);
         launcher.setSshHostKeyVerificationStrategy(new NonVerifyingKeyVerificationStrategy());
+        customizeLauncher(launcher);
         DumbSlave agent = new DumbSlave(name, AGENT_WORK_DIR, launcher);
         j.jenkins.addNode(agent);
         return j.jenkins.getNode(agent.getNodeName());

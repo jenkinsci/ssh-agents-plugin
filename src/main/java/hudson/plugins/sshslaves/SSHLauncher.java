@@ -490,13 +490,21 @@ public class SSHLauncher extends ComputerLauncher {
                             "Launcher Executor Service should be always non-null here, because the task allocates and closes service on its own");
                 }
 
-                results = srv.invokeAll(callables);
+                // A remote that authenticates and then never answers (or a silently dead TCP peer) blocks the launch
+                // thread forever, and the lock held below keeps every later launch of this agent waiting behind it.
+                final long overallTimeoutMillis = getOverallLaunchTimeoutMillis();
+                results = srv.invokeAll(callables, overallTimeoutMillis, TimeUnit.MILLISECONDS);
                 long duration = System.currentTimeMillis() - time;
                 Boolean res;
                 try {
                     res = results.get(0).get();
                 } catch (CancellationException | ExecutionException e) {
                     res = Boolean.FALSE;
+                    if (results.get(0).isCancelled() && duration >= overallTimeoutMillis) {
+                        listener.getLogger()
+                                .println(Messages.SSHLauncher_launchTimedOut(
+                                        TimeUnit.MILLISECONDS.toSeconds(overallTimeoutMillis)));
+                    }
                     listener.getLogger().println(Messages.SSHLauncher_launchCanceled());
                 }
                 if (!res) {
@@ -508,6 +516,8 @@ public class SSHLauncher extends ComputerLauncher {
                 }
             } catch (InterruptedException e) {
                 LOGGER.warning(() -> Messages.SSHLauncher_LaunchFailed(nodeName, host));
+                // Without this the field stays set and every later launch stops at "already connected".
+                cleanupConnection(listener);
             } finally {
                 shutdownAndAwaitTerminationOfLauncher();
             }
@@ -1145,6 +1155,18 @@ public class SSHLauncher extends ComputerLauncher {
     @NonNull
     public Integer getLaunchTimeoutSeconds() {
         return launchTimeoutSeconds;
+    }
+
+    /**
+     * Upper bound for one whole launch. {@code launchTimeoutSeconds} only limits the TCP connect and the key
+     * exchange, so every later step (authentication, header check, environment dump, jar copy, agent start) gets one
+     * launch timeout of its own on top of the worst case of the connect retries.
+     */
+    long getOverallLaunchTimeoutMillis() {
+        long launchTimeoutMillis = TimeUnit.SECONDS.toMillis(getLaunchTimeoutSeconds());
+        long connectAttemptMillis =
+                2 * launchTimeoutMillis + TimeUnit.SECONDS.toMillis(5) + TimeUnit.SECONDS.toMillis(getRetryWaitTime());
+        return (getMaxNumRetries() + 1L) * connectAttemptMillis + 5 * launchTimeoutMillis;
     }
 
     private long getLaunchTimeoutMillis() {
